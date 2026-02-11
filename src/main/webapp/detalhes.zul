@@ -1,0 +1,139 @@
+<zk xmlns:n="native">
+
+    <div sclass="card shadow-sm" style="border-top: 5px solid #007bff;">
+
+        <div sclass="card-body">
+            <div sclass="d-flex justify-content-between align-items-start">
+
+                <hlayout spacing="15px" valign="middle">
+                    <span sclass="z-icon-user-circle" style="font-size: 40px; color: #555;"/>
+
+                    <vlayout spacing="2px">
+                        <label value="@load(vm.curriculo.nomeCompleto)" style="font-size: 22px; font-weight: bold; color: #333;"/>
+
+                        <vlayout onClick="@command('toggleResumo')" style="cursor: pointer;" spacing="0">
+                            <label value="@load(vm.resumoExpandido ? vm.curriculo.resumo : vm.curriculo.resumoCompactado)"
+                                   multiline="true"
+                                   tooltiptext="Clique para expandir/recolher"
+                                   style="font-size: 12px; color: #666; font-style: italic; line-height: 1.4; display:block; text-align: justify; padding-right: 58px;"/>
+
+                            <label value="@load(vm.resumoExpandido ? '▲ Recolher resumo' : '▼ Ler resumo completo')"
+                                   visible="@load(vm.curriculo.resumo.length() > 250)"
+                                   style="font-size: 10px; color: #007bff; font-weight: bold; margin-top: 2px;"/>
+                        </vlayout>
+                    </vlayout>
+                </hlayout>
+
+                <button iconSclass="z-icon-times"
+                        onClick="@command('fecharResultado')"
+                        tooltiptext="Fechar Visualização"
+                        style="background: transparent; border: none; font-size: 18px; color: #999; cursor: pointer;"
+                        sclass="btn-sm text-hover-danger"/>
+            </div>
+        </div>
+
+        <separator bar="true"/>
+
+        <vlayout spacing="20px" style="padding: 20px;">
+
+            <groupbox closable="false" mold="3d">
+                <caption label="Formação Acadêmica" iconSclass="z-icon-graduation-cap"/>
+                <listbox model="@load(vm.curriculo.formacoes)" height="150px" emptyMessage="Nenhuma formação registrada." sclass="table-striped">
+                    <listhead>
+                        <listheader label="Nível" width="150px" style="font-weight:bold"/>
+                        <listheader label="Curso / Título"/>
+                        <listheader label="Instituição"/>
+                        <listheader label="Conclusão" width="100px" align="center"/>
+                    </listhead>
+                    <template name="model">
+                        <listitem>
+                            <listcell label="@load(each.tipoFormacao)"/>
+                            <listcell label="@load(each.nomeCurso.nomeCurso)"/>
+                            <listcell label="@load(each.nomeInstituicao.nomeInstituicao)"/>
+                            <listcell label="@load(each.anoConclusao)"/>
+                        </listitem>
+                    </template>
+                </listbox>
+            </groupbox>
+
+            <groupbox closable="false" mold="3d">
+                <caption label="Atuação Profissional" iconSclass="z-icon-briefcase"/>
+                <vlayout children="@load(vm.curriculo.atuacoes)">
+                    <template name="children" var="at">
+                        <div sclass="card mb-3" style="border: 1px solid #eee;">
+                            <div sclass="card-header bg-light">
+                                <label value="@load(at.instituicao.nomeInstituicao)" style="font-weight:bold; font-size:14px; color:#2c3e50"/>
+                            </div>
+                            <div sclass="card-body" style="padding: 10px;">
+                                <grid model="@load(at.vinculos)" visible="@load(not empty at.vinculos)" sclass="mb-3">
+                                    <columns>
+                                        <column label="Vínculo / Cargo" hflex="1"/>
+                                        <column label="Enquadramento" hflex="1"/>
+                                        <column label="Carga Horária" width="120px" align="center"/>
+                                        <column label="Período" width="140px" align="center"/>
+                                    </columns>
+                                    <template name="model" var="vinc">
+                                        <row>
+                                            <label value="@load(not empty vinc.tipoVinculo ? vinc.tipoVinculo : 'Não informado')"
+                                                   style="@load(not empty vinc.tipoVinculo ? 'font-weight:bold;' : 'font-weight:normal; color:#999; font-style:italic;')"/>
+                                            <label value="@load(not empty vinc.descEnquadramento ? vinc.descEnquadramento : 'Não informado')"
+                                                   style="@load(not empty vinc.descEnquadramento ? '' : 'color:#999; font-style:italic;')"/>
+                                            <label value="@load(not empty vinc.descCargaHoraria ? vinc.descCargaHoraria : 'Não informado')"
+                                                   style="@load(not empty vinc.descCargaHoraria ? '' : 'color:#999; font-style:italic;')" />
+                                            <label value="@load(vinc.anoInicio)"/>
+                                        </row>
+                                    </template>
+                                </grid>
+                            </div>
+                        </div>
+                    </template>
+                </vlayout>
+            </groupbox>
+
+            <groupbox closable="false" mold="3d">
+                <caption label="Produção Bibliográfica" iconSclass="z-icon-book"/>
+
+                <listbox model="@load(vm.curriculo.producoes)" height="300px" emptyMessage="Nenhuma produção registrada.">
+                    <listhead>
+                        <listheader label="Tipo" width="100px" style="font-weight:bold"/>
+                        <listheader label="Título"/>
+                        <listheader label="Ano" width="80px" align="center"/>
+                        <listheader label="Citações" width="80px" align="center" tooltiptext="Fonte: CrossRef"/>
+                        <listheader label="Acesso" width="100px" align="center" tooltiptext="Fonte: Unpaywall"/>
+                    </listhead>
+                    <template name="model">
+                        <listitem>
+                            <listcell label="@load(each.tipo)"/>
+
+                            <listcell>
+                                <vlayout spacing="0">
+                                    <label value="@load(each.titulo)" style="font-size:12px;"/>
+                                    <label value="@load(each.nomeVeiculo ne null ? each.nomeVeiculo : each.nomeEvento)"
+                                           style="font-size:10px; color:#888;"/>
+                                    <label value="@load(each.doi)" visible="@load(not empty each.doi)"
+                                           style="font-size:9px; color:#aaa; font-family:monospace;"/>
+                                </vlayout>
+                            </listcell>
+
+                            <listcell>
+                                    <label value ="@load(each.ano)"/>
+                            </listcell>
+
+                            <listcell>
+                                <label value="@load(each.citacoes eq null ? '-' : each.citacoes)"
+                                       style="font-weight:bold; color:#007bff;"/>
+                            </listcell>
+
+                            <listcell style="font-size:14px;">
+                                <label value="@load(each.statusAcesso)"
+                                       sclass="@load('text-'.concat(each.corAcesso))"
+                                       style="font-size:9px; font-weight: bold;"/>
+                            </listcell>
+                        </listitem>
+                    </template>
+                </listbox>
+            </groupbox>
+
+        </vlayout>
+    </div>
+</zk>

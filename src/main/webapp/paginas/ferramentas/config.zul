@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?page title="Configurações"?>
+<?link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico"?>
+<?taglib uri="http://www.zkoss.org/dsp/web/core" prefix="c"?>
+
+<?link rel="stylesheet" type="text/css" href="/css/bootstrap.css"?>
+<?link rel="stylesheet" type="text/css" href="/css/zkbootstrap.css"?>
+<?link rel="stylesheet" type="text/css" href="/css/fontawesome.css"?>
+
+<zk xmlns="http://www.zkoss.org/2005/zul" xmlns:n="native">
+
+    <div sclass="d-flex flex-column min-vh-100">
+        <include src="/header.zul"/>
+        <include src="/navbar.zul"/>
+
+        <div sclass="container-fluid flex-grow-1" style="padding: 20px;"
+             apply="org.zkoss.bind.BindComposer"
+             viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ConfigVM')">
+
+            <div sclass="row mb-3">
+                <div sclass="col-md-12">
+                    <n:h4 class="text-secondary"><n:i class="fa-solid fa-sliders"></n:i> Configurações do Sistema</n:h4>
+                    <n:small class="text-muted">
+                        Arquivo de configuração: <label value="@load(vm.caminhoArquivo)" style="font-family: monospace;"/>
+                    </n:small>
+                </div>
+            </div>
+
+            <div sclass="row mb-4">
+                <div sclass="col-md-12">
+                    <div sclass="card shadow-sm border-0">
+                        <div sclass="card-header bg-primary text-white">
+                            <n:h5 class="mb-0" style="font-size: 1rem;"><n:i class="fa-solid fa-globe mr-2"></n:i> Configurações CNPq</n:h5>
+                        </div>
+                        <div sclass="card-body">
+                            <div sclass="row">
+                                <div sclass="col-md-8 mb-3">
+                                    <label value="URL do WebService (WSDL)" sclass="font-weight-bold"/>
+                                    <textbox value="@bind(vm.wsdlUrl)" width="100%" sclass="form-control"
+                                             placeholder="http://..."/>
+                                </div>
+                                <div sclass="col-md-2 mb-3">
+                                    <label value="Timeout (seg)" sclass="font-weight-bold"/>
+                                    <intbox value="@bind(vm.timeout)" width="100%" sclass="form-control"/>
+                                </div>
+                                <div sclass="col-md-2 mb-3">
+                                    <label value="Tentativas (Retry)" sclass="font-weight-bold"/>
+                                    <intbox value="@bind(vm.retryAttempts)" width="100%" sclass="form-control"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div sclass="row">
+
+                <div sclass="col-md-6 mb-4">
+                    <div sclass="card shadow-sm border-0 h-100">
+                        <div sclass="card-header bg-dark text-white">
+                            <n:h5 class="mb-0" style="font-size: 1rem;"><n:i class="fa-solid fa-database mr-2"></n:i> Monitoramento do Banco</n:h5>
+                        </div>
+
+                        <div sclass="card-body container-fluid">
+                            <div sclass="row align-items-center h-100">
+
+                                <div sclass="col-md-5 text-center" style="border-right: 1px solid #eee;">
+                                    <div sclass="mb-2">
+                                        <span visible="@load(vm.dbStatusState eq 'success')">
+                                            <n:i class="fa-solid fa-circle-check text-success" style="font-size: 4rem;"></n:i>
+                                        </span>
+                                        <span visible="@load(vm.dbStatusState eq 'error')">
+                                            <n:i class="fa-solid fa-circle-xmark text-danger" style="font-size: 4rem;"></n:i>
+                                        </span>
+                                        <span visible="@load(vm.dbStatusState eq 'loading')">
+                                            <n:i class="fa-solid fa-spinner fa-spin text-warning" style="font-size: 4rem;"></n:i>
+                                        </span>
+                                        <span visible="@load(vm.dbStatusState eq 'question')">
+                                            <n:i class="fa-solid fa-circle-question text-muted" style="font-size: 4rem;"></n:i>
+                                        </span>
+                                    </div>
+                                    <label value="@load(vm.dbStatus)" sclass="font-weight-bold d-block text-secondary" style="font-size: 14px;"/>
+                                </div>
+
+                                <div sclass="col-md-7">
+                                    <div sclass="d-flex flex-column justify-content-center align-items-center h-100">
+
+                                        <div sclass="mb-4 text-center">
+                                            <label value="Pool de Conexões" sclass="text-muted small text-uppercase font-weight-bold d-block"/>
+
+                                            <div sclass="d-flex align-items-center justify-content-center mt-1">
+                                                <n:i class="fa-solid fa-server mr-2 text-dark"></n:i>
+                                                <label value="@load(vm.poolStatus)" sclass="h5 mb-0 font-weight-bold" style="padding-left: 5px;"/>
+                                            </div>
+                                        </div>
+
+                                        <button label="Verificar Conexão"
+                                                onClick="@command('testarConexaoBanco')"
+                                                sclass="btn btn-outline-dark btn-block btn-sm font-weight-bold"
+                                                iconSclass="z-icon-refresh"
+                                                style="width: 520px"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div sclass="col-md-6 mb-4">
+                    <div sclass="card shadow-sm border-0 h-100">
+                        <div sclass="card-header bg-info text-white">
+                            <n:h5 class="mb-0" style="font-size: 1rem;"><n:i class="fa-solid fa-cogs mr-2"></n:i> Configurações Gerais</n:h5>
+                        </div>
+                        <div sclass="card-body">
+
+                            <div sclass="d-flex align-items-center mb-3">
+                                <checkbox checked="@bind(vm.verifyEnabled)" sclass="mr-2"/>
+                                <label value="Verificar atualizações automaticamente a cada" style="margin-left: 5px; margin-right: 5px;"/>
+                                <intbox value="@bind(vm.verifyInterval)" width="60px" sclass="form-control form-control-sm" disabled="@load(not vm.verifyEnabled)"/>
+                                <label value="horas" style="margin-left: 5px;"/>
+                            </div>
+
+                            <separator bar="true" sclass="my-3"/>
+
+                            <div sclass="d-flex align-items-center">
+                                <checkbox checked="@bind(vm.backupEnabled)" sclass="mr-2"/>
+                                <label value="Realizar backup diário às" style="margin-left: 5px; margin-right: 5px;"/>
+                                <textbox value="@bind(vm.backupTime)" width="80px" sclass="form-control form-control-sm"
+                                         placeholder="00:00" disabled="@load(not vm.backupEnabled)"/>
+                                <label value="horas" style="margin-left: 5px;"/>
+                            </div>
+
+                            <n:small class="text-muted mt-3 d-block">
+                                * Os serviços automáticos rodam em background no servidor.
+                            </n:small>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div sclass="row mb-4">
+                <div sclass="col-md-12">
+                    <div sclass="card shadow-sm border-0">
+                        <div sclass="card-header bg-warning text-white">
+                            <n:h5 class="mb-0" style="font-size: 1rem;"><n:i class="fa-solid fa-bell mr-2"></n:i> Notificações e Alertas</n:h5>
+                        </div>
+                        <div sclass="card-body">
+                            <div sclass="row">
+                                <div sclass="col-md-6" style="border-right: 1px solid #dee2e6;">
+                                    <n:h6 class="text-muted mb-3 text-uppercase font-weight-bold" style="font-size: 0.8rem;">
+                                        <n:i class="fa-solid fa-envelope mr-1"></n:i> Configuração SMTP
+                                    </n:h6>
+
+                                    <div sclass="form-group row">
+                                        <label value="Servidor SMTP:" sclass="col-sm-4 col-form-label font-weight-bold"/>
+                                        <div sclass="col-sm-8">
+                                            <textbox value="@bind(vm.smtpHost)" sclass="form-control form-control-sm" placeholder="ex: smtp.gmail.com" style="height: 35px;"/>
+                                        </div>
+                                    </div>
+
+                                    <div sclass="form-group row">
+                                        <label value="Porta:" sclass="col-sm-4 col-form-label font-weight-bold"/>
+                                        <div sclass="col-sm-8">
+                                            <textbox value="@bind(vm.smtpPort)" sclass="form-control form-control-sm" placeholder="ex: 587" style="height: 35px"/>
+                                        </div>
+                                    </div>
+
+                                    <div sclass="form-group row mb-0">
+                                        <label value="Email do Sistema:" sclass="col-sm-4 col-form-label font-weight-bold"/>
+                                        <div sclass="col-sm-8">
+                                            <textbox value="@bind(vm.systemEmail)" sclass="form-control form-control-sm" placeholder="lattes@instituicao.br // Este enviará os alertas" style="height: 35px;"/>
+                                        </div>
+                                    </div>
+
+                                    <div sclass="form-group row mb-3">
+                                        <label value="Email Administrador:" sclass="col-sm-4 col-form-label font-weight-bold"/>
+                                        <div sclass="col-sm-8">
+                                            <textbox value="@bind(vm.adminEmail)" sclass="form-control form-control-sm" placeholder="seu.email@pessoal.com // Este receberá os alertas"/>
+                                        </div>
+                                    </div>
+
+                                    <div sclass="form-group row">
+                                        <div sclass="col-sm-12 text-right">
+                                            <button label="Enviar E-mail de Teste"
+                                                    onClick="@command('testarEnvioEmail')"
+                                                    iconSclass="z-icon-paper-plane"
+                                                    sclass="btn btn-sm btn-outline-dark"/>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <div sclass="col-md-6 pl-4">
+                                    <n:h6 class="text-muted mb-3 text-uppercase font-weight-bold" style="font-size: 0.8rem;">
+                                        <n:i class="fa-solid fa-robot mr-1"></n:i> Notificações Automáticas
+                                    </n:h6>
+
+                                    <vlayout spacing="10px">
+                                        <checkbox label="Notificar quando houver currículos desatualizados"
+                                                  checked="@bind(vm.notifyOutdated)" sclass="font-weight-normal"/>
+
+                                        <checkbox label="Enviar relatório semanal por e-mail (Toda Segunda-feira)"
+                                                  checked="@bind(vm.notifyWeekly)" sclass="font-weight-normal"/>
+
+                                        <checkbox label="Notificar sobre falhas na conexão CNPq"
+                                                  checked="@bind(vm.notifyConnection)" sclass="font-weight-normal"/>
+
+                                        <checkbox label="Alertar sobre espaço em disco baixo"
+                                                  checked="@bind(vm.notifyDisk)" sclass="font-weight-normal"/>
+                                    </vlayout>
+                                </div>
+
+                                <div sclass="col-md-6">
+                                    <separator bar="true" sclass="my-3"/>
+
+                                    <n:h6 class="text-muted mb-3 text-uppercase font-weight-bold" style="font-size: 0.8rem;">
+                                        <n:i class="fa-solid fa-play-circle mr-1"></n:i> Diagnóstico
+                                    </n:h6>
+
+                                    <div sclass="alert alert-warning">
+                                        <n:small>
+                                            Use este botão para procurar agora por currículos desatualizados (>90 dias) e testar o envio do relatório.
+                                        </n:small>
+                                        <div sclass="text-right mt-2">
+                                            <button label="Rodar Verificação Agora"
+                                                    onClick="@command('forcarVerificacao')"
+                                                    sclass="btn btn-warning btn-sm"
+                                                    iconSclass="z-icon-refresh"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div sclass="row mb-4">
+                <div sclass="col-md-6 mb-4">
+                    <div sclass="card shadow-sm border-0 h-100">
+                        <div sclass="card-header bg-danger border-bottom-0 pt-3 pb-0">
+                            <n:h6 class="text-white text-uppercase font-weight-bold" style="font-size: 0.85rem;">
+                                <n:i class="fa-solid fa-shield-halved mr-1 text-white"></n:i> Segurança e Autenticação
+                            </n:h6>
+                        </div>
+                        <div sclass="card-body pt-3">
+
+                            <n:h6 class="font-weight-bold mb-2" style="font-size: 0.9rem; color: #495057;">Tipo de Autenticação</n:h6>
+                            <div sclass="mb-4 bg-light p-2 rounded border">
+                                <radiogroup id="authGroup" selectedItem="@bind(vm.authType)">
+                                    <div sclass="d-flex flex-column">
+                                        <radio label="Banco Local (Interno)" value="LOCAL" sclass="mb-2 text-dark font-weight-bold"/>
+                                        <radio label="LDAP UEM (Institucional)" value="LDAP" sclass="text-dark font-weight-bold"/>
+                                    </div>
+                                </radiogroup>
+                                <n:small class="text-muted mt-2 d-block" style="font-size: 0.75rem;">
+                                    * LDAP usa os mesmos usuários e senhas da rede da Universidade.
+                                </n:small>
+                            </div>
+
+                            <n:h6 class="font-weight-bold mb-2" style="font-size: 0.9rem; color: #495057;">Auditoria e Monitoramento</n:h6>
+                            <div sclass="bg-light p-2 rounded border">
+                                <div sclass="form-check mb-2">
+                                    <checkbox checked="@bind(vm.auditLogins)" label="Registrar tentativas de login (Sucesso/Falha)" sclass="text-dark"/>
+                                </div>
+                                <div sclass="form-check mb-2">
+                                    <checkbox checked="@bind(vm.auditQueries)" label="Auditar consultas e buscas realizadas" sclass="text-dark"/>
+                                </div>
+                                <div sclass="form-check">
+                                    <checkbox checked="@bind(vm.auditAdminActions)" label="Log detalhado de ações administrativas" sclass="text-dark"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div sclass="row mt-3">
+                <div sclass="col-md-12 d-flex justify-content-end">
+                    <button label="Restaurar Padrões" onClick="@command('restaurarPadrao')" sclass="btn btn-secondary mr-2" style="margin-right: 10px;"/>
+                    <button label="Salvar Todas as Configurações" onClick="@command('salvar')" sclass="btn btn-outline-success font-weight-bold px-4" height="45px" iconSclass="z-icon-save"/>
+                </div>
+            </div>
+        <include src="/footer.zul"/>
+    </div>
+    </div>
+</zk>

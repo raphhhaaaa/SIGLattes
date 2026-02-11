@@ -1,0 +1,349 @@
+package com.uem.extrator.service;
+
+import com.sun.jdi.event.ExceptionEvent;
+import com.uem.extrator.dao.CurriculoDAO;
+import com.uem.extrator.model.Curriculo;
+import com.uem.extrator.util.ConfigManager;
+import javax.xml.namespace.QName;
+import javax.xml.ws.Service;
+import javax.xml.ws.BindingProvider;
+import java.io.ByteArrayInputStream;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.nio.charset.StandardCharsets;
+import java.net.HttpURLConnection;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+public class LattesService {
+
+    // Aponta para o Localhost na porta do Túnel (-L)
+    // CONSTANTES FIXAS
+    private static final String NAMESPACE = "http://ws.servico.repositorio.cnpq.br/";
+    private static final String SERVICE_NAME = "WSCurriculo";
+
+    private CurriculoDAO curriculoDAO = new CurriculoDAO();
+
+    // classe interna para transportar resultados/informações
+    public static class RelatorioProcessamento {
+        public List<String> atualizados = Collections.synchronizedList(new ArrayList<>());
+        public List<String> erros = Collections.synchronizedList(new ArrayList<>());
+        public List<String> desatualizados = Collections.synchronizedList(new ArrayList<>());
+    }
+
+    private ILattesSOAP criarCliente() throws Exception {
+        // busca URL dinâmica do configmanager
+        ConfigManager config = ConfigManager.getInstance();
+        String urlConfigurada = ConfigManager.getInstance().getWsdlUrl();
+        int timeoutMs = config.getTimeout() * 1000; // converte segundos para ms
+
+        try {
+            URL url = new URL(urlConfigurada);
+            QName qname = new QName(NAMESPACE, SERVICE_NAME);
+            Service service = Service.create(url, qname);
+            ILattesSOAP port = service.getPort(ILattesSOAP.class);
+
+            BindingProvider bp = (BindingProvider) port;
+            Map<String, Object> requestContext = bp.getRequestContext();
+
+            // define o endpoint
+            String endpointAdress = urlConfigurada.replace("?wsdl", "");
+            requestContext.put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, endpointAdress);
+
+            // -- CONFIGURAÇÃO DE TIMEOUT --
+            requestContext.put("javax.xml.ws.client.connectionTimeout", timeoutMs);
+            requestContext.put("javax.xml.ws.client.receiveTimeout", timeoutMs);
+            // fallback para implementações em sun/oracle, talvez fique redundante mas melhor do que quebrar caso
+            // aconteça (comuns em jdk 8/11)
+            requestContext.put("com.sun.xml.internal.ws.connect.timeout", timeoutMs);
+            requestContext.put("com.sun.xml.internal.ws.request.timout", timeoutMs);
+
+            return port;
+        } catch (Exception e) {
+            throw new Exception("Falha ao conectar no Serviço Lattes (" + urlConfigurada + "). Verifique a URL na tela de Configuração ou o Túnel SSH.");
+        }
+    }
+
+    // --- MÉTODOS DE BUSCA (Extração e ID) ---
+
+    public Curriculo getCurriculo(String idLattes) throws Exception {
+        if (idLattes == null) throw new Exception("ID nulo.");
+        String idLimpo = idLattes.trim().replaceAll("[^0-9]", "");
+
+        ConfigManager config = ConfigManager.getInstance();
+        int maxRetries = config.getRetryAttempts();
+        Exception lastError = null;
+
+        // Loop de Tentativas (0 até maxRetries)
+        for (int i = 0; i <= maxRetries; i++) {
+            try {
+                if (i > 0) System.out.println("Tentativa " + (i+1) + " de " + (maxRetries+1) + " para ID " + idLimpo + "...");
+
+                ILattesSOAP port = criarCliente();
+                byte[] zipBytes = port.getCurriculoCompactado(idLimpo);
+
+                if (zipBytes == null || zipBytes.length == 0) {
+                    throw new Exception("CNPq retornou dados vazios ou ID inexistente.");
+                }
+
+                String xmlConteudo = descompactarZip(zipBytes);
+                LattesParser parser = new LattesParser();
+                Curriculo curriculo = parser.parse(xmlConteudo, idLimpo);
+
+                // Sucesso! Sai do loop e enriquece
+                enriquecerCurriculoComMetricas(curriculo);
+                return curriculo;
+
+            } catch (Exception e) {
+                lastError = e;
+                // Se for erro de "ID inexistente", não adianta tentar de novo
+                if (e.getMessage() != null && e.getMessage().contains("inexistente")) throw e;
+
+                // Se ainda tiver tentativas, espera um pouco e tenta de novo
+                if (i < maxRetries) {
+                    try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
+                }
+            }
+        }
+
+        throw new Exception("Falha após " + (maxRetries+1) + " tentativas. Último erro: " + lastError.getMessage());
+    }
+
+
+    /**
+     * Varre as produções do currículo e busca métricas online (CrossRef/Unpaywall)
+     * em paralelo para agilizar o processo.
+     */
+    private void enriquecerCurriculoComMetricas(Curriculo curriculo) {
+        if (curriculo != null && curriculo.getProducoes() != null && !curriculo.getProducoes().isEmpty()){
+            System.out.println("Enriquecendo " + curriculo.getProducoes().size() + " produções com métricas...");
+
+            // usa parallelStream para fazer várias requisições HTTP ao mesmo tempo
+            curriculo.getProducoes().parallelStream().forEach(artigo -> {
+                String doi = artigo.getDoi();
+
+                // inicializa com padrão para não ficar null no banco
+                if (artigo.getStatusAcesso() == null) artigo.setStatusAcesso("-");
+
+                if (doi != null && !doi.trim().isEmpty()) {
+                    try {
+                        // 1. busca citações (CrossRef)
+                        Integer cits = BibliometriaService.buscarCitacoes(artigo.getDoi());
+                        // 2. busca acesso (Unpaywall)
+                        // retorna array: [0]="ABERTO"/"FECHADO", [1]="success"/"danger"
+                        String[] acesso = BibliometriaService.buscarStatusAcesso(artigo.getDoi());
+
+                        artigo.setCitacoes(cits);
+                        artigo.setStatusAcesso(acesso[0]);
+
+                        artigo.setDataAtualizacaoMetricas(new Date());
+                    } catch (Exception e) {
+                        System.err.println("Erro ao buscar métricas para DOI " + doi + ": " + e.getMessage());
+                    }
+                }
+            });
+            System.out.print(">>> Enriquecimento concluído.");
+        }
+    }
+
+    // Metodo interno que chama o SOAP
+    public String buscarIdPorDados(String cpf, String nome, String data) throws Exception {
+        ILattesSOAP port = criarCliente();
+
+        String cpfEnvio = (cpf == null) ? "" : cpf;
+        String nomeEnvio = (nome == null) ? "" : nome;
+        String dataEnvio = (data == null) ? "" : data;
+
+        return port.getIdentificadorCNPq(cpfEnvio, nomeEnvio, dataEnvio);
+    }
+
+    // Metodo chamado pelo ExtratorVM (Recebe o Map de parâmetros)
+    public String getIdLattes(Map<String, String> params) throws Exception {
+
+        // CENÁRIO 1: Busca por CPF
+        if (params.containsKey("cpf")) {
+            String cpf = params.get("cpf");
+            // Chama o SOAP passando CPF e anulando os outros
+            return buscarIdPorDados(cpf, null, null);
+        }
+
+        // CENÁRIO 2: Busca por Nome + Data de Nascimento
+        else if (params.containsKey("nome") && params.containsKey("dataNascimento")) {
+            String nome = params.get("nome");
+            String data = params.get("dataNascimento"); // Formato esperado: dd/MM/yyyy
+            // Chama o SOAP passando Nome/Data e anulando o CPF
+            return buscarIdPorDados(null, nome, data);
+        }
+
+        return null;
+    }
+
+
+    // consulta o CNPq para saber a data da última atualização do currículo na plataforma
+    public Date obterDataAtualizacaoRemota(String idLattes) {
+        try {
+            ILattesSOAP port = criarCliente();
+            String dataString = port.getDataAtualizacaoCV(idLattes);
+
+            if (dataString != null && !dataString.isEmpty()) {
+                try { // tenta formato completo
+                    return new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").parse(dataString);
+                } catch (Exception e1) { // tenta formato curto
+                    return new SimpleDateFormat("dd/MM/yyyy").parse(dataString);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Erro ao buscar data remota para ID " + idLattes + ": " + e.getMessage());
+        }
+        return null;
+    }
+
+    public RelatorioProcessamento verificarAtualizacao() {
+        System.out.println(">>> AUTOMACAO: Iniciando varredura de atualizacoes no CNPq...");
+
+        RelatorioProcessamento relatorio = new RelatorioProcessamento();
+
+        // pega todos os curriculos do banco
+        List<Curriculo> lista = curriculoDAO.listarTodos();
+        int total = lista.size();
+        System.out.println(">>> AUTOMAÇÃO: " + total + " currículos para verificar.");
+
+        // cria pool com 5 Threads (5 currículos por vez)
+        // atenção: não aumente muito o numero de threads para não ser bloqueado pelo CNPq (Ip ban)
+        ExecutorService executor = Executors.newFixedThreadPool(5);
+
+        // contadores Thread-Safe (atomicos)
+        AtomicInteger processados = new AtomicInteger(0);
+
+        for (Curriculo local : lista) {
+            // submete a tarefa para o pool
+            executor.submit(() -> {
+                try {
+
+                    // verifica sincronia com CNPq
+                    String id = local.getIdLattes();
+                    Date dataRemota = obterDataAtualizacaoRemota(id);
+
+                    if (dataRemota != null) {
+
+                        Date dataLocal = local.getDataAtualizacao();
+
+                        Date localSemHora = zerarHoras(dataLocal);
+                        Date remotaSemHora = zerarHoras(dataRemota);
+
+                        // compara dataremota com a datalocal, se a data do cnpq for mais nova que a local:
+                        if (localSemHora == null || remotaSemHora.after(localSemHora)) {
+                            System.out.println(">>> [ATUALIZANDO] " + local.getNomeCompleto() + " | Local: " + localSemHora + " -> Novo: " + remotaSemHora);
+
+                            // baixa o xml completo e processa
+                            Curriculo novo = getCurriculo(id);
+
+                            // salva no banco (atualiza os dados mantendo o id)
+                            curriculoDAO.salvar(novo);
+
+                            // atualiza relatorio
+                            relatorio.atualizados.add(local.getNomeCompleto());
+                        }
+                    } else {
+                        throw new Exception("Data remota nula (CNPq instável)");
+                    }
+
+                } catch (Exception e) {
+                    System.err.println(">>> ERRO ao verificar " + local.getNomeCompleto() + ": " + e.getMessage());
+                    relatorio.erros.add(local.getNomeCompleto() + " - " + e.getMessage());
+                } finally {
+                    // log de progresso a cada 10 processados
+                    int p = processados.incrementAndGet();
+                    if (p % 10 == 0) {
+                        System.out.println(">>> PROGRESSO: " + p + "/" + total + " concluídos.");
+                    }
+                }
+            });
+        }
+        // encerra o recebimento das tarefas e aguarda o fim das atuais
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(3, TimeUnit.HOURS)) {
+                executor.shutdownNow();
+                System.err.println(">>> TIMEOUT: O processo demorou demais e foi forçado a parar.");
+            }
+        } catch (InterruptedException e) {
+            executor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+        System.out.println(">>> AUTOMAÇÃO: Varredura concluída. Atualizados: " + relatorio.atualizados.size() + ", " + "Erros: " + relatorio.erros.size());
+        if (relatorio.atualizados.size() == 0 && relatorio.erros.size() == 0) {
+            System.out.println(">>> AUTOMAÇÃO: Sistema sincronizado!!");
+        }
+        return relatorio;
+    }
+
+
+    // --- UTILITÁRIOS ---
+
+    private Date zerarHoras(Date data) {
+        if (data == null) return null;
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(data);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return cal.getTime();
+    }
+
+    private String descompactarZip(byte[] dados) throws Exception {
+        try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(dados))) {
+            ZipEntry entry = zis.getNextEntry();
+            // O XML do Lattes geralmente vem codificado em ISO-8859-1
+            if (entry != null) return new String(zis.readAllBytes(), StandardCharsets.ISO_8859_1);
+        }
+        throw new Exception("Arquivo ZIP retornado pelo CNPq é inválido ou vazio.");
+    }
+
+    /**
+     * Testa a conexão com o SOAP do CNPq
+     * @return true se responder, false se der erro/timeout
+     */
+    public boolean testarConexaoCNPq() {
+        try {
+            ConfigManager config = ConfigManager.getInstance();
+            String urlConfigurada = ConfigManager.getInstance().getWsdlUrl();
+            URL url = new URL(urlConfigurada);
+            int timeout = config.getTimeout() * 1000;
+
+            // --- CONFIGURAÇÃO DE PROXY (OPCIONAL) ---
+            // Se você estiver na rede da UEM e precisar usar o Proxy Institucional (ex: Squid),
+            // descomente as linhas abaixo e ajuste o IP/Porta.
+            /*
+            String proxyHost = "proxy.uem.br"; // Ajuste aqui
+            int proxyPort = 8080;              // Ajuste aqui
+            Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
+            connection = (HttpURLConnection) url.openConnection(proxy);
+            */
+            // ----------------------------------------
+
+            // PADRÃO: Conexão direta (ou via Túnel Localhost)
+            // Se estiver usando o Túnel SSH (-L 8888:...), isso vai funcionar.
+
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(timeout); // usa o timeout configurado / padrão
+            connection.setReadTimeout(timeout);
+            connection.connect();
+
+            // Se retornar 200 (OK) ou 405 (Method Not Allowed - comum em SOAP GET), o serviço está vivo.
+            int code = connection.getResponseCode();
+            return (code == 200 || code == 405);
+
+        } catch (Exception e) {
+            System.err.println("Falha no teste de conexão: " + e.getMessage());
+            return false;
+        }
+    }
+}

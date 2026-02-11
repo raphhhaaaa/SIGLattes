@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?page title="Relatório Dinâmico"?>
+<?link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico"?>
+<?taglib uri="http://www.zkoss.org/dsp/web/core" prefix="c"?>
+
+<?link rel="stylesheet" type="text/css" href="/css/bootstrap.css"?>
+<?link rel="stylesheet" type="text/css" href="/css/zkbootstrap.css"?>
+<?link rel="stylesheet" type="text/css" href="/css/fontawesome.css"?>
+
+<zk xmlns="http://www.zkoss.org/2005/zul"
+    xmlns:n="native"
+    xmlns:ca="client/attribute">
+
+    <include src="/header.zul"/>
+    <include src="/navbar.zul"/>
+
+    <style>
+        .z-combobox-button {
+        right: 0px !important;
+        background: transparent !important;
+        }
+        /* Ajuste para as abas ficarem bonitas no bootstrap */
+        .nav-tabs { border-bottom: 1px solid #dee2e6; }
+        .z-tab-selected { font-weight: bold; background: #fff; border-top: 2px solid #007bff; }
+
+    </style>
+
+    <div sclass="container-fluid" style="padding: 20px; min-height: 600px;">
+        <div sclass="row">
+            <div sclass="col-md-12">
+
+                <div sclass="card shadow-sm"
+                     apply="org.zkoss.bind.BindComposer"
+                     viewModel="@id('vm') @init('com.uem.extrator.viewmodel.RelatorioDinamicoVM')">
+
+                    <div sclass="card-header bg-light d-flex justify-content-between align-items-center"
+                         style="padding: 15px;">
+                        <div class="d-flex align-items-center">
+                            <n:i class="fa fa-bar-chart text-primary mr-2" style="font-size: 18px;"></n:i>
+                            <label value="Análise de Produção Científica" style="font-size: 16px; font-weight: bold; color: #555; padding-left: 8px;"/>
+                        </div>
+                    </div>
+
+                    <div sclass="card-body" style="padding-top: 7x">
+
+                        <div id="divFiltros" visible="true">
+                            <vlayout spacing="15px">
+                                <hlayout spacing="20px" style="display: flex; align-items: last baseline; max-height: 110%\">
+
+                                    <div style="flex: 1;">
+                                        <label value="Tipo de Produção" style="font-weight: bold; font-size: 12px; color: #777;"/>
+                                        <combobox model="@load(vm.listaOpcoes)"
+                                                  selectedItem="@bind(vm.opcaoSelecionada)"
+                                                  width="100%"
+                                                  onSelect="@command('carregarDados')"
+                                                  placeholder="Selecione o tipo..."
+                                                  readonly="true"
+                                                  sclass="form-control-sm"/>
+                                    </div>
+
+                                    <div style="flex: 1;">
+                                        <label value="Instituição" style="font-weight: bold; font-size: 12px; color: #777;"/>
+                                        <combobox model="@load(vm.listaInstituicoes)"
+                                                  selectedItem="@bind(vm.instituicaoSelecionada)"
+                                                  width="100%"
+                                                  onSelect="@command('carregarDados')"
+                                                  readonly="true"
+                                                  sclass="form-control-sm"/>
+                                    </div>
+
+                                    <div style="position: relative; right: -715px" sclass="">
+                                        <button label="Extrair CSV (Resumo)"
+                                                onClick="@command('exportarCsvSimples')"
+                                                iconSclass="z-icon-download"
+                                                sclass="btn btn-sm btn-outline-success"
+                                                height="39px"
+                                                style="position: inherit; left: -10px;"
+                                                disabled="@load(empty vm.dadosGrafico)"
+                                                tooltiptext="Baixa os dados consolidados do gráfico (Ano e Quantidade)"/>
+
+                                        <button label="Extrair CSV (Detalhado)"
+                                                onClick="@command('exportarCsvDetalhado')"
+                                                visible="@load(vm.opcaoSelecionada eq 'Artigos em Periódicos')"
+                                                iconSclass="z-icon-file-text-o"
+                                                sclass="btn btn-sm btn-outline-success"
+                                                height="39px"
+                                                disabled="@load(empty vm.dadosGrafico)"
+                                                tooltiptext="Baixa lista completa com Citações, DOI e Status de Acesso"/>
+                                    </div>
+                                </hlayout>
+                                <separator height="5px"/>
+                            </vlayout>
+                        </div>
+
+
+                        <tabbox id="tb" mold="accordion-lite">
+                            <tabs>
+                                <tab label="@load('Visualização em tabela - '.concat(vm.tituloGrafico).concat(' - ').concat('Total: ').concat(vm.totalGeral))" iconSclass="z-icon-table"/>
+                                <tab label="Gráfico de Evolução" iconSclass="z-icon-bar-chart"/>
+                            </tabs>
+                            <tabpanels>
+
+                                <tabpanel>
+                                    <grid model="@load(vm.dadosGrafico)"
+                                          emptyMessage="Nenhum dado encontrado para os filtros selecionados."
+                                          mold="paging"
+                                          pageSize="10"
+                                          sclass="table-striped table-hover">
+                                        <columns>
+                                            <column label="Ano de Referência" width="154px" align="center" sort="auto(ano)"/>
+                                            <column label="Visualização Proporcional" hflex="1"/>
+                                            <column label="Qtd." width="100px" align="center" sort="auto(quantidade)"/>
+                                        </columns>
+                                        <template name="model">
+                                            <row>
+                                                <label value="@load(each.ano)" style="font-weight: bold; color: #555;"/>
+
+                                                <div style="width: 100%; padding-right: 10px;">
+                                                    <div class="progress" style="height: 22px; background-color: #e9ecef; border-radius: 3px;">
+                                                        <div sclass="@load('progress-bar '.concat(each.cor))"
+                                                             ca:role="progressbar"
+                                                             style="@load('width: '.concat(each.percentual).concat('%; transition: width 1s;'))">
+                                                            <label value="@load(each.percentual > 10 ? each.quantidade : '')" style="padding-left:5px; font-weight:bold;"/>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <label value="@load(each.quantidade)" style="font-weight: bold;"/>
+                                            </row>
+                                        </template>
+                                    </grid>
+
+                                    <separator height="20px"/>
+                                    <n:small class="text-muted">
+                                        * Dados extraídos da Plataforma Lattes.
+                                    </n:small>
+                                </tabpanel>
+
+                                <tabpanel>
+                                    <div sclass="card border-0">
+                                        <div sclass="card-body" style="padding: 0;">
+
+                                            <label value="Volume de Produção" style="font-size: 17px; color: #5b5e61; margin-left: 4px;"/>
+
+                                            <div sclass="d-flex align-items-end"
+                                                 height="400px"
+                                                 width="100%"
+                                                 style="border-bottom: 2px solid #ddd; padding-bottom: 0px; overflow-x: auto;"
+                                                 children="@load(vm.dadosGraficoOrdenado)">
+
+                                                <template name="children">
+                                                    <div style="flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; min-width: 60px; margin: 0 4px;">
+
+                                                        <label value="@load(each.quantidade)"
+                                                               style="font-weight: bold; font-size: 12px; margin-bottom: 5px; color: #555;"/>
+
+                                                        <div sclass="@load(each.cor)"
+                                                             width="100%"
+                                                             height="@load(each.percentual.toString().concat('%'))"
+                                                             tooltiptext="@load('Ano: '.concat(each.ano).concat(' | Qtd: ').concat(each.quantidade))"
+                                                             style="border-radius: 4px 4px 0 0; min-height: 2px; opacity: 0.85; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); transition: height 0.5s;">
+                                                        </div>
+
+                                                        <label value="@load(each.ano)"
+                                                               style="font-weight: bold; margin-top: 8px; font-size: 12px; color: #333;"/>
+                                                    </div>
+                                                </template>
+                                            </div>
+
+                                            <div sclass="text-center mt-3 text-muted small" style="font-size: 17px;">
+                                                <n:i class="fa fa-arrow-right mr-1"></n:i> Linha do Tempo (Anos)
+                                            </div>
+                                        </div>
+                                    </div>
+                                </tabpanel>
+                            </tabpanels>
+                        </tabbox> </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <include src="/footer.zul"/>
+</zk>

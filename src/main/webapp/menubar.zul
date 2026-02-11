@@ -1,0 +1,31 @@
+<?taglib uri="http://www.zkoss.org/dsp/web/core" prefix="c"?>
+
+<zk xmlns="http://www.zkoss.org/2005/zul" xmlns:n="native" xmlns:w="client">
+    
+    <nodom id="winMenu" use="menu.controller.MenuController"> 
+        
+        <menubar orient="horizontal" autodrop="true">
+            <menu label="Cadastros">
+                <menupopup>
+                    <menuitem label="Curso"     onClick="winMenu.abrirCurso()" />               
+                    <menuitem label="Inscrição" onClick="winMenu.abrirInscricao()" />
+                </menupopup>
+            </menu>
+            <menuitem label="Endereço" onClick="winMenu.abrirEndereco()" />
+            <menu label="Relatórios">
+                <menupopup>
+                    <menuitem label="Relatório Lista de Curso"      onClick="winMenu.abrirCursoRelatorio()" />
+                    <!-- 
+                    <menuitem label="Relatório Curso por Tipo"      onClick="winMenu.abrirCursoTipoRelatorio()" />
+                    <menuitem label="Relatório Curso por Pessoa"    onClick="winMenu.abrirCursoPessoaRelatorio()" />
+                    <menuitem label="Relatório de Inscrição"        onClick="winMenu.abrirInscricaoRelatorio()" />
+                    -->
+                </menupopup>
+            </menu>
+            <menuitem label="Componentes" onClick="winMenu.abrirComponentes()" />
+            <menuitem label="Login" onClick="winMenu.abrirLogin()" />
+        </menubar>
+        
+    </nodom>
+    
+</zk>

@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?page title="Extrator Lattes - Início"?>
+<?link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico"?>
+<?taglib uri="http://www.zkoss.org/dsp/web/core" prefix="c"?>
+
+<?link rel="stylesheet" type="text/css" href="/css/bootstrap.css"?>
+<?link rel="stylesheet" type="text/css" href="/css/zkbootstrap.css"?>
+<?link rel="stylesheet" type="text/css" href="/css/fontawesome.css"?>
+<?link rel="stylesheet" type="text/css" href="/css/toastr.css"?>
+<?script type="text/javascript" src="/js/toastr.js"?>
+
+<zk xmlns="http://www.zkoss.org/2005/zul"
+    xmlns:n="http://www.zkoss.org/2005/zk/native">
+
+    <div sclass="d-flex flex-column min-vh-100">
+
+        <include src="/header.zul"/>
+        <include src="/navbar.zul"/>
+
+        <style>
+            .z-tabbox { border: none !important; margin: 0 !important; padding: 0 !important; }
+            .z-tabs { margin: 0 !important; padding: 0 !important; border-bottom: 1px solid #dee2e6; }
+            .z-tabpanels { border: none !important; }
+            .card-body-zero { padding: 0 !important; }
+            .log-box { font-family: monospace; background-color: #f8f9fa; font-size: 11px; resize: none; border: 1px solid #ced4da; }
+            .dashboard-card { transition: transform 0.2s; cursor: default; }
+            .dashboard-card:hover { transform: scale(1.02); }
+            .card-value { font-size: 32px; font-weight: bold; }
+
+            .list-group-item.list-group-item-action.bg-light.font-weight-bold.text-muted.d-flex.justify-content-between.align-items-center.z-a:hover {
+            background: #e3f2fd;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            color: #1976d2;
+            }
+        </style>
+
+        <div sclass="container-fluid flex-grow-1" style="padding: 20px;">
+            <div sclass="row">
+                <div sclass="col-md-12">
+
+                    <div sclass="card shadow-sm">
+                        <div sclass="card-header bg-primary text-white">
+                            <n:h5 class="mb-0"><n:i class="fa fa-search"></n:i> Extrator de Currículos Lattes</n:h5>
+                        </div>
+
+                        <div sclass="card-body card-body-zero"
+                             apply="org.zkoss.bind.BindComposer"
+                             viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ExtratorVM')"
+                             validationMessages="@id('vmsgs')">
+
+                            <tabbox id="tb" sclass="nav-tabs" selectedIndex="@bind(vm.abaSelecionada)" width="100%">
+                                <tabs>
+                                    <tab label="Por ID Lattes" iconSclass="z-icon-id-card" disabled="@load(vm.processando)"/>
+                                    <tab label="Por CPF" iconSclass="z-icon-list-alt" disabled="@load(vm.processando)"/>
+                                    <tab label="Por Nome/Data" iconSclass="z-icon-user" disabled="@load(vm.processando)"/>
+                                    <tab label="Extração em Lote (TXT)" iconSclass="z-icon-upload" disabled="@load(vm.processando)"/>
+                                </tabs>
+
+                                <tabpanels>
+                                    <tabpanel style="padding: 20px;">
+                                        <vlayout spacing="10px">
+                                            <label value="Informe o ID Lattes (16 dígitos):" sclass="font-weight-bold"/>
+                                            <textbox value="@bind(vm.idLattesInput)" placeholder="Ex: 1234567890123456" disabled="@load(vm.processando)" maxlength="16" width="300px" sclass="form-control"/>
+                                        </vlayout>
+                                    </tabpanel>
+
+                                    <tabpanel style="padding: 20px;">
+                                        <vlayout spacing="10px">
+                                            <label value="Informe o CPF (apenas números):" sclass="font-weight-bold"/>
+                                            <textbox value="@bind(vm.cpfInput)" placeholder="Ex: 12345678900" disabled="@load(vm.processando)" width="300px" sclass="form-control"/>
+                                        </vlayout>
+                                    </tabpanel>
+
+                                    <tabpanel style="padding: 20px;">
+                                        <vlayout spacing="10px">
+                                            <label value="Nome Completo:" sclass="font-weight-bold"/>
+                                            <textbox value="@bind(vm.nomeInput)" placeholder="Nome igual ao CNPq" disabled="@load(vm.processando)" width="100%" sclass="form-control"/>
+                                            <separator height="5px"/>
+                                            <label value="Data de Nascimento:" sclass="font-weight-bold"/>
+                                            <datebox value="@bind(vm.dataNascimentoInput)" disabled="@load(vm.processando)" format="dd/MM/yyyy" width="200px" />
+                                        </vlayout>
+                                    </tabpanel>
+
+                                    <tabpanel style="padding: 20px;">
+                                        <div sclass="row">
+                                            <div sclass="col-md-5">
+                                                <label value="Carregue um arquivo .txt:" sclass="font-weight-bold d-block mb-2"/>
+                                                <button label="Selecionar Arquivo TXT" upload="true,maxsize=5000" onUpload="@command('carregarArquivo', media=event.media)" disabled="@load(vm.processando)" iconSclass="z-icon-cloud-upload" sclass="btn btn-success btn-block"/>
+                                            </div>
+                                            <div sclass="col-md-7">
+                                                <label value="Log de Processamento:" style="font-weight: bold; font-size: 12px;"/>
+                                                <textbox value="@load(vm.logBatch)" readonly="true" multiline="true" rows="8" width="100%" sclass="form-control log-box"/>
+                                                <div visible="@load(vm.processando)" sclass="mt-2 text-center text-primary"><n:i class="fa fa-spinner fa-spin"></n:i> Processando...</div>
+                                            </div>
+                                        </div>
+                                    </tabpanel>
+                                </tabpanels>
+                            </tabbox>
+
+                            <div style="padding: 0px 20px 20px 20px; padding-bottom: 0px">
+                                <separator bar="true" height="15px"/>
+                                <hlayout spacing="10px" style="padding-top: 5px;">
+                                    <button label="Pesquisar" onClick="@command('buscarPorId')" visible="@load(vm.abaSelecionada eq 0)" disabled="@load(vm.processando)" sclass="btn btn-outline-primary" iconSclass="z-icon-search"/>
+                                    <button label="Pesquisar" onClick="@command('buscarPesquisador')" visible="@load(vm.abaSelecionada eq 1 or vm.abaSelecionada eq 2)" disabled="@load(vm.processando)" sclass="btn btn-outline-primary" iconSclass="z-icon-search"/>
+                                    <button label="Limpar Tudo" onClick="@command('limpar')" visible="@load(vm.abaSelecionada le 2)" disabled="@load(vm.processando)" sclass="btn btn-outline-secondary" iconSclass="z-icon-eraser"/>
+                                </hlayout>
+
+                                <vlayout visible="@load(vm.barraVisivel)" spacing="0">
+                                    <separator height="20px"/>
+                                    <div sclass="alert alert-info d-flex align-items-center">
+                                        <label value="@load(vm.logStatus)" sclass="font-weight-bold"/>
+                                    </div>
+                                </vlayout>
+
+                                <div visible="@load(vm.curriculo ne null)">
+                                    <separator height="15px"/>
+                                    <include src="/detalhes.zul" mode="instant"/>
+                                </div>
+                            </div>
+
+                            <separator height="0px"/>
+
+                            <div sclass="row" style="padding: 33px 15px;">
+                                <div sclass="col-md-12 mb-2">
+                                    <n:h3 class="h4 text-primary">Dashboard - Métricas</n:h3>
+                                    <label value="Monitoramento do Sistema" sclass="h5 text-secondary"/>
+                                    <button iconSclass="z-icon-refresh" onClick="@command('atualizarDashboard')" sclass="btn btn-sm btn-link" tooltiptext="Atualizar métricas"/>
+                                </div>
+
+                                <div sclass="col-md-6">
+                                    <div sclass="@load('card text-white mb-3 shadow-sm dashboard-card '.concat(vm.statusClasse))">
+                                        <div sclass="card-body" style="min-height: 120px;">
+                                            <n:h5 class="card-title">Status Conexão CNPq</n:h5>
+                                            <separator bar="true" sclass="mb-3"/>
+                                            <div sclass="d-flex align-items-center">
+                                                <span sclass="@load(vm.statusIcone)" style="font-size: 40px; margin-right: 15px;"/>
+                                                <vlayout spacing="0">
+                                                    <label value="@load(vm.statusTexto)" style="font-weight: bold; font-size: 20px;"/>
+                                                    <label value="@load(vm.online ? 'Serviço Operacional' : 'Sem resposta do servidor')" style="font-size: 12px; opacity: 0.9;"/>
+                                                </vlayout>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div sclass="col-md-6">
+                                    <div sclass="card text-white bg-info mb-3 shadow-sm dashboard-card">
+                                        <div sclass="card-body" style="min-height: 120px;">
+                                            <n:h5 class="card-title">Base de Dados</n:h5>
+                                            <separator bar="true" sclass="mb-3"/>
+                                            <div sclass="d-flex align-items-center">
+                                                <span sclass="z-icon-database" style="font-size: 40px; margin-right: 15px; opacity: 0.8;"/>
+                                                <vlayout spacing="0">
+                                                    <label value="@load(vm.totalCurriculos)" sclass="card-value"/>
+                                                    <label value="Currículos Cadastrados" style="font-size: 12px; opacity: 0.9;"/>
+                                                </vlayout>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div sclass="col-md-6">
+                                        <div sclass="card text-white bg-warning mb-3 shadow-sm dashboard-card">
+                                            <div sclass="card-body" style="min-height: 120px;">
+                                                <n:h5 class="card-title">Atualizações CNPq</n:h5>
+                                                <separator bar="true" sclass="mb-3"/>
+                                                <div sclass="d-flex align-items-center">
+                                                    <span sclass="z-icon-refresh" style="font-size: 40px; margin-right: 15px; opacity: 0.8;"/>
+                                                    <vlayout spacing="0">
+                                                        <label value="@load(vm.textoDesatualizados)" sclass="card-value"/>
+                                                        <label value="Currículos Desatualizados" style="font-size: 11px; opacity: 0.9;"/>
+                                                    </vlayout>
+                                                </div>
+                                            </div>
+                                        </div>
+                                </div>
+
+                                <div sclass="col-md-6">
+                                    <div sclass="card text-white bg-primary mb-3 shadow-sm dashboard-card">
+                                        <div sclass="card-body" style="min-height: 120px;">
+                                            <n:h5 class="card-title">Atividade Hoje</n:h5>
+                                            <separator bar="true" sclass="mb-3"/>
+                                            <div sclass="d-flex align-items-center">
+                                                <span sclass="z-icon-line-chart" style="font-size: 40px; margin-right: 15px; opacity: 0.8;"/>
+                                                <vlayout spacing="0">
+                                                    <label value="@load(vm.consultasHoje)" sclass="card-value"/>
+                                                    <label value="Currículos Processados Hoje" style="font-size: 11px; opacity: 0.9;"/>
+                                                </vlayout>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <include src="/footer.zul"/>
+
+    </div> </zk>

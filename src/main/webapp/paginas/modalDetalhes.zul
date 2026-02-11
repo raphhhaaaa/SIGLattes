@@ -1,0 +1,10 @@
+<zk>
+    <window title="Detalhes do Pesquisador" border="normal" width="90%" height="90%"
+            closable="true" mode="modal" maximizable="true" contentStyle="overflow:auto"
+            apply="org.zkoss.bind.BindComposer"
+            viewModel="@id('vm') @init(arg.vm)">
+
+        <include src="/detalhes.zul"/>
+
+    </window>
+</zk>

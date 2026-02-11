@@ -1,0 +1,22 @@
+<?taglib uri="http://www.zkoss.org/dsp/web/core" prefix="c"?>
+<zk xmlns="http://www.zkoss.org/2005/zul" xmlns:n="native" xmlns:w="client">
+
+    <n:nav class="navbar pt-0 pl-0 pb-2" style="background-color: white; background-image:url(${c:encodeURL('/images/header_background.png')  }); background-repeat: repeat-x; background-position: bottom;">
+        <div class="container-fluid p-0">
+            <n:a href="/ExtratorLattes" style="text-decoration: none">
+            <div class="d-flex pull-left m-0 h4">
+                <div>
+                    <image src="/images/header_logo.png" style="height:70px"/>
+                </div>
+                <div class="align-self-center">
+                    Extrator Lattes - UEM
+                    <n:small class="text-body-secondary">Sistema de Gestão de Currículos Lattes</n:small>
+                </div>
+            </div>
+            </n:a>
+            <div class="pull-right">
+                <button class="btn btn-light " iconSclass="z-icon-lock" label="Admin" style="left:-15px;position: relative;"/>
+            </div>
+        </div>
+    </n:nav>
+</zk>

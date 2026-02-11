@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?page title="Verificar Atualizações"?>
+<?link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico"?>
+<?taglib uri="http://www.zkoss.org/dsp/web/core" prefix="c"?>
+
+<?link rel="stylesheet" type="text/css" href="/css/bootstrap.css"?>
+<?link rel="stylesheet" type="text/css" href="/css/zkbootstrap.css"?>
+<?link rel="stylesheet" type="text/css" href="/css/fontawesome.css"?>
+<?link rel="stylesheet" type="text/css" href="/css/toastr.css"?>
+<?script type="text/javascript" src="/js/toastr.js"?>
+
+<zk xmlns="http://www.zkoss.org/2005/zul"
+    xmlns:n="http://www.zkoss.org/2005/zk/native">
+
+    <div sclass="d-flex flex-column min-vh-100">
+
+        <include src="/header.zul"/>
+        <include src="/navbar.zul"/>
+
+        <style>
+            .log-box { font-family: monospace; background-color: #f8f9fa; font-size: 11px; resize: none; border: 1px solid #ced4da; }
+        </style>
+
+        <div sclass="container-fluid flex-grow-1" style="padding: 20px;">
+            <div sclass="row">
+                <div sclass="col-md-12">
+
+                    <div sclass="card shadow-sm">
+                        <div sclass="card-header bg-warning text-white">
+                            <n:h5 class="mb-0"><n:i class="fa fa-refresh"></n:i> Central de Atualizações Lattes</n:h5>
+                        </div>
+
+                        <div sclass="card-body"
+                             apply="org.zkoss.bind.BindComposer"
+                             viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ExtratorVM')">
+
+                            <div sclass="row">
+                                <div sclass="col-md-12 mb-4">
+                                    <div sclass="alert alert-warning">
+                                        <n:strong>Como funciona:</n:strong> O sistema verifica a data da última atualização de cada currículo salvo no banco local e compara com a data informada pelo webservice do CNPq. Se a data do CNPq for mais recente, o currículo é marcado para atualização.
+                                        <n:br><label style="color:gray; font-style:italic;">Nota: Este processo consulta currículos já salvos no sistema e pode demorar alguns minutos dependendo da quantidade.</label></n:br>
+                                    </div>
+
+                                    <hlayout spacing="10px">
+                                        <button label="Buscar Currículos Desatualizados"
+                                                onClick="@command('verificarListaCompleta')"
+                                                iconSclass="z-icon-search"
+                                                disabled="@load(vm.processando)"
+                                                sclass="btn btn-primary font-weight-bold"
+                                                height="45px"/>
+
+                                        <button label="Atualizar Todos da Lista"
+                                                onClick="@command('atualizarTodosDesatualizados')"
+                                                iconSclass="z-icon-cloud-download"
+                                                visible="@load(not empty vm.listaDesatualizados)"
+                                                disabled="@load(vm.processando)"
+                                                sclass="btn btn-success ml-2"
+                                                height="45px"/>
+                                    </hlayout>
+                                </div>
+
+                                <div sclass="col-md-7">
+                                    <label value="Currículos Pendentes de Atualização:" sclass="h6 mb-2 d-block"/>
+                                    <listbox model="@load(vm.listaDesatualizados)" height="400px" emptyMessage="Nenhum currículo desatualizado encontrado (clique em buscar)." sclass="table-striped shadow-sm">
+                                        <listhead>
+                                            <listheader label="Nome do Pesquisador" sort="auto(nomeCompleto)"/>
+                                            <listheader label="ID Lattes" width="140px"/>
+                                            <listheader label="Data Local" width="100px" align="center"/>
+                                            <listheader label="Ação" width="80px" align="center"/>
+                                        </listhead>
+                                        <template name="model">
+                                            <listitem>
+                                                <listcell label="@load(each.nomeCompleto)"/>
+                                                <listcell label="@load(each.idLattes)"/>
+                                                <listcell label="@load(each.dataAtualizacao) @converter('formatedDate', format='dd/MM/yyyy')"/>
+                                                <listcell>
+                                                    <button iconSclass="z-icon-refresh"
+                                                            tooltiptext="Atualizar apenas este currículo"
+                                                            onClick="@command('atualizarUnico', item=each)"
+                                                            disabled="@load(vm.processando)"
+                                                            sclass="btn btn-sm btn-outline-primary"/>
+                                                </listcell>
+                                            </listitem>
+                                        </template>
+                                    </listbox>
+                                </div>
+
+                                <div sclass="col-md-5">
+                                    <label value="Log de Execução em Tempo Real:" sclass="h6 mb-2 d-block"/>
+                                    <textbox value="@load(vm.logAtualizacao)"
+                                             readonly="true"
+                                             multiline="true"
+                                             rows="19"
+                                             width="100%"
+                                             sclass="form-control log-box shadow-sm"/>
+                                    <div visible="@load(vm.processando)" sclass="mt-2 text-center text-primary font-weight-bold">
+                                        <n:i class="fa fa-spinner fa-spin"></n:i> Processando operação... Por favor, aguarde.
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <include src="/footer.zul"/>
+
+    </div> </zk>
