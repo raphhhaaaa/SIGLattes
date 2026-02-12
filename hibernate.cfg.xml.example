@@ -1,0 +1,41 @@
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+    <session-factory>
+
+        <property name="hibernate.connection.provider_class">org.hibernate.c3p0.internal.C3P0ConnectionProvider</property>
+
+        <property name="hibernate.c3p0.min_size">3</property>
+        <property name="hibernate.c3p0.max_size">20</property>
+        <property name="hibernate.c3p0.timeout">300</property>
+        <property name="hibernate.c3p0.max_statements">50</property>
+        <property name="hibernate.c3p0.idle_test_period">1800</property>
+
+        <property name="connection.driver_class">com.mysql.cj.jdbc.Driver</property>
+
+        <property name="connection.url">jdbc:mysql://localhost:3306/LATTESEXTRATOR?useTimezone=true&amp;serverTimezone=UTC&amp;allowPublicKeyRetrieval=true&amp;useSSL=false</property>
+
+        // credenciais
+        <property name="connection.username">root</property>
+        <property name="connection.password">sua_senha_aqui</property>
+
+        <property name="dialect">org.hibernate.dialect.MySQL8Dialect</property>
+
+        <property name="hbm2ddl.auto">update</property>
+
+        <property name="show_sql">true</property>
+        <property name="format_sql">true</property>
+
+        <mapping class="com.uem.extrator.model.Curriculo"/>
+        <mapping class="com.uem.extrator.model.Formacao"/>
+        <mapping class="com.uem.extrator.model.Producao"/>
+        <mapping class="com.uem.extrator.model.Instituicao"/>
+        <mapping class="com.uem.extrator.model.Curso"/>
+        <mapping class="com.uem.extrator.model.Atuacao"/>
+        <mapping class="com.uem.extrator.model.Vinculo"/>
+        <mapping class="com.uem.extrator.model.Atividade"/>
+        <mapping class="com.uem.extrator.model.AtividadeItem"/>
+
+    </session-factory>
+</hibernate-configuration>
