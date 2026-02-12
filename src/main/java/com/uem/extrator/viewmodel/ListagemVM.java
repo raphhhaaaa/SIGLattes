@@ -146,17 +146,21 @@ public class ListagemVM {
 
     @Command
     public void verDetalhes(@BindingParam("item") Curriculo item) {
-        this.curriculo = item;
+        this.curriculo = curriculoDAO.buscarComDetalhes(item.getIdLattes());
         this.resumoExpandido = false;
 
-        Map<String, Object> args = new HashMap<>();
-        args.put("vm", this);
-        Window win = (Window) Executions.createComponents("/paginas/modalDetalhes.zul", null, args);
+        if (this.curriculo != null) {
+            Map<String, Object> args = new HashMap<>();
+            args.put("vm", this);
+            Window win = (Window) Executions.createComponents("/paginas/modalDetalhes.zul", null, args);
 
-        // Dispara o carregamento automático
-        iniciarCarregamentoAutomatico();
+            // Dispara o carregamento automático
+            iniciarCarregamentoAutomatico();
 
-        win.doModal();
+            win.doModal();
+        } else {
+            org.zkoss.zk.ui.util.Clients.showNotification("Erro ao carregar detalhes", "error", null, null, 2000);
+        }
     }
 
     private void iniciarCarregamentoAutomatico() {

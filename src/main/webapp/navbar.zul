@@ -89,9 +89,6 @@
                 <a href="/paginas/sistema/logs.zul" sclass="list-group-item list-group-item-action border-0 pl-5">
                     <n:i class="fa fa-list-alt"></n:i> Logs do Sistema
                 </a>
-                <a href="/login/index.zul" sclass="list-group-item list-group-item-action border-0 pl-5 text-danger">
-                    <n:i class="fa fa-sign-out"></n:i> Sair
-                </a>
             </div>
 
         </div>

@@ -7,7 +7,10 @@ import org.hibernate.annotations.Fetch;       // <--- IMPORTANTE
 import org.hibernate.annotations.FetchMode;
 
 @Entity
-@Table(name = "ATUACAO", schema = "LATTESEXTRATOR")
+@Table(name = "ATUACAO", schema = "LATTESEXTRATOR", indexes = {
+        @Index(name = "idx_atu_curr", columnList = "cd_cnpq"),
+        @Index(name = "idx_atu_inst", columnList = "cd_instituicao")
+})
 public class Atuacao {
 
     @Id
@@ -27,12 +30,12 @@ public class Atuacao {
     private Integer sequencia;
 
     // LISTA 1 : VINCULOS (CARGOS/DATAS)
-    @OneToMany(mappedBy = "atuacao", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "atuacao", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Fetch(FetchMode.SUBSELECT)
     private List<Vinculo> vinculos = new ArrayList<>();
     
     // LISTA 2 : AS ATIVIDADES (PROJETOS)
-    @OneToMany(mappedBy = "atuacao", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "atuacao", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Fetch(FetchMode.SUBSELECT)
     @OrderBy("anoInicio DESC, mesInicio DESC")
     private List<Atividade> atividades = new ArrayList<>();

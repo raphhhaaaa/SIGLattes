@@ -3,12 +3,14 @@ package com.uem.extrator.model;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "INSTITUICAO", schema = "LATTESEXTRATOR")
+@Table(name = "INSTITUICAO", schema = "LATTESEXTRATOR", indexes = {
+        @Index(name = "idx_inst_nome", columnList = "nm_instituicao")
+})
 
 public class Instituicao {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // No MySQL usa auto-increment
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "cd_instituicao")
     private Long id;
 

@@ -4,6 +4,7 @@ import com.uem.extrator.dao.CurriculoDAO;
 import com.uem.extrator.dao.ProducaoDAO;
 import com.uem.extrator.model.Curriculo;
 import com.uem.extrator.model.Producao;
+import com.uem.extrator.model.Usuario;
 import com.uem.extrator.service.BibliometriaService;
 import com.uem.extrator.service.LattesService;
 import org.zkoss.bind.BindUtils;
@@ -14,6 +15,7 @@ import org.zkoss.bind.annotation.NotifyChange;
 import org.zkoss.util.media.Media;
 import org.zkoss.zk.ui.Desktop;
 import org.zkoss.zk.ui.Executions;
+import org.zkoss.zk.ui.Sessions;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.util.Clients;
 import org.zkoss.zk.ui.event.EventListener;
@@ -30,6 +32,10 @@ import java.util.Date;
 import java.util.List;
 
 public class ExtratorVM {
+
+    // --- LOGIN --- //
+    private Usuario usuarioLogado;
+
 
     // --- VARIAVÉIS DE ENTRADA --- //
     private String idLattesInput;
@@ -70,6 +76,10 @@ public class ExtratorVM {
 
     @Init
     public void init() {
+        this.usuarioLogado = (Usuario) Sessions.getCurrent().getAttribute("usuario_logado");
+        if (this.usuarioLogado == null) {
+            Executions.sendRedirect("/login.zul");
+        }
         atualizarDashboard();
     }
 
@@ -252,6 +262,14 @@ public class ExtratorVM {
                 finalizarProcesso(desktop, "Erro: " + e.getMessage(), false);
             }
         }).start();
+    }
+
+    @Command
+    public void logout() {
+        // mata a sesssão
+        Sessions.getCurrent().invalidate();
+        // manda pro login
+        Executions.sendRedirect("/login.zul");
     }
 
     //  UTILITÁRIOS //
@@ -667,4 +685,5 @@ public class ExtratorVM {
     public Long getConsultasHoje() { return consultasHoje; }
     public List<Curriculo> getListaDesatualizados() { return listaDesatualizados; }
     public String getLogAtualizacao() { return logAtualizacao; }
+    public Usuario getUsuarioLogado() { return usuarioLogado; }
 }

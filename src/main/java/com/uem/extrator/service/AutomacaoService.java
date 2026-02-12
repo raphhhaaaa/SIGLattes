@@ -7,6 +7,7 @@ import java.util.Scanner;
 import com.uem.extrator.dao.CurriculoDAO;
 import com.uem.extrator.dao.ProducaoDAO;;
 import com.uem.extrator.util.ConfigManager;
+import com.uem.extrator.service.LattesService;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,6 +33,10 @@ public class AutomacaoService {
 
     private ScheduledFuture<?> tarefaBackup;
     private ScheduledFuture<?> tarefaVerificacao;
+
+    // variavel pra evitar spam
+    //false == estava online na ultima checagem. true == já avisou que caiu
+    private boolean notificadoQueda = false;
 
     private AutomacaoService() {
 
@@ -69,6 +74,10 @@ public class AutomacaoService {
                     intervaloHoras,
                     TimeUnit.HOURS
             );
+
+            // agenda para monitorar conexão com o CNPq
+            scheduler.scheduleAtFixedRate(this::monitorarConexao, 1, 5, TimeUnit.MINUTES);
+            System.out.println("[AUTOMAÇÃO] Monitoramento de conexão ativado (Check a cada 30min).");
         } else {
             System.out.println(">>> AUTOMAÇÃO: Verificação automática DESATIVADA.");
         }
@@ -169,6 +178,54 @@ public class AutomacaoService {
                 }
             } catch (Exception e) {
             }
+        }
+    }
+
+    private void monitorarConexao() {
+        ConfigManager config = ConfigManager.getInstance();
+        LattesService service = new LattesService();
+
+        if (!config.isNotifyConnection()) {
+            notificadoQueda = false;
+            return;
+        }
+
+        try {
+            boolean online = service.testarConexaoCNPq();
+
+            if (!online) {
+                if (!notificadoQueda) {
+                    System.err.println(">>> [MONITOR] ALERTA: Conexão com CNPq caiu!");
+
+                    StringBuilder msg = new StringBuilder();
+                    msg.append("<h3>⚠️ Alerta de Monitoramento</h3>");
+                    msg.append("<p>O sistema detectou uma falha de comunicação com o webservice do <b>CNPq</b>.</p>");
+                    msg.append("<p>Isso pode impedir novas extrações ou atualizações de currículos temporariamente.</p>");
+                    msg.append("<hr>");
+                    msg.append("<p><b>Status:</b> 🔴 SERVIÇO INDISPONÍVEL / INSTÁVEL</p>");
+                    msg.append("<p><b>Horário:</b> " + new java.util.Date() + "</p>");
+
+                    EmailService.getInstance().enviarAlerta("URGENTE: Falha na Conexão CNPq", msg.toString());
+
+                    // marca que já avisamos, para não mandar outro email daqui 30 min se continuar off
+                    notificadoQueda = true;
+                }
+            } else {
+                if (notificadoQueda && service.testarConexaoCNPq()) {
+                    // se estava marcado como queda significa que voltou
+                    System.out.println(">>> [MONITOR] Conexão restabelecida.");
+
+                    StringBuilder msg = new StringBuilder();
+                    msg.append("<h3>✅ Serviço Restabelecido</h3>");
+                    msg.append("<p>A comunicação com o CNPq foi normalizada.</p>");
+
+                    EmailService.getInstance().enviarAlerta("Resolvido: Conexão CNPq Normalizada", msg.toString());
+
+                    notificadoQueda = false; // reseta para monitorar futuras quedas
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

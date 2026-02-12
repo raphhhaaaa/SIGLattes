@@ -3,7 +3,10 @@ package com.uem.extrator.model;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "VINCULO", schema = "LATTESEXTRATOR")
+@Table(name = "VINCULO", schema = "LATTESEXTRATOR", indexes = {
+        @Index(name = "idx_vinc_atuacao", columnList = "cd_atuacao"),
+        @Index(name = "idx_vinc_anos", columnList = "ano_inicio, ano_fim")
+})
 public class Vinculo {
 
     @Id

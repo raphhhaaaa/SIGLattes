@@ -4,6 +4,10 @@ import com.uem.extrator.model.Producao;
 import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import org.hibernate.query.Query;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ProducaoDAO {
 
@@ -34,6 +38,49 @@ public class ProducaoDAO {
             return 0L;
         } finally {
             if (session != null) session.close();
+        }
+    }
+    /**
+     * Busca OTIMIZADA: Traz apenas as produções do tipo selecionado,
+     * já trazendo junto o nome do pesquisador (FETCH) para não dar query N+1.
+     */
+    public List<Producao> listarPorTipo(String tipoProducao, String nomeInstituicao) {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        try {
+            StringBuilder hql = new StringBuilder();
+
+            // SELECT DISTINCT é essencial porque um pesquisador pode ter
+            // múltiplas atuações na mesma instituição
+            hql.append("SELECT DISTINCT p FROM Producao p ");
+            hql.append("JOIN FETCH p.curriculo c "); // Traz o dono da produção
+
+            if (nomeInstituicao != null && !"TODAS".equals(nomeInstituicao)) {
+                // CORREÇÃO DO CAMINHO: Curriculo -> Atuacoes -> Vinculos
+                hql.append("JOIN c.atuacoes a ");
+                hql.append("JOIN a.instituicao i ");
+                hql.append("WHERE p.tipo = :tipo ");
+                hql.append("AND v.nomeInstituicao = :nomeInst ");
+            } else {
+                hql.append("WHERE p.tipo = :tipo ");
+            }
+
+            hql.append("ORDER BY p.ano DESC, c.nomeCompleto ASC");
+
+            Query<Producao> query = session.createQuery(hql.toString(), Producao.class);
+            query.setParameter("tipo", tipoProducao);
+
+            if (nomeInstituicao != null && !"TODAS".equals(nomeInstituicao)) {
+                query.setParameter("nomeInst", nomeInstituicao);
+            }
+
+            query.setMaxResults(2000); // Limite para manter a performance
+
+            return query.list();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        } finally {
+            session.close();
         }
     }
 }

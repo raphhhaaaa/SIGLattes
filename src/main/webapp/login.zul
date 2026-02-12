@@ -1,0 +1,66 @@
+<?page title="Login - Extrator Lattes UEM" contentType="text/html;charset=UTF-8"?>
+<?link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico"?>
+<?link rel="stylesheet" type="text/css" href="/css/bootstrap.css"?>
+<?link rel="stylesheet" type="text/css" href="/css/zkbootstrap.css"?>
+<?link rel="stylesheet" type="text/css" href="/css/fontawesome.css"?>
+
+<zk>
+    <style>
+        body {
+        background-color: #f0f2f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        }
+        .login-card {
+        width: 400px;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        background: white;
+        }
+        .login-header {
+        text-align: center;
+        margin-bottom: 25px;
+        }
+        .login-btn {
+        width: 100%;
+        margin-top: 15px;
+        font-weight: bold;
+        }
+    </style>
+
+    <div viewModel="@id('vm') @init('com.uem.extrator.viewmodel.LoginVM')"
+         style="height: 100%; display:flex; justify-content:center; align-items:center;">
+
+        <vlayout sclass="login-card">
+            <div sclass="login-header">
+                <image src="/images/uem.png" height="80px" />
+                <separator height="10px"/>
+                <label value="Extrator Lattes" sclass="h4" style="color:#005a9c; font-weight:bold;"/>
+                <div style="color:#666; font-size:12px;">// EM DESENVOLVIMENTO //</div>
+            </div>
+
+            <label value="Usuário" style="font-weight:bold;"/>
+            <textbox value="@bind(vm.usuario)" width="100%" height="40px" placeholder="Digite seu login"
+                     onOK="@command('autenticar')" focus="true"/>
+
+            <separator height="15px"/>
+
+            <label value="Senha" style="font-weight:bold;"/>
+            <textbox value="@bind(vm.senha)" type="password" width="100%" height="40px" placeholder="Digite sua senha"
+                     onOK="@command('autenticar')"/>
+
+            <button label="ENTRAR" sclass="btn btn-primary login-btn"
+                    onClick="@command('autenticar')" />
+
+            <separator height="10px"/>
+            <label value="@load(vm.mensagemErro)" style="color:red; font-size:12px; text-align:center; display:block;"/>
+        </vlayout>
+
+        <div style="position:absolute; bottom:10px; text-align:center; width:100%; color:black; font-size:11px;">
+            © 2026 Universidade Estadual de Maringá - Pró-Reitoria de Planejamento e Desenvolvimento Institucional - Extrator Lattes v1.0
+        </div>
+    </div>
+</zk>

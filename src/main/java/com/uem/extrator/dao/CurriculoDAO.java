@@ -6,6 +6,7 @@ import com.uem.extrator.model.Formacao;
 import com.uem.extrator.service.AuditLogService;
 import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
+import org.hibernate.query.Query;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -98,6 +99,53 @@ public class CurriculoDAO {
             return 0L;
         } finally {
             if (session != null) session.close();
+        }
+    }
+
+    /**
+     * Busca apenas ID, DATA e NOME para verificação rápida.
+     * Retorna uma lista de Arrays: [0]=idLattes, [1]=dataAtualizacao, [2]=nome
+     * Extremamente leve para a memória.
+     */
+    public List<Object[]> listarResumoParaVerificacao() {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        try {
+            // HQL: traz apenas as colunas necessárias, sem carregar o objeto inteiro
+            String hql = "SELECT c.idLattes, c.dataAtualizacao, c.nomeCompleto FROM Curriculo c";
+            Query<Object[]> query = session.createQuery(hql, Object[].class);
+            return query.list();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        } finally {
+            session.close();
+        }
+    }
+
+    public Curriculo buscarComDetalhes(String idLattes) {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+
+        try {
+            String hql = "FROM Curriculo c " +
+                    "LEFT JOIN FETCH c.formacoes " +
+                    "WHERE c.idLattes = :id";
+
+            Curriculo c = session.createQuery(hql, Curriculo.class)
+                    .setParameter("id", idLattes)
+                    .uniqueResult();
+
+            // truque para carregar as outras listaas (pois o Hibernate não gosta de múltilos JOIN FETCH de uma vez)
+            if (c != null) {
+                org.hibernate.Hibernate.initialize(c.getProducoes());
+                org.hibernate.Hibernate.initialize(c.getAtuacoes());
+            }
+
+            return c;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            session.close();
         }
     }
 }

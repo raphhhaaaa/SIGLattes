@@ -1,8 +1,8 @@
 package com.uem.extrator.viewmodel;
 
 import com.uem.extrator.dao.InstituicaoDAO;
+import com.uem.extrator.dao.ProducaoDAO;
 import com.uem.extrator.dao.RelatorioDAO;
-import com.uem.extrator.model.Formacao;
 import com.uem.extrator.model.Producao;
 import org.zkoss.bind.annotation.Command;
 import org.zkoss.bind.annotation.Init;
@@ -10,8 +10,6 @@ import org.zkoss.bind.annotation.NotifyChange;
 import org.zkoss.zk.ui.util.Clients;
 import org.zkoss.zul.Filedownload;
 import org.zkoss.zul.ListModelList;
-
-import javax.xml.crypto.dsig.spec.ExcC14NParameterSpec;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.text.SimpleDateFormat;
@@ -22,6 +20,8 @@ public class RelatorioDinamicoVM {
 
     private RelatorioDAO dao = new RelatorioDAO();
     private InstituicaoDAO instituicaoDAO = new InstituicaoDAO();
+    private ProducaoDAO producaoDAO = new ProducaoDAO();
+    private List<Producao> listaProducoes = new ArrayList<>();
 
     // Dados do Gráfico
     private ListModelList<ItemGrafico> dadosGrafico = new ListModelList<>();
@@ -69,7 +69,7 @@ public class RelatorioDinamicoVM {
     }
 
     @Command
-    @NotifyChange({"dadosGrafico", "totalGeral", "tituloGrafico", "opcaoSelecionada"})
+    @NotifyChange({"dadosGrafico", "totalGeral", "tituloGrafico", "opcaoSelecionada", "listaProducoes"})
     public void carregarDados() {
         if (opcaoSelecionada == null) {
             Clients.showNotification("Selecione um tipo de produção!", "warning", null, null, 3000);
@@ -83,6 +83,7 @@ public class RelatorioDinamicoVM {
 
         this.dadosGrafico.clear();
         this.dadosGraficoOrdenado.clear();
+        this.listaProducoes.clear();
         this.totalGeral = 0L;
 
         try {
@@ -110,8 +111,10 @@ public class RelatorioDinamicoVM {
                     dadosGrafico.add(new ItemGrafico(ano, qtd, percentual, cor));
                 }
 
+                this.listaProducoes = producaoDAO.listarPorTipo(chave, instituicaoSelecionada);
                 this.dadosGraficoOrdenado.addAll(this.dadosGrafico);
                 this.dadosGraficoOrdenado.sort(Comparator.comparingInt(ItemGrafico::getAno));
+
 
             } else {
                 Clients.showNotification("Nenhum dado encontrado.", "info", null, null, 3000);
@@ -239,6 +242,9 @@ public class RelatorioDinamicoVM {
     public ListModelList<String> getListaInstituicoes() { return listaInstituicoes; }
     public String getInstituicaoSelecionada() { return instituicaoSelecionada; }
     public void setInstituicaoSelecionada(String i) { this.instituicaoSelecionada = i; }
+    public List<Producao> getListaProducoes() { return listaProducoes; }
+    public void setListaProducoes(List<Producao> listaProducoes) { this.listaProducoes = listaProducoes; }
+
 
     public static class ItemGrafico {
         private Integer ano;

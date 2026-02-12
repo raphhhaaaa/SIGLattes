@@ -208,59 +208,54 @@ public class LattesService {
 
         RelatorioProcessamento relatorio = new RelatorioProcessamento();
 
-        // pega todos os curriculos do banco
-        List<Curriculo> lista = curriculoDAO.listarTodos();
-        int total = lista.size();
+        // busca leve
+        List<Object[]> listaResumida = curriculoDAO.listarResumoParaVerificacao();
+        int total = listaResumida.size();
         System.out.println(">>> AUTOMAÇÃO: " + total + " currículos para verificar.");
 
-        // cria pool com 5 Threads (5 currículos por vez)
+        // cria pool com 20 Threads (20 currículos por vez)
         // atenção: não aumente muito o numero de threads para não ser bloqueado pelo CNPq (Ip ban)
-        ExecutorService executor = Executors.newFixedThreadPool(5);
+        ExecutorService executor = Executors.newFixedThreadPool(20);
 
         // contadores Thread-Safe (atomicos)
         AtomicInteger processados = new AtomicInteger(0);
 
-        for (Curriculo local : lista) {
-            // submete a tarefa para o pool
+        for (Object[] dados : listaResumida) {
             executor.submit(() -> {
+                String idLattes = (String) dados[0];
+                Date dataLocal = (Date) dados[1];
+                String nome = (String) dados[2];
+
                 try {
+                    // --- Validação Rápida ---
+                    Date dataRemotaFull = obterDataAtualizacaoRemota(idLattes);
 
-                    // verifica sincronia com CNPq
-                    String id = local.getIdLattes();
-                    Date dataRemota = obterDataAtualizacaoRemota(id);
-
-                    if (dataRemota != null) {
-
-                        Date dataLocal = local.getDataAtualizacao();
-
+                    if (dataRemotaFull != null) {
                         Date localSemHora = zerarHoras(dataLocal);
-                        Date remotaSemHora = zerarHoras(dataRemota);
+                        Date remotaSemHora = zerarHoras(dataRemotaFull);
 
-                        // compara dataremota com a datalocal, se a data do cnpq for mais nova que a local:
+                        // Se precisa atualizar
                         if (localSemHora == null || remotaSemHora.after(localSemHora)) {
-                            System.out.println(">>> [ATUALIZANDO] " + local.getNomeCompleto() + " | Local: " + localSemHora + " -> Novo: " + remotaSemHora);
 
-                            // baixa o xml completo e processa
-                            Curriculo novo = getCurriculo(id);
+                            System.out.println(">>> [BAIXANDO] " + nome + " (Nova versão detectada)");
 
-                            // salva no banco (atualiza os dados mantendo o id)
+                            // AQUI (e só aqui) gastamos memória para baixar e salvar o XML completo
+                            Curriculo novo = getCurriculo(idLattes);
                             curriculoDAO.salvar(novo);
 
-                            // atualiza relatorio
-                            relatorio.atualizados.add(local.getNomeCompleto());
-                        }
-                    } else {
-                        throw new Exception("Data remota nula (CNPq instável)");
-                    }
+                            // Força limpeza imediata do objeto pesado
+                            novo = null;
 
+                            relatorio.atualizados.add(nome);
+                        }
+                    }
                 } catch (Exception e) {
-                    System.err.println(">>> ERRO ao verificar " + local.getNomeCompleto() + ": " + e.getMessage());
-                    relatorio.erros.add(local.getNomeCompleto() + " - " + e.getMessage());
+                    System.err.println("Erro ao verificar " + nome + ": " + e.getMessage());
                 } finally {
-                    // log de progresso a cada 10 processados
                     int p = processados.incrementAndGet();
-                    if (p % 10 == 0) {
-                        System.out.println(">>> PROGRESSO: " + p + "/" + total + " concluídos.");
+                    // Log de progresso a cada 100 currículos para não poluir o console
+                    if (p % 100 == 0) {
+                        System.out.println(">>> Progresso: " + p + "/" + total);
                     }
                 }
             });
@@ -268,7 +263,7 @@ public class LattesService {
         // encerra o recebimento das tarefas e aguarda o fim das atuais
         executor.shutdown();
         try {
-            if (!executor.awaitTermination(3, TimeUnit.HOURS)) {
+            if (!executor.awaitTermination(4, TimeUnit.HOURS)) {
                 executor.shutdownNow();
                 System.err.println(">>> TIMEOUT: O processo demorou demais e foi forçado a parar.");
             }
@@ -276,6 +271,10 @@ public class LattesService {
             executor.shutdownNow();
             Thread.currentThread().interrupt();
         }
+
+        // limpeza final forçada
+        System.gc();
+
         System.out.println(">>> AUTOMAÇÃO: Varredura concluída. Atualizados: " + relatorio.atualizados.size() + ", " + "Erros: " + relatorio.erros.size());
         if (relatorio.atualizados.size() == 0 && relatorio.erros.size() == 0) {
             System.out.println(">>> AUTOMAÇÃO: Sistema sincronizado!!");

@@ -5,7 +5,11 @@ import javax.transaction.TransactionScoped;
 import java.util.Date;
 
 @Entity
-@Table(name = "PRODUCAO", schema = "LATTESEXTRATOR")
+@Table(name = "PRODUCAO", schema = "LATTESEXTRATOR", indexes = {
+        @Index(name = "idx_prod_tipo", columnList = "tp_producao"), // Acelera filtro por Artigo/Evento
+        @Index(name = "idx_prod_ano", columnList = "ano_producao"),   // Acelera ordenação por ano
+        @Index(name = "idx_prod_curr", columnList = "curriculo_id") // por id
+})
 
 public class Producao {
 

@@ -8,7 +8,10 @@ import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
 @Entity
-@Table(name = "CURRICULO", schema = "LATTESEXTRATOR")
+@Table(name = "CURRICULO", schema = "LATTESEXTRATOR", indexes = {
+        @Index(name = "idx_curr_nome", columnList = "nm_completo"), // Acelera ordenação alfabética
+        @Index(name = "idx_curr_lattes", columnList = "cd_cnpq")
+})
 public class Curriculo {
 
     @Id
@@ -33,16 +36,16 @@ public class Curriculo {
     private String resumo;
 
     // Relacionamento com Formação
-    @OneToMany(mappedBy = "curriculo", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "curriculo", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Fetch(FetchMode.SUBSELECT)
     private List<Formacao> formacoes = new ArrayList<>();
 
     // Relacionamento com Produção (mapear depois)
-    @OneToMany(mappedBy = "curriculo", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "curriculo", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Fetch(FetchMode.SUBSELECT)
     private List<Producao> producoes = new ArrayList<>();
 
-    @OneToMany(mappedBy = "curriculo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "curriculo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Fetch(FetchMode.SUBSELECT)
     private List<Atuacao> atuacoes = new ArrayList<>();
 
