@@ -36,6 +36,7 @@
         <mapping class="com.uem.extrator.model.Vinculo"/>
         <mapping class="com.uem.extrator.model.Atividade"/>
         <mapping class="com.uem.extrator.model.AtividadeItem"/>
+        <mapping class="com.uem.extrator.model.Usuario"/>
 
     </session-factory>
 </hibernate-configuration>
