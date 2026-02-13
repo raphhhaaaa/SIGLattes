@@ -4,9 +4,12 @@ import com.uem.extrator.dao.InstituicaoDAO;
 import com.uem.extrator.dao.ProducaoDAO;
 import com.uem.extrator.dao.RelatorioDAO;
 import com.uem.extrator.model.Producao;
+import com.uem.extrator.model.Usuario;
+import com.uem.extrator.service.AuditLogService;
 import org.zkoss.bind.annotation.Command;
 import org.zkoss.bind.annotation.Init;
 import org.zkoss.bind.annotation.NotifyChange;
+import org.zkoss.zk.ui.Sessions;
 import org.zkoss.zk.ui.util.Clients;
 import org.zkoss.zul.Filedownload;
 import org.zkoss.zul.ListModelList;
@@ -85,6 +88,13 @@ public class RelatorioDinamicoVM {
         this.dadosGraficoOrdenado.clear();
         this.listaProducoes.clear();
         this.totalGeral = 0L;
+
+        // loga (nao é muito relevante pra segurança, mas é interessante ver)
+        Usuario user = (Usuario) Sessions.getCurrent().getAttribute("usuario_logado");
+        String autor = (user != null) ? user.getLogin() : "ANONIMO";
+
+        AuditLogService.log("CONSULTA", autor,
+                "Relatório: " + opcaoSelecionada + " | Inst: " + instituicaoSelecionada);
 
         try {
             // Busca dados AGREGADOS (Count) para o Gráfico

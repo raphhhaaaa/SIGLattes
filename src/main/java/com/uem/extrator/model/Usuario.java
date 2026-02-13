@@ -27,7 +27,7 @@ public class Usuario implements Serializable {
     @Column(nullable = false, length = 64) // SHA-256 gera 64 caracteres hex
     private String senha;
 
-    @Column(name = "nome_completo", nullable = false, length = 30)
+    @Column(name = "nome_completo", nullable = false, length = 60)
     private String nome;
 
     @Column(name = "admin")

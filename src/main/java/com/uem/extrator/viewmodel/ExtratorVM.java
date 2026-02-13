@@ -7,6 +7,7 @@ import com.uem.extrator.model.Producao;
 import com.uem.extrator.model.Usuario;
 import com.uem.extrator.service.BibliometriaService;
 import com.uem.extrator.service.LattesService;
+import com.uem.extrator.service.AuditLogService;
 import org.zkoss.bind.BindUtils;
 import org.zkoss.bind.annotation.BindingParam;
 import org.zkoss.bind.annotation.Command;
@@ -35,7 +36,6 @@ public class ExtratorVM {
 
     // --- LOGIN --- //
     private Usuario usuarioLogado;
-
 
     // --- VARIAVÉIS DE ENTRADA --- //
     private String idLattesInput;
@@ -353,9 +353,13 @@ public class ExtratorVM {
         this.processando = true;
         atualizarLog(desktop, "Consultando base do CNPq...");
 
+        final String login = (usuarioLogado != null) ? usuarioLogado.getLogin() : "ANONIMO";
+
         new Thread(() -> {
             try {
                 String idEncontrado = null;
+                String tipoBusca = (abaSelecionada == 1) ? "POR_CPF" : "POR_NOME"; // define o tipo da busca
+                String termoBusca = (abaSelecionada == 1) ? cpfInput : nomeInput; // Guarda o que foi digitado para logar
 
                 // --- LÓGICA DE ENVIO SEGURA ---
                 if (abaSelecionada == 1) {
@@ -380,12 +384,19 @@ public class ExtratorVM {
                     this.idLattesInput = idEncontrado;
                     atualizarTela(desktop, "idLattesInput");
                     atualizarLog(desktop, "ID Encontrado: " + idEncontrado + ". Baixando...");
-                    executarExtracaoInternal(desktop, idEncontrado);
+
+                    executarExtracaoInternal(desktop, idEncontrado, tipoBusca);
                 } else {
+                    // loga falha
+                    AuditLogService.registrarExtracao(tipoBusca, login, false, termoBusca, "Pesquisador não localizado na busca");
                     finalizarProcesso(desktop, "❌ Pesquisador não encontrado. Tente verificar a data de nascimento.", false);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
+
+                // log de erro
+                AuditLogService.registrarExtracao("BUSCA_ERRO", login, false, "N/A", "Erro: " + e.getMessage());
+
                 finalizarProcesso(desktop, "❌ Erro na busca: " + e.getMessage(), false);
             }
         }).start();
@@ -408,10 +419,13 @@ public class ExtratorVM {
         this.logStatus = "Iniciando download direto...";
         this.barraVisivel = true;
 
-        new Thread(() -> executarExtracaoInternal(desktop, idLattesInput)).start();
+        new Thread(() -> executarExtracaoInternal(desktop, idLattesInput, "POR_ID")).start();
     }
 
-    private void executarExtracaoInternal(Desktop desktop, String id) {
+    private void executarExtracaoInternal(Desktop desktop, String id, String tipoOrigem) {
+        // captura o usuario logado
+        String login = (usuarioLogado != null) ? usuarioLogado.getLogin() : "ANONIMO";
+
         try {
             atualizarLog(desktop, "Extraindo XML...");
             Curriculo c = lattesService.getCurriculo(id);
@@ -421,12 +435,23 @@ public class ExtratorVM {
                 curriculoDAO.salvar(c);
                 this.curriculo = c;
                 atualizarTela(desktop, "curriculo");
+
+                // loga sucesso
+                AuditLogService.registrarExtracao(tipoOrigem, login, true, c.getIdLattes(), c.getNomeCompleto());
+
                 finalizarProcesso(desktop, "Currículo de " + c.getNomeCompleto() + " salvo!", true);
             } else {
+                // loga falha
+                AuditLogService.registrarExtracao(tipoOrigem, login, false, id, "CNPq retornou vazio/privado");
+
                 finalizarProcesso(desktop, "CNPq retornou vazio ou perfil privado.", false);
             }
         } catch (Exception e) {
             e.printStackTrace();
+
+            // log de erro técnico
+            AuditLogService.registrarExtracao(tipoOrigem, login, false, id, "ERRO: " + e.getMessage());
+
             finalizarProcesso(desktop, "Falha técnica: " + e.getMessage(), false);
         }
     }
@@ -521,6 +546,10 @@ public class ExtratorVM {
         int total = ids.size();
         int sucesso = 0;
         int erro = 0;
+
+        // captura login
+        String login = (usuarioLogado != null) ? usuarioLogado.getLogin() : "ANONIMO";
+
         for (int i = 0; i < total; i++) {
             String dado = ids.get(i);
             try {
@@ -529,15 +558,38 @@ public class ExtratorVM {
                     atualizarLogBatch(desktop, "["+(i+1)+"/"+total+"] CPF "+dado+"...");
                     String conv = lattesService.buscarIdPorDados(dado, "", "");
                     if(conv != null && !conv.isEmpty()) idBusca = conv;
-                    else { erro++; continue; }
+                    else {
+                        erro++;
+                        AuditLogService.registrarExtracao("LOTE_CPF", login, false, dado, "CPF não convertido" );
+                        continue;
+                    }
                 }
                 if (idBusca.length() != 16) { erro++; continue; }
 
                 atualizarLogBatch(desktop, "["+(i+1)+"/"+total+"] ID "+idBusca+"...");
                 Curriculo c = lattesService.getCurriculo(idBusca);
-                if (c!=null) { curriculoDAO.salvar(c); sucesso++; atualizarLogBatch(desktop, "✅ Salvo: "+c.getNomeCompleto()+"\n"); }
-                else { erro++; atualizarLogBatch(desktop, "❌ Falha.\n"); }
-            } catch(Exception e){ erro++; atualizarLogBatch(desktop, "❌ Erro.\n");}
+                if (c!=null) {
+                    curriculoDAO.salvar(c);
+                    sucesso++;
+                    atualizarLogBatch(desktop, "✅ Salvo: "+c.getNomeCompleto()+"\n");
+
+                    // log de sucesso
+                    AuditLogService.registrarExtracao("LOTE", login, true, c.getIdLattes(), c.getNomeCompleto());
+                }
+                else {
+                    erro++;
+                    atualizarLogBatch(desktop, "❌ Falha.\n");
+
+                    // log de falha
+                    AuditLogService.registrarExtracao("LOTE", login, false, idBusca, "Não encontrado/Vazio");
+                }
+            } catch(Exception e){
+                erro++;
+                atualizarLogBatch(desktop, "❌ Erro.\n");
+
+                // log de erro técnico
+                AuditLogService.registrarExtracao("LOTE", login, false, dado, "Erro: " + e.getMessage());
+            }
         }
         atualizarLogBatch(desktop, "\n🏁 FIM! OK: "+sucesso+" | Erros: "+erro);
 

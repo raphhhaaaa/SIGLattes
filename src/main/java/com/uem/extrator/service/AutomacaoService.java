@@ -152,7 +152,7 @@ public class AutomacaoService {
         if (config.isNotifyOutdated() && !relatorio.atualizados.isEmpty()) {
             StringBuilder msg = new StringBuilder();
             msg.append("<h3>Sincronização automática</h3>");
-            msg.append("<p>O sistema detectou e baixou atualizações recentes para os seguintes pesquisadores/docentes: </p>");
+            msg.append("<p>O sistema detectou e baixou atualizações recentes para os seguintes currículos de pesquisadores/docentes: </p>");
             msg.append(EmailService.getInstance().formatarLista(relatorio.atualizados));
             msg.append("<br><p>O banco de dados local agora está sincronizado com o CNPq.</p>");
             EmailService.getInstance().enviarAlerta("Relatório de Atualização", msg.toString());

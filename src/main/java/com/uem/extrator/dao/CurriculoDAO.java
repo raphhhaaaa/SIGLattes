@@ -61,7 +61,7 @@ public class CurriculoDAO {
 
             session.saveOrUpdate(curriculo);
             session.getTransaction().commit();
-            auditLogService.registrarProcessamento(curriculo.getIdLattes());
+            // auditLogService.registrarProcessamento(curriculo.getIdLattes());
 
         } catch (Exception e) {
             if (session.getTransaction().isActive()) {

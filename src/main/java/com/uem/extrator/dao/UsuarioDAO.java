@@ -5,7 +5,8 @@ import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
-import javax.xml.crypto.dsig.TransformService;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UsuarioDAO {
 
@@ -24,7 +25,7 @@ public class UsuarioDAO {
         }
     }
 
-    public void salvar(Usuario u) {
+    public boolean salvar(Usuario u) {
         Session session = HibernateUtil.getSessionFactory().openSession();
         Transaction tx = null;
 
@@ -32,9 +33,40 @@ public class UsuarioDAO {
             tx = session.beginTransaction();
             session.saveOrUpdate(u);
             tx.commit();
+            return true;
         } catch (Exception e) {
             if (tx != null) tx.rollback();
             e.printStackTrace();
+            return false;
+        } finally {
+            session.close();
+        }
+    }
+
+    public List<Usuario> listarTodos() {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        try {
+            return session.createQuery("FROM Usuario ORDER BY nome", Usuario.class).list();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        } finally {
+            session.close();
+        }
+    }
+
+    public boolean excluir(Usuario u) {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        Transaction tx = null;
+        try {
+            tx = session.beginTransaction();
+            session.delete(u);
+            tx.commit();
+            return true;
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            e.printStackTrace();
+            return false;
         } finally {
             session.close();
         }

@@ -59,7 +59,7 @@ public class ProducaoDAO {
                 hql.append("JOIN c.atuacoes a ");
                 hql.append("JOIN a.instituicao i ");
                 hql.append("WHERE p.tipo = :tipo ");
-                hql.append("AND v.nomeInstituicao = :nomeInst ");
+                hql.append("AND i.nomeInstituicao = :nomeInst ");
             } else {
                 hql.append("WHERE p.tipo = :tipo ");
             }

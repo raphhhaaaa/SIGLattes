@@ -38,13 +38,13 @@
                 <n:i class="fa fa-caret-down"></n:i>
             </a>
             <div id="divCadastros" visible="false" sclass="bg-white">
-                <a href="/paginas/pessoa/pessoaList.zul" sclass="list-group-item list-group-item-action border-0 pl-5">
+                <a href="/paginas/pessoa/pessoaList.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
                     <n:i class="fa-solid fa-circle-user"></n:i> Pessoas
                 </a>
-                <a href="/paginas/curso/cursoList.zul" sclass="list-group-item list-group-item-action border-0 pl-5">
+                <a href="/paginas/curso/cursoList.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
                     <n:i class="fa-solid fa-graduation-cap"></n:i> Cursos
                 </a>
-                <a href="/paginas/instituicao/instituicaoList.zul" sclass="list-group-item list-group-item-action border-0 pl-5">
+                <a href="/paginas/instituicao/instituicaoList.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
                     <n:i class="fa-solid fa-school"></n:i> Instituições
                 </a>
             </div>
@@ -56,10 +56,10 @@
                 <n:i class="fa fa-caret-down"></n:i>
             </a>
             <div id="divFerramentas" visible="false" sclass="bg-white">
-                <a href="/paginas/ferramentas/verificacao.zul" sclass="list-group-item list-group-item-action border-0 pl-5">
+                <a href="/paginas/ferramentas/verificacao.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
                     <n:i class="fa fa-refresh"></n:i> Verificar Atualizações
                 </a>
-                <a href="/paginas/ferramentas/config.zul" sclass="list-group-item list-group-item-action border-0 pl-5">
+                <a href="/paginas/ferramentas/config.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
                     <n:i class="fa fa-cogs"></n:i> Configurações
                 </a>
             </div>
@@ -71,23 +71,29 @@
                 <n:i class="fa fa-caret-down"></n:i>
             </a>
             <div id="divRelatorios" visible="false" sclass="bg-white">
-                <a href="/paginas/relatorio/relatorioPessoaCurso.zul" sclass="list-group-item list-group-item-action border-0 pl-5">
+                <a href="/paginas/relatorio/relatorioPessoaCurso.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
                     <n:i class="fa fa-angle-right"></n:i> Produção por Curso
                 </a>
-                <a href="/paginas/relatorio/relatorioDinamico.zul" sclass="list-group-item list-group-item-action border-0 pl-5">
+                <a href="/paginas/relatorio/relatorioDinamico.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
                     <n:i class="fa-solid fa-chart-simple"></n:i> Análise Dinâmica
                 </a>
             </div>
 
             <a sclass="list-group-item list-group-item-action bg-light font-weight-bold text-muted d-flex justify-content-between align-items-center"
                onClick='toggle(self, "divSistema")'
+
                style="cursor: pointer;">
                 <span><n:i class="fa fa-laptop"></n:i> SISTEMA</span>
                 <n:i class="fa fa-caret-down"></n:i>
             </a>
+
             <div id="divSistema" visible="false" sclass="bg-white">
-                <a href="/paginas/sistema/logs.zul" sclass="list-group-item list-group-item-action border-0 pl-5">
+                <a href="/paginas/sistema/logs.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
                     <n:i class="fa fa-list-alt"></n:i> Logs do Sistema
+                </a>
+
+                <a href="/paginas/sistema/usuarioList.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
+                    <n:i class="fa-solid fa-users"></n:i> Usuários
                 </a>
             </div>
 

@@ -7,6 +7,7 @@ import org.zkoss.bind.annotation.Init;
 import org.zkoss.bind.annotation.NotifyChange;
 import org.zkoss.zk.ui.Executions;
 import org.zkoss.zk.ui.Sessions;
+import com.uem.extrator.service.AuditLogService;
 
 public class LoginVM {
 
@@ -36,16 +37,26 @@ public class LoginVM {
         // busca no banco
         Usuario userBanco = dao.buscarPorLogin(usuario);
 
+        if (userBanco == null) {
+            AuditLogService.log("LOGIN_FALHA", usuario, "Tentativa com usuário inexistente.");
+            this.mensagemErro = "Usuário não encontrado";
+            return;
+        }
+
         // verifica se existe e se a senha bate
-        if (userBanco != null && userBanco.validarSenha(senha)) {
+        if (userBanco.validarSenha(senha)) {
             // se existe, salva o usuario na sessão
             Sessions.getCurrent().setAttribute("usuario_logado", userBanco);
+            // log de sucesso
+            AuditLogService.log("LOGIN_SUCESSO", userBanco.getLogin(), "Acesso realizado. IP: " + Executions.getCurrent().getRemoteAddr());
 
             // redireciona para a tela principa
             Executions.sendRedirect("/index.zul");
         } else {
             // nao existe
             this.mensagemErro = "Usuário ou senha incorretos.";
+            // log de senha errada
+            AuditLogService.log("LOGIN_FALHA", userBanco.getLogin(), "Senha incorreta.");
         }
     }
 

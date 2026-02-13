@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?page title="Lista de Usuários"?>
+<?link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico"?>
+<?link rel="stylesheet" type="text/css" href="/css/bootstrap.css"?>
+<?link rel="stylesheet" type="text/css" href="/css/zkbootstrap.css"?>
+<?link rel="stylesheet" type="text/css" href="/css/fontawesome.css"?>
+<?link rel="stylesheet" type="text/css" href="/css/toastr.css"?>
+<?script type="text/javascript" src="/js/toastr.js"?>
+
+<zk xmlns:n="native">
+    <div viewModel="@id('vm') @init('com.uem.extrator.viewmodel.UsuarioVM')"
+         sclass="container-fluid" style="padding-top: 15px;">
+
+        <div sclass="card shadow-sm">
+
+            <div sclass="card-header bg-white text-center"
+                 style="border-bottom: none; padding-top: 15px; padding-bottom: 0px;">
+
+                <n:h3 sclass="text-primary font-weight-bold" style="margin-bottom: 5px;">
+                    <n:i class="fa fa-users" style="margin-right: 10px;"></n:i>
+                    Gestão de Usuários
+                </n:h3>
+
+                <div class="text-muted small" style="margin-bottom: 5px;">
+                    Administração de acesso e permissões do sistema
+                </div>
+            </div>
+
+            <div sclass="card-body" style="padding-top: 0px;">
+
+                <div sclass="row" style="margin-bottom: 10px;">
+
+                    <div sclass="col-md-6" style="display: flex; align-items: center;">
+                        <button label="Voltar ao Início"
+                                iconSclass="z-icon-arrow-left"
+                                sclass="btn btn-secondary"
+                                height="38px"
+                                href="/index.zul"/> </div>
+
+                    <div sclass="col-md-6" style="display: flex; justify-content: flex-end;">
+                        <button label="Novo Usuário"
+                                iconSclass="z-icon-plus"
+                                sclass="btn btn-success"
+                                height="38px"
+                                onClick="@command('novoUsuario')"/>
+                    </div>
+                </div>
+
+                <listbox model="@load(vm.listaUsuarios)"
+                         emptyMessage="Nenhum usuário cadastrado no sistema."
+                         mold="paging"
+                         pageSize="10"
+                         style="border-radius: 5px; overflow: hidden;">
+
+                    <listhead sizable="true">
+                        <listheader label="ID" width="80px" align="center" sort="auto(id)"/>
+                        <listheader label="Nome Completo" sort="auto(nome)"/>
+                        <listheader label="Login" width="200px" sort="auto(login)"/>
+                        <listheader label="Perfil" width="120px" align="center"/>
+                        <listheader label="Ações" width="150px" align="center"/>
+                    </listhead>
+
+                    <template name="model">
+                        <listitem>
+                            <listcell label="@load(each.id)"/>
+                            <listcell label="@load(each.nome)" style="font-weight: bold;"/>
+                            <listcell label="@load(each.login)"/>
+                            <listcell>
+                                <span sclass="@load(each.admin ? 'badge badge-primary' : 'badge badge-secondary')"
+                                      style="font-size: 11px; padding: 5px 10px; color:black">
+                                    <label value="@load(each.admin ? 'ADMIN' : 'COMUM')"/>
+                                </span>
+                            </listcell>
+                            <listcell>
+                                <button iconSclass="z-icon-pencil"
+                                        sclass="btn btn-sm btn-info"
+                                        tooltiptext="Editar Usuário"
+                                        onClick="@command('editarUsuario', u=each)"
+                                        style="margin-right: 5px;"/>
+
+                                <button iconSclass="z-icon-trash"
+                                        sclass="btn btn-sm btn-danger"
+                                        tooltiptext="Excluir Usuário"
+                                        onClick="@command('excluir', u=each)"/>
+                            </listcell>
+                        </listitem>
+                    </template>
+                </listbox>
+            </div>
+        </div>
+
+        <window title="Cadastro de Usuário"
+                mode="modal"
+                border="normal"
+                width="500px"
+                visible="@load(vm.modoEdicao)"
+                position="center,center"
+                closable="true"
+                onClose="@command('cancelar')"
+                sclass="modal-shadow">
+
+            <style>
+                .modal-shadow .z-window-content { padding: 0px; }
+            </style>
+
+            <div sclass="card" style="margin-bottom: 0px; border: none;">
+                <div sclass="card-body" style="padding: 20px;">
+
+                    <vlayout spacing="10px">
+                        <label value="Nome Completo" sclass="font-weight-bold"/>
+                        <textbox value="@bind(vm.usuarioEdicao.nome)" hflex="1"
+                                 placeholder="Ex: João da Silva" style="height:35px;"/>
+
+                        <label value="Login de Acesso" sclass="font-weight-bold"/>
+                        <textbox value="@bind(vm.usuarioEdicao.login)" hflex="1"
+                                 placeholder="Ex: joao.silva" style="height:35px;"/>
+
+                        <label value="Senha" sclass="font-weight-bold"/>
+                        <textbox value="@bind(vm.senhaTemporaria)" type="password" hflex="1"
+                                 placeholder="@load(vm.usuarioEdicao.id eq null ? 'Obrigatória' : '(Deixe em branco para manter a atual)')" style="height:35px;"/>
+
+                        <separator height="2px"/>
+
+                        <div sclass="p-2">
+                            <checkbox label="Conceder permissão de Administrador?"
+                                      checked="@bind(vm.usuarioEdicao.admin)"
+                                      style="font-weight: bold; color: #555;"/>
+                        </div>
+                    </vlayout>
+                </div>
+
+                <div sclass="card-footer" style="background-color: #fff; display: flex; justify-content: flex-end;">
+                    <button label="Cancelar" onClick="@command('cancelar')"
+                            sclass="btn btn-secondary" style="margin-right: 10px;"/>
+                    <button label="Salvar Dados" onClick="@command('salvar')"
+                            sclass="btn btn-primary" iconSclass="z-icon-save"/>
+                </div>
+            </div>
+        </window>
+
+    </div>
+</zk>
