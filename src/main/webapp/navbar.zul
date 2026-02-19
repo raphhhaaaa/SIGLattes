@@ -49,6 +49,7 @@
                 </a>
             </div>
 
+
             <a sclass="list-group-item list-group-item-action bg-light font-weight-bold text-muted d-flex justify-content-between align-items-center"
                onClick='toggle(self, "divFerramentas")'
                style="cursor: pointer;">
@@ -59,10 +60,13 @@
                 <a href="/paginas/ferramentas/verificacao.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
                     <n:i class="fa fa-refresh"></n:i> Verificar Atualizações
                 </a>
-                <a href="/paginas/ferramentas/config.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
-                    <n:i class="fa fa-cogs"></n:i> Configurações
-                </a>
+                <zk if="${sessionScope.usuario_logado.admin}">
+                    <a href="/paginas/ferramentas/config.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
+                        <n:i class="fa fa-cogs"></n:i> Configurações
+                    </a>
+                </zk>
             </div>
+
 
             <a sclass="list-group-item list-group-item-action bg-light font-weight-bold text-muted d-flex justify-content-between align-items-center"
                onClick='toggle(self, "divRelatorios")'
@@ -79,13 +83,14 @@
                 </a>
             </div>
 
-            <a sclass="list-group-item list-group-item-action bg-light font-weight-bold text-muted d-flex justify-content-between align-items-center"
-               onClick='toggle(self, "divSistema")'
-
-               style="cursor: pointer;">
-                <span><n:i class="fa fa-laptop"></n:i> SISTEMA</span>
-                <n:i class="fa fa-caret-down"></n:i>
-            </a>
+            <zk if="${sessionScope.usuario_logado.admin}">
+                <a sclass="list-group-item list-group-item-action bg-light font-weight-bold text-muted d-flex justify-content-between align-items-center"
+                   onClick='toggle(self, "divSistema")'
+                   style="cursor: pointer;">
+                    <span><n:i class="fa fa-laptop"></n:i> SISTEMA</span>
+                    <n:i class="fa fa-caret-down"></n:i>
+                </a>
+            </zk>
 
             <div id="divSistema" visible="false" sclass="bg-white">
                 <a href="/paginas/sistema/logs.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">

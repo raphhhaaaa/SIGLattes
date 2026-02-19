@@ -21,7 +21,7 @@ public class Vinculo {
     @Column(name = "tp_vinculo", length = 100)
     private String tipoVinculo;
 
-    @Column(name = "ds_enquadramento", length = 1000)
+    @Column(name = "ds_enquadramento", length = 2000)
     private String descEnquadramento;
 
     @Column(name = "ds_carga_horaria")

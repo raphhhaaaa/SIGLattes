@@ -32,6 +32,12 @@ public class RelatorioDinamicoVM {
     private Long totalGeral = 0L;
     private String tituloGrafico;
 
+    // KPIs do dashboard
+    private long totalPesquisadores = 0L;
+    private long totalArtigos = 0L;
+    private long totalLivros = 0L;
+    private long totalEventos = 0L;
+
     // --- FILTROS ---
     private ListModelList<String> listaOpcoes = new ListModelList<>(Arrays.asList(
             "Artigos em Periódicos",
@@ -72,7 +78,7 @@ public class RelatorioDinamicoVM {
     }
 
     @Command
-    @NotifyChange({"dadosGrafico", "totalGeral", "tituloGrafico", "opcaoSelecionada", "listaProducoes"})
+    @NotifyChange({"dadosGrafico", "totalGeral", "tituloGrafico", "opcaoSelecionada", "listaProducoes", "totalPesquisadores", "totalArtigos", "totalLivros", "totalEventos"})
     public void carregarDados() {
         if (opcaoSelecionada == null) {
             Clients.showNotification("Selecione um tipo de produção!", "warning", null, null, 3000);
@@ -129,10 +135,25 @@ public class RelatorioDinamicoVM {
             } else {
                 Clients.showNotification("Nenhum dado encontrado.", "info", null, null, 3000);
             }
+
+            atualizarKPIs(instituicaoSelecionada);
+
         } catch (Exception e) {
             e.printStackTrace();
             Clients.showNotification("Erro ao gerar relatório: " + e.getMessage(), "error", null, null, 3000);
             this.tituloGrafico = "Erro: " + e.getMessage();
+        }
+    }
+
+    private void atualizarKPIs(String instituicao) {
+        try {
+            this.totalPesquisadores = dao.contarTotalPesquisadores(instituicao);
+            this.totalArtigos = dao.contarTotalProducao("ARTIGO", instituicao);
+            this.totalLivros = dao.contarTotalProducao("LIVRO", instituicao);
+            this.totalEventos = dao.contarTotalProducao("EVENTO", instituicao);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Clients.showNotification("Erro ao carregar os indicadores do dashboard", "error", null, null, 3000);
         }
     }
 
@@ -254,7 +275,10 @@ public class RelatorioDinamicoVM {
     public void setInstituicaoSelecionada(String i) { this.instituicaoSelecionada = i; }
     public List<Producao> getListaProducoes() { return listaProducoes; }
     public void setListaProducoes(List<Producao> listaProducoes) { this.listaProducoes = listaProducoes; }
-
+    public long getTotalPesquisadores() { return totalPesquisadores; }
+    public long getTotalArtigos() { return totalArtigos; }
+    public long getTotalLivros() { return totalLivros; }
+    public long getTotalEventos() { return totalEventos; }
 
     public static class ItemGrafico {
         private Integer ano;

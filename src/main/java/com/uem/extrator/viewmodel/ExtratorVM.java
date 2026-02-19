@@ -49,6 +49,8 @@ public class ExtratorVM {
     private boolean barraVisivel = false;
     private boolean resumoExpandido = false;
     private boolean processando = false;
+    private volatile boolean cancelarLote = false;
+    private volatile boolean cancelarAtualizacao = false;
     private int abaSelecionada = 0;
     private String logBatch = "";
 
@@ -163,6 +165,7 @@ public class ExtratorVM {
     @NotifyChange({"listaDesatualizados", "processando", "logAtualizacao"})
     public void verificarListaCompleta() {
         this.processando = true;
+        this.cancelarAtualizacao = false;
         this.listaDesatualizados.clear();
         this.logAtualizacao = "Iniciando verificação completa...\n";
 
@@ -175,6 +178,12 @@ public class ExtratorVM {
             int atual = 0;
 
             for (Curriculo c : locais) {
+
+                if (this.cancelarAtualizacao) {
+                    atualizarLogBatch(desktop, "\n⚠️ VERIFICAÇÃO INTERROMPIDA PELO UTILIZADOR!\n");
+                    break;
+                }
+
                 atual++;
                 final String nome = c.getNomeCompleto().length() > 30 ? c.getNomeCompleto().substring(0, 30) + "..." : c.getNomeCompleto();
                 final String progresso = "Checando " + atual + "/" + total + ": " + nome;
@@ -195,6 +204,12 @@ public class ExtratorVM {
     }
 
     @Command
+    public void cancelarProcessamentoAtualizacao() {
+        this.cancelarAtualizacao = true;
+        Clients.showNotification("Cancelando operação... Aguardando conclusão do item atual.", "warning", null, "middle-center", 3000);
+    }
+
+    @Command
     @NotifyChange({"listaDesatualizados", "processando", "logAtualizacao"})
     public void atualizarTodosDesatualizados() {
         if (listaDesatualizados.isEmpty()) {
@@ -203,6 +218,7 @@ public class ExtratorVM {
         }
 
         this.processando = true;
+        this.cancelarAtualizacao = false;
         this.logAtualizacao += "\n--------------------------\nIniciando atualização em massa...\n";
         final Desktop desktop = Executions.getCurrent().getDesktop();
         if (!desktop.isServerPushEnabled()) desktop.enableServerPush(true);
@@ -215,6 +231,12 @@ public class ExtratorVM {
             int count = 0;
 
             for (Curriculo c : paraAtualizar) {
+
+                if (cancelarAtualizacao) {
+                    atualizarLogBatch(desktop, "\n⚠️ ATUALIZAÇÃO INTERROMPIDA PELO UTILIZADOR!\n");
+                    break;
+                }
+
                 count++;
                 atualizarLogAtualizacao(desktop, "[" + count + "/" + total + "] Baixando " + c.getNomeCompleto() + "...");
 
@@ -507,6 +529,7 @@ public class ExtratorVM {
             return;
         }
         this.processando = true;
+        this.cancelarLote = false;
         this.logBatch = "📂 Arquivo: " + media.getName() + "\n";
 
         final Desktop desktop = Executions.getCurrent().getDesktop();
@@ -520,6 +543,12 @@ public class ExtratorVM {
         }
         this.logBatch += "✅ " + linhas.size() + " linhas. Iniciando...\n----------------\n";
         new Thread(() -> processarLote(desktop, linhas)).start();
+    }
+
+    @Command
+    public void cancelarProcessamentoLote() {
+        this.cancelarLote = true;
+        Clients.showNotification("Cancelando processamento do lote. O processo irá parar após o currículo atual.", "warning", null, "middle-center", 3000);
     }
 
     private List<String> lerArquivo(Media media) {
@@ -551,6 +580,12 @@ public class ExtratorVM {
         String login = (usuarioLogado != null) ? usuarioLogado.getLogin() : "ANONIMO";
 
         for (int i = 0; i < total; i++) {
+
+            if (this.cancelarLote) {
+                atualizarLogBatch(desktop, "\n⚠ PROCESSAMENTO INTERROMPIDO PELO UTILIZADOR!\n");
+                break;
+            }
+
             String dado = ids.get(i);
             try {
                 String idBusca = dado;

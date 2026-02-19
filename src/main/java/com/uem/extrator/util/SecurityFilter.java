@@ -32,8 +32,24 @@ public class SecurityFilter implements Filter {
 
         boolean isLoginPage = url.endsWith("login.zul");
 
-        if (usuarioLogado != null || isLoginPage) {
-            chain.doFilter(request, response); // deixa entrar
+        if (usuarioLogado != null) {
+            // cast para modelo de usuario
+            com.uem.extrator.model.Usuario usuario = (com.uem.extrator.model.Usuario) usuarioLogado;
+
+            // define as rotas restritas e administradoras
+            boolean isAreaRestrita = url.contains("/paginas/sistema") || url.contains("/paginas/ferramentas/config.zul");
+
+            if (isAreaRestrita && !usuario.isAdmin()) {
+                // usuario comum tenta acessar área de admin: redireciona para página principal
+                res.sendRedirect(req.getContextPath() + "/index.zul");
+                return;
+            }
+
+            // se tem permissão, deixa passar
+            chain.doFilter(request, response);
+        } else if (isLoginPage) {
+            // não está logado, mas está na página de login, deixa passar
+            chain.doFilter(request, response);
         } else {
             // nega acesso: manda para login
             res.sendRedirect(req.getContextPath() + "/login.zul");

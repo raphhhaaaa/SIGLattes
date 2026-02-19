@@ -179,4 +179,87 @@ public class RelatorioDAO {
     public List<Object[]> gerarRelatorioPorAno(String tipo) {
         return gerarRelatorio(tipo, "TODAS");
     }
+
+    public long contarTotalPesquisadores(String nomeInstituicao) {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        try {
+            boolean filtrarInstituicao = nomeInstituicao != null && !nomeInstituicao.equals("TODAS");
+
+            // Em vez de COUNT, selecionamos apenas a String do ID Lattes
+            StringBuilder hql = new StringBuilder("SELECT DISTINCT c.idLattes FROM Curriculo c ");
+
+            if (filtrarInstituicao) {
+                hql.append("JOIN c.atuacoes a JOIN a.instituicao i JOIN a.vinculos v WHERE upper(i.nomeInstituicao) = :nomeInst ");
+            }
+
+            // A query agora retorna uma Lista de Strings
+            Query<String> query = session.createQuery(hql.toString(), String.class);
+
+            if (filtrarInstituicao) {
+                query.setParameter("nomeInst", nomeInstituicao.toUpperCase());
+            }
+
+            List<String> ids = query.list();
+
+            // O Java conta o tamanho da lista
+            return ids != null ? ids.size() : 0L;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0L;
+        } finally {
+            if (session != null) session.close();
+        }
+    }
+
+    public long contarTotalProducao(String tipoRelatorio, String nomeInstituicao) {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        try {
+            boolean filtrarInstituicao = nomeInstituicao != null && !nomeInstituicao.equals("TODAS");
+            StringBuilder hql = new StringBuilder("SELECT COUNT(DISTINCT p.titulo) FROM Producao p JOIN p.curriculo c ");
+            String termoBusca = "";
+
+            switch (tipoRelatorio) {
+                case "ARTIGO": termoBusca = "%ARTIGO%"; break;
+                case "LIVRO": termoBusca = "%LIVRO%"; break;
+                case "EVENTO": termoBusca = "IGNORE"; break;
+                default: return 0L;
+            }
+
+            if (filtrarInstituicao) {
+                hql.append("JOIN c.atuacoes a JOIN a.instituicao i JOIN a.vinculos v WHERE upper(i.nomeInstituicao) = :nomeInst ");
+
+                if (termoBusca.equals("IGNORE")) {
+                    hql.append("AND (upper(p.tipo) LIKE '%EVENTO%' OR upper(p.tipo) LIKE '%CONGRESSO%') ");
+                } else {
+                    hql.append("AND upper(p.tipo) LIKE :termo ");
+                }
+                hql.append("AND p.ano >= v.anoInicio AND (v.anoFim IS NULL OR p.ano <= v.anoFim) ");
+            } else {
+                if (termoBusca.equals("IGNORE")) {
+                    hql.append("WHERE (upper(p.tipo) LIKE '%EVENTO%' OR upper(p.tipo) LIKE '%CONGRESSO%') ");
+                } else {
+                    hql.append("WHERE upper(p.tipo) LIKE :termo ");
+                }
+            }
+
+            Query<Long> query = session.createQuery(hql.toString(), Long.class);
+
+            if (filtrarInstituicao) {
+                query.setParameter("nomeInst", nomeInstituicao.toUpperCase());
+            }
+            if (!termoBusca.equals("IGNORE")) {
+                query.setParameter("termo", termoBusca);
+            }
+
+            Long total = query.uniqueResult();
+            return total != null ? total : 0L;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0L;
+        } finally {
+            if (session != null) session.close();
+        }
+    }
 }

@@ -56,6 +56,13 @@
                                                 disabled="@load(vm.processando)"
                                                 sclass="btn btn-success ml-2"
                                                 height="45px"/>
+
+                                        <button label="Parar Operação"
+                                                onClick="@command('cancelarProcessamentoAtualizacao')"
+                                                visible="@load(vm.processando)"
+                                                iconSclass="z-icon-stop"
+                                                sclass="btn btn-danger font-weight-bold ml-2"
+                                                height="45px"/>
                                     </hlayout>
                                 </div>
 

@@ -9,7 +9,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 @Entity
-@Table(name = "USUARIO", indexes = {
+@Table(name = "USUARIO", schema = "LATTESEXTRATOR", indexes = {
         @Index(name = "idx_usuario_login", columnList = "login", unique = true)
 })
 public class Usuario implements Serializable {

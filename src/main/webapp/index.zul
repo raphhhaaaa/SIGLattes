@@ -81,7 +81,7 @@
                                             <textbox value="@bind(vm.nomeInput)" placeholder="Nome igual ao CNPq" disabled="@load(vm.processando)" width="100%" sclass="form-control"/>
                                             <separator height="5px"/>
                                             <label value="Data de Nascimento:" sclass="font-weight-bold"/>
-                                            <datebox value="@bind(vm.dataNascimentoInput)" disabled="@load(vm.processando)" format="dd/MM/yyyy" width="200px" />
+                                            <datebox value="@bind(vm.dataNascimentoInput)" disabled="@load(vm.processando)" format="dd/MM/yyyy" width="200px" placeholder="DD/MM/AAAA" />
                                         </vlayout>
                                     </tabpanel>
 
@@ -90,6 +90,7 @@
                                             <div sclass="col-md-5">
                                                 <label value="Carregue um arquivo .txt:" sclass="font-weight-bold d-block mb-2"/>
                                                 <button label="Selecionar Arquivo TXT" upload="true,maxsize=5000" onUpload="@command('carregarArquivo', media=event.media)" disabled="@load(vm.processando)" iconSclass="z-icon-cloud-upload" sclass="btn btn-success btn-block"/>
+                                                <button label="Parar Processamento" onClick="@command('cancelarProcessamentoLote')" visible="@load(vm.processando)" iconSclass="z-icon-stop" sclass="btn btn-danger btn-block mt-2"/>
                                             </div>
                                             <div sclass="col-md-7">
                                                 <label value="Log de Processamento:" style="font-weight: bold; font-size: 12px;"/>
