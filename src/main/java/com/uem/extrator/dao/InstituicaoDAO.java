@@ -6,32 +6,41 @@ import org.hibernate.Session;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Retorna uma lista de Arrays, onde:
- * [0] = Nome da Instituição (String)
- * [1] = Quantidade de Ocorrências (Long)
- */
-
 public class InstituicaoDAO {
 
+    // Cache estático para evitar consultas repetitivas ao banco
+    private static List<Object[]> cacheInstituicoes = null;
+    private static long ultimaAtualizacao = 0;
+    // O cache expira a cada 30 minutos (ajuste se necessário)
+    private static final long TEMPO_CACHE = 30 * 60 * 1000;
+
     public List<Object[]> listarInstituicoesConsolidadas() {
+        if (cacheInstituicoes != null && (System.currentTimeMillis() - ultimaAtualizacao) < TEMPO_CACHE) {
+            return cacheInstituicoes;
+        }
+
         Session session = null;
         try {
             session = HibernateUtil.getSessionFactory().openSession();
 
-            String hql = "SELECT i.nomeInstituicao, COUNT(i) " +
-                    "FROM Instituicao i " +
-                    "WHERE i.nomeInstituicao IS NOT NULL " +
-                    "AND trim(i.nomeInstituicao) <> '' " +
-                    "AND (lower(i.nomeInstituicao) LIKE '%universidade%' " +
-                    "     OR lower(i.nomeInstituicao) LIKE '%instituto%' " +
-                    "     OR lower(i.nomeInstituicao) LIKE '%centro%' " +
-                    "     OR lower(i.nomeInstituicao) LIKE '%faculdade%') " +
-                    "GROUP BY i.nomeInstituicao " +
-                    "ORDER BY COUNT(i) DESC";
+            // Usamos SQL Nativo com índices.
+            // Importante: Tiramos o COUNT do banco se ele for o gargalo.
+            // O objetivo aqui é apenas os NOMES para o filtro.
+            String sql = "SELECT DISTINCT nm_instituicao, 0 " + // O '0' é apenas para manter o contrato do Object[]
+                    "FROM INSTITUICAO " +
+                    "WHERE nm_instituicao IS NOT NULL " +
+                    "AND (nm_instituicao LIKE 'UNIVERSIDADE%' " +
+                    "     OR nm_instituicao LIKE 'INSTITUTO%' " +
+                    "     OR nm_instituicao LIKE 'FACULDADE%' " +
+                    "     OR nm_instituicao LIKE 'CENTRO%') " +
+                    "ORDER BY nm_instituicao ASC";
 
-            return session.createQuery(hql, Object[].class).setReadOnly(true).list();
+            List<Object[]> resultados = session.createNativeQuery(sql).list();
 
+            cacheInstituicoes = resultados;
+            ultimaAtualizacao = System.currentTimeMillis();
+
+            return resultados;
         } catch (Exception e) {
             e.printStackTrace();
             return new ArrayList<>();
@@ -40,14 +49,17 @@ public class InstituicaoDAO {
         }
     }
 
-    // Metodo extra caso precise listar TODAS sem filtro de palavra-chave
+    // Método para limpar o cache manualmente (chame isso após uma nova extração massiva)
+    public static void limparCache() {
+        cacheInstituicoes = null;
+    }
+
     public List<Instituicao> listarTodas() {
         Session session = null;
         try {
             session = HibernateUtil.getSessionFactory().openSession();
-            // Traz até 1000 instituições ordenadas por nome
             return session.createQuery("FROM Instituicao i ORDER BY i.nomeInstituicao", Instituicao.class)
-                    .setMaxResults(1000)
+                    .setMaxResults(500) // Reduzi para 500 para ser mais leve
                     .list();
         } catch (Exception e) {
             e.printStackTrace();
@@ -56,5 +68,4 @@ public class InstituicaoDAO {
             if (session != null) session.close();
         }
     }
-
 }

@@ -17,11 +17,11 @@ public class RelatorioDAO {
 
             // Define o termo de busca base
             switch (tipoRelatorio) {
-                case "ARTIGO": termoBusca = "%ARTIGO%"; break;
-                case "LIVRO": termoBusca = "%LIVRO%"; break;
-                case "EVENTO": termoBusca = "IGNORE"; break;
-                case "DOUTORADO": termoBusca = "%DOUTORADO%"; break;
-                case "MESTRADO": termoBusca = "%MESTRADO%"; break;
+                case "ARTIGO": termoBusca = "ARTIGO"; break;
+                case "LIVRO": termoBusca = "LIVRO"; break;
+                case "EVENTO": termoBusca = "EVENTO"; break;
+                case "DOUTORADO": termoBusca = "DOUTORADO"; break;
+                case "MESTRADO": termoBusca = "MESTRADO"; break;
                 default: return new ArrayList<>();
             }
 
@@ -48,16 +48,16 @@ public class RelatorioDAO {
                         .append("WHERE upper(i.nomeInstituicao) = :nomeInst ");
 
                 if (tipoRelatorio.equals("DOUTORADO") || tipoRelatorio.equals("MESTRADO")) {
-                    hql.append("AND p.tipoFormacao LIKE :termo ");
+                    hql.append("AND p.tipoFormacao = :termo ");
                     // Para formação, usamos o ano de conclusão
                     hql.append("AND p.anoConclusao >= v.anoInicio ")
                             .append("AND (v.anoFim IS NULL OR p.anoConclusao <= v.anoFim) ");
                     hql.append("GROUP BY p.anoConclusao ORDER BY p.anoConclusao DESC");
                 } else {
-                    if (termoBusca.equals("IGNORE")) {
-                        hql.append("AND (p.tipo LIKE '%EVENTO%' OR p.tipo LIKE '%CONGRESSO%') ");
+                    if (termoBusca.equals("EVENTO")) {
+                        hql.append("AND (p.tipo = 'EVENTO' OR p.tipo = 'CONGRESSO') ");
                     } else {
-                        hql.append("AND p.tipo LIKE :termo ");
+                        hql.append("AND p.tipo = :termo ");
                     }
                     // Para produção, usamos o ano da produção
                     hql.append("AND p.ano >= v.anoInicio ")
@@ -68,13 +68,13 @@ public class RelatorioDAO {
             } else {
                 // QUERY SIMPLES (Todas as Instituições / Sem Filtro)
                 if (tipoRelatorio.equals("DOUTORADO") || tipoRelatorio.equals("MESTRADO")) {
-                    hql.append("SELECT f.anoConclusao, COUNT(f) FROM Formacao f WHERE f.tipoFormacao LIKE :termo GROUP BY f.anoConclusao ORDER BY f.anoConclusao DESC");
+                    hql.append("SELECT f.anoConclusao, COUNT(f) FROM Formacao f WHERE f.tipoFormacao = :termo GROUP BY f.anoConclusao ORDER BY f.anoConclusao DESC");
                 } else {
                     hql.append("SELECT p.ano, COUNT(DISTINCT p.hashTitulo) FROM Producao p ");
-                    if (termoBusca.equals("IGNORE")) {
-                        hql.append("WHERE (p.tipo LIKE '%EVENTO%' OR p.tipo LIKE '%CONGRESSO%') ");
+                    if (termoBusca.equals("EVENTO")) {
+                        hql.append("WHERE (p.tipo = 'EVENTO' OR p.tipo = 'CONGRESSO') ");
                     } else {
-                        hql.append("WHERE p.tipo LIKE :termo ");
+                        hql.append("WHERE p.tipo = :termo ");
                     }
                     hql.append("GROUP BY p.ano ORDER BY p.ano DESC");
                 }
@@ -109,11 +109,11 @@ public class RelatorioDAO {
             boolean isFormacao = tipoRelatorio.equals("DOUTORADO") || tipoRelatorio.equals("MESTRADO");
 
             switch (tipoRelatorio) {
-                case "ARTIGO": termoBusca = "%ARTIGO%"; break;
-                case "LIVRO": termoBusca = "%LIVRO%"; break;
-                case "EVENTO": termoBusca = "%EVENTO%"; break;
-                case "DOUTORADO": termoBusca = "%DOUTORADO%"; break;
-                case "MESTRADO" : termoBusca = "%MESTRADO%"; break;
+                case "ARTIGO": termoBusca = "ARTIGO"; break;
+                case "LIVRO": termoBusca = "LIVRO"; break;
+                case "EVENTO": termoBusca = "EVENTO"; break;
+                case "DOUTORADO": termoBusca = "DOUTORADO"; break;
+                case "MESTRADO" : termoBusca = "MESTRADO"; break;
                 default: return new ArrayList<>();
             }
 
@@ -133,12 +133,12 @@ public class RelatorioDAO {
 
             // 4. Filtros de Tipo
             if (isFormacao) {
-                hql.append("AND p.tipoFormacao LIKE :termo ");
+                hql.append("AND p.tipoFormacao = :termo ");
             } else {
                 if (termoBusca.equals("IGNORE")) {
-                    hql.append("AND (p.tipo LIKE '%EVENTO%' OR p.tipo LIKE '%CONGRESSO%') ");
+                    hql.append("AND (p.tipo = 'EVENTO' OR p.tipo = 'CONGRESSO') ");
                 } else {
-                    hql.append("AND p.tipo LIKE :termo ");
+                    hql.append("AND p.tipo = :termo ");
                 }
             }
 
@@ -184,24 +184,27 @@ public class RelatorioDAO {
     public long contarTotalPesquisadores(String nomeInstituicao) {
         Session session = HibernateUtil.getSessionFactory().openSession();
         try {
+            if (nomeInstituicao == null || nomeInstituicao.equals("TODAS")) {
+                return ((Number) session.createNativeQuery("SELECT COUNT(*) FROM CURRICULO").getSingleResult()).longValue();
+            }
+
             boolean filtrarInstituicao = nomeInstituicao != null && !nomeInstituicao.equals("TODAS");
 
-            // Em vez de COUNT, selecionamos apenas a String do ID Lattes
-            StringBuilder hql = new StringBuilder("SELECT COUNT(DISTINCT c.idLattes) FROM Curriculo c ");
-
-            if (filtrarInstituicao) {
-                hql.append("JOIN c.atuacoes a JOIN a.instituicao i JOIN a.vinculos v WHERE upper(i.nomeInstituicao) = :nomeInst ");
+            if (!filtrarInstituicao) {
+                // Se não tem filtro, peça ao banco apenas o número total de linhas.
+                // É 1000x mais rápido que fazer DISTINCT.
+                return (Long) session.createQuery("SELECT COUNT(c.id) FROM Curriculo c").uniqueResult();
             }
 
-            // A query agora retorna uma Lista de Strings
+            // Se tiver filtro, mantenha a lógica que você já tem, mas certifique-se que usa o COUNT(c.id)
+            StringBuilder hql = new StringBuilder("SELECT COUNT(DISTINCT c.id) FROM Curriculo c ");
+            hql.append("JOIN c.atuacoes a JOIN a.instituicao i JOIN a.vinculos v ");
+            hql.append("WHERE upper(i.nomeInstituicao) = :nomeInst");
+
             Query<Long> query = session.createQuery(hql.toString(), Long.class);
-
-            if (filtrarInstituicao) {
-                query.setParameter("nomeInst", nomeInstituicao.toUpperCase());
-            }
+            query.setParameter("nomeInst", nomeInstituicao.toUpperCase());
 
             Long total = query.uniqueResult();
-
             return total != null ? total : 0L;
 
         } catch (Exception e) {
@@ -220,26 +223,26 @@ public class RelatorioDAO {
             String termoBusca = "";
 
             switch (tipoRelatorio) {
-                case "ARTIGO": termoBusca = "%ARTIGO%"; break;
-                case "LIVRO": termoBusca = "%LIVRO%"; break;
-                case "EVENTO": termoBusca = "IGNORE"; break;
+                case "ARTIGO": termoBusca = "ARTIGO"; break;
+                case "LIVRO": termoBusca = "LIVRO"; break;
+                case "EVENTO": termoBusca = "EVENTO"; break;
                 default: return 0L;
             }
 
             if (filtrarInstituicao) {
                 hql.append("JOIN p.curriculo c JOIN c.atuacoes a JOIN a.instituicao i JOIN a.vinculos v WHERE upper(i.nomeInstituicao) = :nomeInst ");
 
-                if (termoBusca.equals("IGNORE")) {
-                    hql.append("AND (p.tipo LIKE '%EVENTO%' OR p.tipo LIKE '%CONGRESSO%') ");
+                if (termoBusca.equals("EVENTO")) {
+                    hql.append("AND (p.tipo = 'EVENTO' OR p.tipo = 'CONGRESSO') ");
                 } else {
-                    hql.append("AND p.tipo LIKE :termo ");
+                    hql.append("AND p.tipo = :termo ");
                 }
                 hql.append("AND p.ano >= v.anoInicio AND (v.anoFim IS NULL OR p.ano <= v.anoFim) ");
             } else {
-                if (termoBusca.equals("IGNORE")) {
-                    hql.append("WHERE (p.tipo LIKE '%EVENTO%' OR p.tipo LIKE '%CONGRESSO%') ");
+                if (termoBusca.equals("EVENTO")) {
+                    hql.append("WHERE (p.tipo = 'EVENTO' OR p.tipo = 'CONGRESSO') ");
                 } else {
-                    hql.append("WHERE p.tipo LIKE :termo ");
+                    hql.append("WHERE p.tipo = :termo ");
                 }
             }
 
@@ -248,7 +251,7 @@ public class RelatorioDAO {
             if (filtrarInstituicao) {
                 query.setParameter("nomeInst", nomeInstituicao.toUpperCase());
             }
-            if (!termoBusca.equals("IGNORE")) {
+            if (!termoBusca.equals("EVENTO")) {
                 query.setParameter("termo", termoBusca);
             }
 
