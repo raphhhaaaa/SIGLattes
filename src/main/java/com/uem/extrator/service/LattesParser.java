@@ -6,12 +6,16 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
+
+import javax.mail.Message;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.StringReader;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import com.uem.extrator.model.Curriculo;
+import java.security.MessageDigest;
+import java.math.BigInteger;
 
 public class LattesParser {
 
@@ -123,6 +127,7 @@ public class LattesParser {
                 Producao p = new Producao();
                 p.setTipo("ARTIGO");
                 p.setTitulo(dados.getAttribute("TITULO-DO-ARTIGO"));
+                p.setHashTitulo(gerarHash(dados.getAttribute("TITULO-DO-ARTIGO")));
                 p.setAno(parseIntSafe(dados.getAttribute("ANO-DO-ARTIGO")));
                 p.setPais(dados.getAttribute("PAIS-DE-PUBLICACAO"));
                 p.setIdioma(dados.getAttribute("IDIOMA"));
@@ -154,6 +159,7 @@ public class LattesParser {
                 Producao p = new Producao();
                 p.setTipo("LIVRO");
                 p.setTitulo(dados.getAttribute("TITULO-DO-LIVRO"));
+                p.setHashTitulo(gerarHash(dados.getAttribute("TITULO-DO-LIVRO")));
                 p.setAno(parseIntSafe(dados.getAttribute("ANO")));
                 p.setPais(dados.getAttribute("PAIS-DE-PUBLICACAO"));
                 p.setIdioma(dados.getAttribute("IDIOMA"));
@@ -176,6 +182,7 @@ public class LattesParser {
                 Producao p = new Producao();
                 p.setTipo("EVENTO");
                 p.setTitulo(dados.getAttribute("TITULO-DO-TRABALHO"));
+                p.setHashTitulo(gerarHash(dados.getAttribute("TITULO-DO-TRABALHO")));
                 p.setAno(parseIntSafe(dados.getAttribute("ANO-DO-TRABALHO")));
                 p.setPais(dados.getAttribute("PAIS-DO-EVENTO"));
                 p.setNatureza(dados.getAttribute("NATUREZA"));
@@ -566,5 +573,22 @@ public class LattesParser {
         nova.getVinculos().add(v);
         cv.getAtuacoes().add(nova);
         return nova;
+    }
+
+    private String gerarHash(String texto) {
+        if (texto == null || texto.isEmpty()) return null;
+        try {
+            String limpo = texto.toLowerCase().replaceAll("\\s+", "");
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] messageDigest = md.digest(limpo.getBytes());
+            BigInteger no = new BigInteger(1, messageDigest);
+            String hashText = no.toString(16);
+            while (hashText.length() < 32) {
+                hashText = "0" + hashText;
+            }
+            return hashText;
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

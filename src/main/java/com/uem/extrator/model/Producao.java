@@ -8,7 +8,8 @@ import java.util.Date;
 @Table(name = "PRODUCAO", schema = "LATTESEXTRATOR", indexes = {
         @Index(name = "idx_prod_tipo", columnList = "tp_producao"), // Acelera filtro por Artigo/Evento
         @Index(name = "idx_prod_ano", columnList = "ano_producao"),   // Acelera ordenação por ano
-        @Index(name = "idx_prod_curr", columnList = "curriculo_id") // por id
+        @Index(name = "idx_prod_curr", columnList = "curriculo_id"), // por id
+        @Index(name = "idx_prod_hash", columnList = "hash_titulo")
 })
 
 public class Producao {
@@ -27,6 +28,9 @@ public class Producao {
 
     @Column(name = "ds_titulo", length = 1000)
     private String titulo;
+
+    @Column(name = "hash_titulo", length = 32)
+    private String hashTitulo;
 
     @Column(name = "ano_producao")
     private Integer ano;
@@ -82,6 +86,9 @@ public class Producao {
 
     public String getTitulo() { return titulo; }
     public void setTitulo(String titulo) { this.titulo = titulo; }
+
+    public String getHashTitulo() { return hashTitulo; }
+    public void setHashTitulo(String hashTitulo) { this.hashTitulo = hashTitulo; }
 
     public Integer getAno() { return ano; }
     public void setAno(Integer ano) { this.ano = ano; }
