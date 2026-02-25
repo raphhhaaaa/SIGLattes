@@ -58,6 +58,9 @@
                                     <tab label="Por CPF" iconSclass="z-icon-list-alt" disabled="@load(vm.processando)"/>
                                     <tab label="Por Nome/Data" iconSclass="z-icon-user" disabled="@load(vm.processando)"/>
                                     <tab label="Extração em Lote (TXT)" iconSclass="z-icon-upload" disabled="@load(vm.processando)"/>
+                                    <zk if="${sessionScope.usuario_logado.admin}">
+                                        <tab label="Upload de XML" iconSclass="z-icon-file-archive-o" disabled="@load(vm.processando)"/>
+                                    </zk>
                                 </tabs>
 
                                 <tabpanels>
@@ -99,6 +102,25 @@
                                             </div>
                                         </div>
                                     </tabpanel>
+
+                                    <zk if="${sessionScope.usuario_logado.admin}">
+                                        <tabpanel style="padding: 20px;">
+                                            <div sclass="alert alert-warning mb-3">
+                                                <n:i class="fa fa-exclamation-triangle"/>
+                                                <label value=" Área restrita a Administradores." style="font-weight: bold;"/>
+                                                <n:br/>
+                                                <label value="Utilize esta ferramenta como plano de contingência caso o CNPq bloqueie o servidor ou fique offline. Faça o upload do arquivo .zip ou .xml original do currículo."/>
+                                            </div>
+                                            <vlayout spacing="10px">
+                                                <button label="Selecionar Arquivo XML / ZIP" upload="true,maxsize=10240"
+                                                        onUpload="@command('uploadXmlZip', media=event.media)"
+                                                        disabled="@load(vm.processando)"
+                                                        iconSclass="z-icon-upload"
+                                                        sclass="btn btn-warning"/>
+                                            </vlayout>
+                                        </tabpanel>
+                                    </zk>
+
                                 </tabpanels>
                             </tabbox>
 
@@ -107,7 +129,7 @@
                                 <hlayout spacing="10px" style="padding-top: 5px;">
                                     <button label="Pesquisar" onClick="@command('buscarPorId')" visible="@load(vm.abaSelecionada eq 0)" disabled="@load(vm.processando)" sclass="btn btn-outline-primary" iconSclass="z-icon-search"/>
                                     <button label="Pesquisar" onClick="@command('buscarPesquisador')" visible="@load(vm.abaSelecionada eq 1 or vm.abaSelecionada eq 2)" disabled="@load(vm.processando)" sclass="btn btn-outline-primary" iconSclass="z-icon-search"/>
-                                    <button label="Limpar Tudo" onClick="@command('limpar')" visible="@load(vm.abaSelecionada le 2)" disabled="@load(vm.processando)" sclass="btn btn-outline-secondary" iconSclass="z-icon-eraser"/>
+                                    <button label="Limpar Tudo" onClick="@command('limpar')" visible="@load(vm.abaSelecionada ne 3)" disabled="@load(vm.processando)" sclass="btn btn-outline-secondary" iconSclass="z-icon-eraser"/>
                                 </hlayout>
 
                                 <vlayout visible="@load(vm.barraVisivel)" spacing="0">

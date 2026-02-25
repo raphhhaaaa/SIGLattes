@@ -545,6 +545,102 @@ public class ExtratorVM {
         new Thread(() -> processarLote(desktop, linhas)).start();
     }
 
+    // UPLOAD MANUAL (XML/ZIP)
+    @Command
+    @NotifyChange({"logStatus", "barraVisivel", "processando", "curriculo", "resumoExpandido"})
+    public void uploadXmlZip(@BindingParam("media") Media media) {
+        if (media == null) return;
+
+        // segurança e auditoria
+        if (usuarioLogado == null || !usuarioLogado.isAdmin()) {
+            Clients.showNotification("Acesso negado: Apenas administradores podem ter acesso a essa funcionalidade.", "error", null, "middle-center", 3000);
+            return;
+        }
+
+        String nomeArquivo = media.getName().toLowerCase();
+        if (!nomeArquivo.endsWith(".xml") && !nomeArquivo.endsWith(".zip")) {
+            Clients.showNotification("Envie um arquivo .xml ou .zip", "warning", null, "middle-center", 3000);
+            return;
+        }
+
+        this.curriculo = null;
+        this.resumoExpandido = false;
+        final Desktop desktop = Executions.getCurrent().getDesktop();
+        if (!desktop.isServerPushEnabled()) desktop.enableServerPush(true);
+
+        this.processando = true;
+        this.logStatus = "Processando arquivo: " + media.getName() + "...";
+        this.barraVisivel = true;
+
+        final String login = usuarioLogado.getLogin();
+
+        // copia os dados do arquivo em memória de forma segura
+        final boolean isBinary = media.isBinary();
+        final byte[] byteData = isBinary ? media.getByteData() : null;
+        final String stringData = !isBinary ? media.getStringData() : null;
+
+        new Thread(() -> {
+            try {
+                atualizarLog(desktop, "Descompactando/Lendo arquivo...");
+                String xmlConteudo = "";
+
+                // Decodifica o XML ou descompacta o ZIP
+                if (nomeArquivo.endsWith(".zip")) {
+                    if (!isBinary) throw new Exception("O navegador não enviou o ZIP em formato binário.");
+
+                    try (java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(new java.io.ByteArrayInputStream(byteData))) {
+                        java.util.zip.ZipEntry entry = zis.getNextEntry();
+                        if (entry != null) {
+                            xmlConteudo = new String(zis.readAllBytes(), StandardCharsets.ISO_8859_1);
+                        } else {
+                            throw new Exception("Arquivo ZIP vazio ou inválido.");
+                        }
+                    }
+                } else {
+                    if (isBinary) {
+                        xmlConteudo = new String(byteData, StandardCharsets.ISO_8859_1); // Padrão do Lattes
+                    } else {
+                        xmlConteudo = stringData;
+                    }
+                }
+
+                atualizarLog(desktop, "Extraindo ID Lattes...");
+                String idLattes = "0000000000000000"; // Fallback caso não encontre
+                java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("NUMERO-IDENTIFICADOR=\"(\\d{16})\"").matcher(xmlConteudo);
+                if (matcher.find()) {
+                    idLattes = matcher.group(1);
+                }
+
+                atualizarLog(desktop, "Lendo estrutura do Currículo...");
+                com.uem.extrator.service.LattesParser parser = new com.uem.extrator.service.LattesParser();
+                Curriculo c = parser.parse(xmlConteudo, idLattes);
+
+                if (c != null) {
+                    atualizarLog(desktop, "Salvando dados no banco...");
+                    curriculoDAO.salvar(c);
+
+                    // Atualiza a tela local com o currículo
+                    Executions.schedule(desktop, event -> {
+                        this.curriculo = c;
+                        org.zkoss.bind.BindUtils.postNotifyChange(null, null, ExtratorVM.this, "curriculo");
+                        atualizarDashboard();
+                    }, new Event("onUpdate"));
+
+                    // Audita como UPLOAD MANUAL
+                    AuditLogService.registrarExtracao("UPLOAD_MANUAL", login, true, c.getIdLattes(), c.getNomeCompleto());
+                    finalizarProcesso(desktop, "Currículo salvo com sucesso via Upload!", true);
+                } else {
+                    AuditLogService.registrarExtracao("UPLOAD_MANUAL", login, false, idLattes, "Falha na conversão do XML");
+                    finalizarProcesso(desktop, "Erro: Não foi possível estruturar o XML.", false);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                AuditLogService.registrarExtracao("UPLOAD_MANUAL", login, false, "N/A", "ERRO: " + e.getMessage());
+                finalizarProcesso(desktop, "Falha técnica ao processar arquivo: " + e.getMessage(), false);
+            }
+        }).start();
+    }
+
     @Command
     public void cancelarProcessamentoLote() {
         this.cancelarLote = true;
@@ -601,8 +697,16 @@ public class ExtratorVM {
                 }
                 if (idBusca.length() != 16) { erro++; continue; }
 
+                // -- verifica o id já existe no banco, se existir, pula, se não, prossegue.
+                if (curriculoDAO.existe(idBusca)) {
+                    sucesso++;
+                    atualizarLogBatch(desktop, "⏩ ["+(i+1)+"/"+total+"] ID " + idBusca + " já cadastrado. Pulando...\n");
+                    continue;
+                }
+
                 atualizarLogBatch(desktop, "["+(i+1)+"/"+total+"] ID "+idBusca+"...");
                 Curriculo c = lattesService.getCurriculo(idBusca);
+
                 if (c!=null) {
                     curriculoDAO.salvar(c);
                     sucesso++;

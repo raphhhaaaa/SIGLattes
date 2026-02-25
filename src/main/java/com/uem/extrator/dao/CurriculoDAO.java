@@ -138,12 +138,32 @@ public class CurriculoDAO {
             if (c != null) {
                 org.hibernate.Hibernate.initialize(c.getProducoes());
                 org.hibernate.Hibernate.initialize(c.getAtuacoes());
+
+                for (com.uem.extrator.model.Atuacao atuacao : c.getAtuacoes()) {
+                    org.hibernate.Hibernate.initialize(atuacao.getVinculos());
+                    org.hibernate.Hibernate.initialize(atuacao.getAtividades());
+                }
             }
 
             return c;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
+        } finally {
+            session.close();
+        }
+    }
+
+    public boolean existe(String idLattes) {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        try {
+            Long count = session.createQuery("SELECT COUNT(c) FROM Curriculo c WHERE c.idLattes = :id", Long.class)
+                    .setParameter("id", idLattes)
+                    .uniqueResult();
+            return count != null && count > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
         } finally {
             session.close();
         }

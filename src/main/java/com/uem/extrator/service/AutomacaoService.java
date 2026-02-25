@@ -301,7 +301,7 @@ public class AutomacaoService {
         html.append("</div>");
 
         // envia e marca como feito
-        EmailService.getInstance().enviarAlerta("Relatório Semanal de Monitoramnto", html.toString());
+        EmailService.getInstance().enviarAlerta("Relatório Semanal de Monitoramento", html.toString());
 
         try (FileWriter writer = new FileWriter(controle)) {
             writer.write(hoje.toString()); // salvar a data atual no arquivo

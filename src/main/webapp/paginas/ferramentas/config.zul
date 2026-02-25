@@ -243,12 +243,12 @@
                     <div sclass="card shadow-sm border-0 h-100">
                         <div sclass="card-header bg-danger border-bottom-0 pt-3 pb-0">
                             <n:h6 class="text-white text-uppercase font-weight-bold" style="font-size: 0.85rem;">
-                                <n:i class="fa-solid fa-shield-halved mr-1 text-white"></n:i> Segurança e Autenticação (EM DESENVOLVIMENTO)
+                                <n:i class="fa-solid fa-shield-halved mr-1 text-white"></n:i> Segurança e Autenticação
                             </n:h6>
                         </div>
                         <div sclass="card-body pt-3">
 
-                            <n:h6 class="font-weight-bold mb-2" style="font-size: 0.9rem; color: #495057;">Tipo de Autenticação</n:h6>
+                            <n:h6 class="font-weight-bold mb-2" style="font-size: 0.9rem; color: #495057;">Tipo de Autenticação (EM DESENVOLVIMENTO)</n:h6>
                             <div sclass="mb-4 bg-light p-2 rounded border">
                                 <radiogroup id="authGroup" selectedItem="@bind(vm.authType)">
                                     <div sclass="d-flex flex-column">

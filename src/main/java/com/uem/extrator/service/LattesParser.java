@@ -6,12 +6,12 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.StringReader;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import com.uem.extrator.model.Curriculo;
 
 public class LattesParser {
 
@@ -46,7 +46,13 @@ public class LattesParser {
             if (nList.getLength() > 0) {
                 Element dados = (Element) nList.item(0);
                 cv.setNomeCompleto(dados.getAttribute("NOME-COMPLETO"));
-                cv.setNomeCitacao(dados.getAttribute("NOME-EM-CITACOES-BIBLIOGRAFICAS"));
+                // proteção de tamanho
+                String nomeCitacao = dados.getAttribute("NOME-EM-CITACOES-BIBLIOGRAFICAS");
+                if (nomeCitacao != null && nomeCitacao.length() > 1000) {
+                    nomeCitacao = nomeCitacao.substring(0, 995) + "...";
+                }
+                //                          //
+                cv.setNomeCitacao(nomeCitacao);
                 cv.setOrcid(dados.getAttribute("ORCID-ID"));
 
                 NodeList nResumo = dados.getElementsByTagName("RESUMO-CV");
@@ -92,7 +98,7 @@ public class LattesParser {
                     if ((nomeCursoStr == null || nomeCursoStr.isEmpty()) && tagName.equals("POS-DOUTORADO")) {
                         nomeCursoStr = "Pós-Doutorado em Pesquisa";
                     }
-                    formacao.setNomeCurso(tratarCurso(nomeCursoStr));
+                    formacao.setNomeCurso(tratarCurso(nomeCursoStr, elementoFormacao));
                     formacao.setStatus(elementoFormacao.getAttribute("STATUS-DO-CURSO"));
                     formacao.setAnoInicio(parseIntSafe(elementoFormacao.getAttribute("ANO-DE-INICIO")));
                     formacao.setAnoConclusao(parseIntSafe(elementoFormacao.getAttribute("ANO-DE-CONCLUSAO")));
@@ -120,7 +126,13 @@ public class LattesParser {
                 p.setAno(parseIntSafe(dados.getAttribute("ANO-DO-ARTIGO")));
                 p.setPais(dados.getAttribute("PAIS-DE-PUBLICACAO"));
                 p.setIdioma(dados.getAttribute("IDIOMA"));
-                p.setDoi(dados.getAttribute("DOI"));
+                // Tratamento de DOIs gigantes
+                String doiLattes = dados.getAttribute("DOI");
+                if (doiLattes != null && doiLattes.length() > 200) {
+                    doiLattes = doiLattes.substring(0, 195) + "...";
+                }
+                p.setDoi(doiLattes);
+                //                            //
                 if (detalhe != null) {
                     p.setNomeVeiculo(detalhe.getAttribute("TITULO-DO-PERIODICO-OU-REVISTA"));
                     p.setIsbnIssn(detalhe.getAttribute("ISSN"));
@@ -194,9 +206,12 @@ public class LattesParser {
                 Element elVinculo = (Element) listaVinculos.item(j);
                 Vinculo vinculo = new Vinculo();
                 vinculo.setTipoVinculo(elVinculo.getAttribute("OUTRO-VINCULO-INFORMADO"));
-                vinculo.setDescEnquadramento(elVinculo.getAttribute("OUTRAS-INFORMACOES"));
+                // passa o conteudo por um metodo de sanitização de dados antes de setar //
+                vinculo.setDescEnquadramento(limparTextoLongo(elVinculo.getAttribute("OUTRAS-INFORMACOES"), 2000));
+                // --------------------------------------------------------------------- //
                 vinculo.setDescCargaHoraria(elVinculo.getAttribute("CARGA-HORARIA-SEMANAL"));
-                String flag = elVinculo.getAttribute("FLAG-VINCULO-EMPREGATICIO");
+                String flag = elVinculo.getAttribute("FLAG-VINCULO-E" +
+                        "MPREGATICIO");
                 vinculo.setFlagVinculoEmpregaticio("SIM".equalsIgnoreCase(flag) ? "S" : "N");
                 vinculo.setAnoInicio(parseIntSafe(elVinculo.getAttribute("ANO-INICIO")));
                 vinculo.setMesInicio(parseIntSafe(elVinculo.getAttribute("MES-INICIO")));
@@ -375,18 +390,128 @@ public class LattesParser {
 
     private Instituicao tratarInstituicao(String nomeInst) {
         if (nomeInst == null || nomeInst.trim().isEmpty()) {
-            return null;
+            nomeInst = "INSTITUIÇÃO NÃO INFORMADA";
         }
         Instituicao inst = new Instituicao();
         inst.setNomeInstituicao(nomeInst);
         return inst;
     }
 
-    private Curso tratarCurso(String nomeCurso) {
+    private Curso tratarCurso(String nomeCurso, Element elementoFormacao) {
         if (nomeCurso == null || nomeCurso.trim().isEmpty()) {
             return null;
         }
-        return new Curso(nomeCurso);
+
+        String nomeLimpo = limparString(nomeCurso);
+
+        // se após a limpeza sobrou nada ou se era só um texto gigante
+        if (nomeLimpo.isEmpty() || nomeLimpo.length() >= 15) {
+            return new Curso("Outros / Nome não padronizado");
+        }
+        Curso curso = new Curso(nomeLimpo);
+
+        // --- NOVA LÓGICA: EXTRAIR AS ÁREAS DE CONHECIMENTO ---
+        if (elementoFormacao != null) {
+            NodeList nAreas = elementoFormacao.getElementsByTagName("AREAS-DO-CONHECIMENTO");
+            if (nAreas != null && nAreas.getLength() > 0) {
+                Element areaRoot = (Element) nAreas.item(0);
+                NodeList areasList = areaRoot.getElementsByTagName("AREA-DO-CONHECIMENTO-1");
+
+                if (areasList != null && areasList.getLength() > 0) {
+                    Element areaEl = (Element) areasList.item(0);
+
+                    String grandeArea = areaEl.getAttribute("NOME-GRANDE-AREA-DO-CONHECIMENTO");
+                    String area = areaEl.getAttribute("NOME-DA-AREA-DO-CONHECIMENTO");
+                    String subArea = areaEl.getAttribute("NOME-DA-SUB-AREA-DO-CONHECIMENTO");
+                    String especialidade = areaEl.getAttribute("NOME-DA-ESPECIALIDADE");
+
+                    // Atribui os valores ao curso caso eles existam no XML
+                    if (grandeArea != null && !grandeArea.isEmpty()) curso.setNomeGrandeArea(capitalizarPalavras(grandeArea));
+                    if (area != null && !area.isEmpty()) curso.setNomeArea(capitalizarPalavras(area));
+                    if (subArea != null && !subArea.isEmpty()) curso.setNomeSubArea(capitalizarPalavras(subArea));
+                    if (especialidade != null && !especialidade.isEmpty()) curso.setNomeEspecialidade(capitalizarPalavras(especialidade));
+                }
+            }
+        }
+        return curso;
+    }
+
+    // -- METODO DE HIGIENIZAÇÃO DE STRINGS --
+    private String limparString(String texto) {
+        String limpo = texto;
+
+        // resolve entidades HTML comuns
+        limpo = limpo.replace("&quot;", "\"")
+                .replace("&#09;", " ") // TABs
+                .replace("&amp;", "&")
+                .replace("&#10;", " ") // quebra de linhas
+                .replace("&apos;", "'");
+
+        // remove sujeiras (ex: ?Preceptoria...?)
+        limpo = limpo.replace("?", "");
+
+        // regex: remove pontuações estranhas, pípes, ou números de listas soltos NO INICIO da string
+        // Explicando a Regex: ^ significa "no início". Vai remover números soltos, hífens, pipes, aspas ou pontos no começo.
+        limpo = limpo.replaceAll("^(?:\\d+[a-zA-Zº°\\.\\-]*\\s*)+", "") // Remove coisas como "1.5 ", "2a ", "8 º "
+                .replaceAll("^['\"\\|\\-\\.\\s]+", ""); // Remove ', ", |, -, . ou espaços soltos no começo
+
+        // regex: remove aspas ou espaços isoladas NO FINAL da string
+        limpo = limpo.replaceAll("['\"\\s]+$", "");
+
+        // ajuste de capitalização (para padrozinar "DESIGN" ou "design" para "Design"
+        limpo = capitalizarPalavras(limpo);
+
+        return limpo.trim();
+    }
+
+    private String limparTextoLongo(String texto, int limiteMaximo) {
+        if (texto == null || texto.trim().isEmpty()) {
+            return null;
+        }
+
+        // converte entidades HTML e remove quebras de linha/tabs
+        String limpo = texto.replace("&#10;", " ")   // Quebra de linha (Enter)
+                .replace("&#09;", " ")   // Tabulação (Tab)
+                .replace("&quot;", "\"")
+                .replace("&apos;", "'")
+                .replace("&amp;", "&");
+
+        // colapsa múltiplos espaços gerados pela limpeza acima para apenas 1 espaço
+        limpo = limpo.replaceAll("\\s+", " ").trim();
+
+        // aplica limite de caracteres de segurança para não quebrar o banco de dados
+        if (limpo.length() > limiteMaximo) {
+            limpo = limpo.substring(0, limiteMaximo - 5) + "...";
+        }
+
+        return limpo;
+    }
+
+    private String capitalizarPalavras(String texto) {
+        if (texto == null || texto.trim().isEmpty()) {
+            return null; // Retorna nulo se for só espaço em branco para não sujar o banco
+        }
+
+        // 1. Substitui os sublinhados irritantes do CNPq por espaços normais
+        texto = texto.replace("_", " ");
+
+        StringBuilder resultado = new StringBuilder();
+        boolean capitalizarProxima = true;
+
+        for (char c : texto.toLowerCase().toCharArray()) {
+            // Se for espaço ou hífen, a próxima letra será maiúscula
+            if (Character.isSpaceChar(c) || c == '-') {
+                capitalizarProxima = true;
+            } else if (capitalizarProxima) {
+                // Força a letra a ficar maiúscula
+                c = Character.toTitleCase(c);
+                capitalizarProxima = false;
+            }
+            resultado.append(c);
+        }
+
+        // Retorna o texto formatado e sem espaços sobrando nas pontas
+        return resultado.toString().trim();
     }
 
     private void ordenarAtividades(Curriculo cv) {
