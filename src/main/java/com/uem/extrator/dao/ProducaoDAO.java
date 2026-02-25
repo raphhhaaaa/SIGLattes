@@ -73,7 +73,7 @@ public class ProducaoDAO {
                 query.setParameter("nomeInst", nomeInstituicao);
             }
 
-            query.setMaxResults(2000); // Limite para manter a performance
+            query.setMaxResults(100); // Limite para manter a performance
 
             return query.list();
         } catch (Exception e) {
