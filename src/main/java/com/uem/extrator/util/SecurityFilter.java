@@ -37,7 +37,9 @@ public class SecurityFilter implements Filter {
             com.uem.extrator.model.Usuario usuario = (com.uem.extrator.model.Usuario) usuarioLogado;
 
             // define as rotas restritas e administradoras
-            boolean isAreaRestrita = url.contains("/paginas/sistema") || url.contains("/paginas/ferramentas/config.zul");
+            boolean isAreaRestrita = url.contains("/paginas/sistema")
+                    || url.contains("/paginas/ferramentas/config.zul")
+                    || url.contains("/paginas/relatorio/consultaSql.zul");
 
             if (isAreaRestrita && !usuario.isAdmin()) {
                 // usuario comum tenta acessar área de admin: redireciona para página principal

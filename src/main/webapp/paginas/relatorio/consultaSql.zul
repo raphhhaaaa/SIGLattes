@@ -1,0 +1,90 @@
+<?page title="Consulta SQL Avançada" contentType="text/html;charset=UTF-8"?>
+<zk xmlns="http://www.zkoss.org/2005/zul" xmlns:n="native">
+    <window apply="org.zkoss.bind.BindComposer"
+            viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ConsultaSqlVM')"
+            hflex="1" vflex="1" style="padding: 20px; background-color: #f4f6f9;">
+
+        <n:div class="d-flex justify-content-between align-items-center mb-2"/>
+        <n:div class="d-flex align-items-center"/>
+        <button iconSclass="fas fa-arrow-left" sclass="btn btn-outline-secondary btn-sm mr-3"
+                tooltiptext="Voltar ao Início" onClick='Executions.sendRedirect("/index.zul")'
+                style="border-radius: 5px; font-weight: 500;" label=" Voltar"/>
+
+        <n:div class="d-flex justify-content-between align-items-center mb-3">
+            <n:h3 class="m-0 text-dark" style="font-weight: 600; font-size: 1.5rem;">
+                <n:i class="fas fa-database text-primary mr-2"></n:i> Console SQL
+            </n:h3>
+            <span sclass="badge badge-danger p-2 shadow-sm" tooltiptext="Acesso restrito. Cuidado ao manipular dados.">
+                <n:i class="fas fa-shield-alt mr-1"></n:i> Nível Administrador
+            </span>
+        </n:div>
+
+        <div sclass="card border-0 shadow-sm mb-4" style="border-radius: 8px;">
+            <div sclass="card-body">
+
+                <div sclass="alert border-left-warning shadow-sm" style="border-left: 4px solid #f6c23e; background-color: #fdfaf2;">
+                    <n:strong><n:i class="fas fa-exclamation-triangle mr-1 text-warning"></n:i> Atenção:</n:strong>
+                    Área de acesso direto ao banco. Por segurança, inicie o comando com a instrução <n:code style="background: rgba(0,0,0,0.05); padding: 3px 6px; border-radius: 4px; color: #e74a3b; font-weight: bold;">SELECT</n:code>. O retorno máximo em tela é de 500 registros.
+                </div>
+
+                <div style="position: relative; margin-top: 15px;">
+                    <textbox value="@bind(vm.sqlQuery)" multiline="true" rows="6" hflex="1"
+                             style="font-family: 'Consolas', 'Courier New', monospace; font-size: 14px; background-color: white; color: black; padding: 15px; border-radius: 6px; border: 1px solid #1e2127; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);"
+                             placeholder="-- Digite sua consulta aqui...&#10;SELECT c.nm_completo, count(p.id) as total_producoes &#10;FROM CURRICULO c &#10;JOIN PRODUCAO p ON c.cd_cnpq = p.curriculo_id &#10;GROUP BY c.nm_completo ORDER BY total_producoes DESC LIMIT 10;" />
+
+                    <span style="position: absolute; top: 10px; right: 15px; color: #5c6370; font-family: monospace; font-size: 12px; pointer-events: none; font-weight: bold;">SQL</span>
+                </div>
+
+                <div class="d-flex justify-content-end align-items-center" style="margin-top: 15px;">
+
+                    <div visible="@load(vm.executando)" style="margin-right: 20px; color: #4e73df; font-weight: 500;">
+                        <n:i class="fas fa-spinner fa-spin mr-2"></n:i> Consultando o banco de dados...
+                    </div>
+
+                    <button label="Limpar Editor" iconSclass="fas fa-eraser" sclass="btn btn-outline-secondary mr-2"
+                            onClick="@command('limpar')" disabled="@load(vm.executando)" style="border-radius: 5px; font-weight: 500;"/>
+
+                    <button label="Executar Consulta" iconSclass="fas fa-play" sclass="btn btn-primary shadow-sm"
+                            onClick="@command('executarQuery')" disabled="@load(vm.executando)" style="border-radius: 5px; font-weight: bold; padding: 6px 20px; background-color: #4e73df; border-color: #4e73df;"/>
+
+                    <button label="Exportar CSV" iconSclass="fas fa-file-csv" sclass="btn btn-sm btn-outline-success"
+                            onClick="@command('exportarCsv')" disabled="@load(empty vm.linhas or vm.executando)" style="border-radius: 5px; font-weight: bold;"/>
+
+                </div>
+            </div>
+        </div>
+
+        <div sclass="card border-0 shadow-sm" vflex="1" style="border-radius: 8px;">
+            <div sclass="card-header bg-white d-flex justify-content-between align-items-center" style="border-bottom: 1px solid #e3e6f0; padding: 12px 20px;">
+                <n:h6 class="m-0 font-weight-bold" style="color: #4e73df;">
+                    <n:i class="fas fa-table mr-2"></n:i> Resultado da Consulta
+                </n:h6>
+
+                <span sclass="badge badge-success p-2 shadow-sm" visible="@load(not empty vm.linhas)" style="font-size: 0.85rem;">
+                    <n:i class="fas fa-check-circle mr-1"></n:i> <label value="@load(vm.linhas.size())"/> linhas retornadas
+                </span>
+            </div>
+
+            <div sclass="card-body p-0" vflex="1">
+                <listbox model="@load(vm.linhas)" emptyMessage="O resultado da sua consulta aparecerá aqui."
+                         vflex="1" mold="paging" pageSize="15" style="border: none;" sizedByContent="true" span="true">
+
+                    <listhead children="@load(vm.colunas)" sizable="true">
+                        <template name="children" var="col">
+                            <listheader label="@load(col)" style="background-color: #f8f9fc; font-weight: 700; color: #5a5c69; text-transform: uppercase; font-size: 12px; letter-spacing: 0.05em; border-bottom: 2px solid #e3e6f0;" />
+                        </template>
+                    </listhead>
+
+                    <template name="model" var="linha">
+                        <listitem children="@load(linha)">
+                            <template name="children" var="celula">
+                                <listcell label="@load(celula)" tooltiptext="@load(celula)"
+                                          style="font-size: 13px; color: #3a3b45; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; padding: 8px 12px;" />
+                            </template>
+                        </listitem>
+                    </template>
+                </listbox>
+            </div>
+        </div>
+    </window>
+</zk>

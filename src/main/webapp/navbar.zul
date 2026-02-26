@@ -75,11 +75,13 @@
                 <n:i class="fa fa-caret-down"></n:i>
             </a>
             <div id="divRelatorios" visible="false" sclass="bg-white">
-                <a href="/paginas/relatorio/relatorioPessoaCurso.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
-                    <n:i class="fa fa-angle-right"></n:i> Produção por Curso
+                <zk if="${sessionScope.usuario_logado.admin}">
+                <a href="/paginas/relatorio/consultaSql.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
+                    <n:i class="fas fa-terminal"></n:i> Consulta SQL Manual
                 </a>
+                </zk>
                 <a href="/paginas/relatorio/relatorioDinamico.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
-                    <n:i class="fa-solid fa-chart-simple"></n:i> Análise Dinâmica
+                    <n:i class="fa-solid fa-pen-to-square"></n:i> Análise Dinâmica
                 </a>
             </div>
 
