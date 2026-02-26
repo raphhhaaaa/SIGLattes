@@ -1,7 +1,6 @@
 package com.uem.extrator.viewmodel;
 
 import com.uem.extrator.dao.InstituicaoDAO;
-import com.uem.extrator.dao.ProducaoDAO;
 import com.uem.extrator.dao.RelatorioDAO;
 import com.uem.extrator.model.Producao;
 import com.uem.extrator.model.Usuario;
@@ -13,6 +12,7 @@ import org.zkoss.zk.ui.Sessions;
 import org.zkoss.zk.ui.util.Clients;
 import org.zkoss.zul.Filedownload;
 import org.zkoss.zul.ListModelList;
+
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.text.SimpleDateFormat;
@@ -23,8 +23,6 @@ public class RelatorioDinamicoVM {
 
     private RelatorioDAO dao = new RelatorioDAO();
     private InstituicaoDAO instituicaoDAO = new InstituicaoDAO();
-    private ProducaoDAO producaoDAO = new ProducaoDAO();
-    private List<Producao> listaProducoes = new ArrayList<>();
 
     // Dados do Gráfico
     private ListModelList<ItemGrafico> dadosGrafico = new ListModelList<>();
@@ -55,7 +53,6 @@ public class RelatorioDinamicoVM {
 
     @Init
     public void init() {
-        // Mapeamento Chave Tela -> Chave Banco
         mapaDeChaves.put("Artigos em Periódicos", "ARTIGO");
         mapaDeChaves.put("Livros e Capítulos", "LIVRO");
         mapaDeChaves.put("Trabalhos em Eventos/Congressos", "EVENTO");
@@ -63,7 +60,10 @@ public class RelatorioDinamicoVM {
         mapaDeChaves.put("Mestrados Concluídos", "MESTRADO");
 
         carregarInstituicoes();
-        carregarDados();
+
+        // No INIT, carregamos tudo: Gráfico + KPIs
+        atualizarKPIs(instituicaoSelecionada);
+        atualizarGrafico();
     }
 
     private void carregarInstituicoes() {
@@ -77,48 +77,50 @@ public class RelatorioDinamicoVM {
         listaInstituicoes.addToSelection("TODAS");
     }
 
+    // Chamado apenas quando a INSTITUIÇÃO muda (Recalcula TUDO)
     @Command
-    @NotifyChange({"dadosGrafico", "totalGeral", "tituloGrafico", "opcaoSelecionada", "listaProducoes", "totalPesquisadores", "totalArtigos", "totalLivros", "totalEventos"})
-    public void carregarDados() {
-        if (opcaoSelecionada == null) {
-            Clients.showNotification("Selecione um tipo de produção!", "warning", null, null, 3000);
-            return;
-        }
+    @NotifyChange({"dadosGrafico", "dadosGraficoOrdenado", "totalGeral", "tituloGrafico", "totalPesquisadores", "totalArtigos", "totalLivros", "totalEventos"})
+    public void alterarInstituicao() {
+        atualizarKPIs(instituicaoSelecionada);
+        atualizarGrafico();
+    }
+
+    // Chamado apenas quando o TIPO DE GRÁFICO muda (Não mexe nos KPIs)
+    @Command
+    @NotifyChange({"dadosGrafico", "dadosGraficoOrdenado", "totalGeral", "tituloGrafico"})
+    public void alterarTipoProducao() {
+        atualizarGrafico();
+    }
+
+    // Método que gera APENAS o gráfico da aba
+    private void atualizarGrafico() {
+        if (opcaoSelecionada == null) return;
 
         String chave = mapaDeChaves.get(opcaoSelecionada);
-
-        // Título do Gráfico
         this.tituloGrafico = opcaoSelecionada + ("TODAS".equals(instituicaoSelecionada) ? " (Geral)" : " (" + instituicaoSelecionada + ")");
 
         this.dadosGrafico.clear();
         this.dadosGraficoOrdenado.clear();
-        this.listaProducoes.clear();
         this.totalGeral = 0L;
 
-        // loga (nao é muito relevante pra segurança, mas é interessante ver)
         Usuario user = (Usuario) Sessions.getCurrent().getAttribute("usuario_logado");
         String autor = (user != null) ? user.getLogin() : "ANONIMO";
-
-        AuditLogService.log("CONSULTA", autor,
-                "Relatório: " + opcaoSelecionada + " | Inst: " + instituicaoSelecionada);
+        AuditLogService.log("CONSULTA", autor, "Gráfico: " + opcaoSelecionada + " | Inst: " + instituicaoSelecionada);
 
         try {
-            // Busca dados AGREGADOS (Count) para o Gráfico
             List<Object[]> resultados = dao.gerarRelatorio(chave, instituicaoSelecionada);
 
             if (resultados != null && !resultados.isEmpty()) {
                 long maxValor = 0;
-                // 1. Calcula totais
                 for (Object[] row : resultados) {
                     Long qtd = (Long) row[1];
                     if (qtd > maxValor) maxValor = qtd;
                     totalGeral += qtd;
                 }
-                // 2. Monta objetos do gráfico
+
                 for (Object[] row : resultados) {
                     Integer ano = (Integer) row[0];
                     Long qtd = (Long) row[1];
-
                     if (ano == null) continue;
 
                     int percentual = (int) ((qtd * 100) / (maxValor == 0 ? 1 : maxValor));
@@ -127,20 +129,11 @@ public class RelatorioDinamicoVM {
                     dadosGrafico.add(new ItemGrafico(ano, qtd, percentual, cor));
                 }
 
-                this.listaProducoes = producaoDAO.listarPorTipo(chave, instituicaoSelecionada);
                 this.dadosGraficoOrdenado.addAll(this.dadosGrafico);
                 this.dadosGraficoOrdenado.sort(Comparator.comparingInt(ItemGrafico::getAno));
-
-
-            } else {
-                Clients.showNotification("Nenhum dado encontrado.", "info", null, null, 3000);
             }
-
-            atualizarKPIs(instituicaoSelecionada);
-
         } catch (Exception e) {
             e.printStackTrace();
-            Clients.showNotification("Erro ao gerar relatório: " + e.getMessage(), "error", null, null, 3000);
             this.tituloGrafico = "Erro: " + e.getMessage();
         }
     }
@@ -153,11 +146,10 @@ public class RelatorioDinamicoVM {
             this.totalEventos = dao.contarTotalProducao("EVENTO", instituicao);
         } catch (Exception e) {
             e.printStackTrace();
-            Clients.showNotification("Erro ao carregar os indicadores do dashboard", "error", null, null, 3000);
         }
     }
 
-    // --- 1. EXPORTAÇÃO SIMPLES ---
+    // --- EXPORTAÇÕES ---
     @Command
     public void exportarCsvSimples() {
         if (dadosGrafico.isEmpty()) {
@@ -178,7 +170,6 @@ public class RelatorioDinamicoVM {
         baixarCsv(sb, "RESUMO");
     }
 
-    // --- 2. EXPORTAÇÃO DETALHADA (Apenas Artigos) ---
     @Command
     public void exportarCsvDetalhado() {
         try {
@@ -191,8 +182,6 @@ public class RelatorioDinamicoVM {
             }
 
             StringBuilder sb = new StringBuilder();
-
-            // Cabeçalho Rico
             sb.append("Titulo;Ano;Pesquisador;Veículo;Citações;Acesso;DOI\n");
 
             for (Object obj : listaDetalhada) {
@@ -215,8 +204,6 @@ public class RelatorioDinamicoVM {
             msgErro("Erro ao exportar detalhado: " + e.getMessage());
         }
     }
-
-    // --- UTILITÁRIOS ---
 
     private void baixarCsv(StringBuilder conteudo, String sufixo) {
         String nomeArquivo = "RELATORIO_" + sufixo + "_" +
@@ -253,17 +240,11 @@ public class RelatorioDinamicoVM {
                 .replaceAll("");
     }
 
-    private void msgAviso(String msg) {
-        org.zkoss.zk.ui.util.Clients.showNotification(msg, "warning", null, null, 2000);
-    }
-    private void msgErro(String msg) {
-        org.zkoss.zk.ui.util.Clients.showNotification(msg, "error", null, null, 3000);
-    }
+    private void msgAviso(String msg) { Clients.showNotification(msg, "warning", null, null, 2000); }
+    private void msgErro(String msg) { Clients.showNotification(msg, "error", null, null, 3000); }
 
     // Getters e Setters
-    public ListModelList<ItemGrafico> getDadosGraficoOrdenado() {
-        return dadosGraficoOrdenado;
-    }
+    public ListModelList<ItemGrafico> getDadosGraficoOrdenado() { return dadosGraficoOrdenado; }
     public ListModelList<ItemGrafico> getDadosGrafico() { return dadosGrafico; }
     public Long getTotalGeral() { return totalGeral; }
     public String getTituloGrafico() { return tituloGrafico; }
@@ -273,8 +254,6 @@ public class RelatorioDinamicoVM {
     public ListModelList<String> getListaInstituicoes() { return listaInstituicoes; }
     public String getInstituicaoSelecionada() { return instituicaoSelecionada; }
     public void setInstituicaoSelecionada(String i) { this.instituicaoSelecionada = i; }
-    public List<Producao> getListaProducoes() { return listaProducoes; }
-    public void setListaProducoes(List<Producao> listaProducoes) { this.listaProducoes = listaProducoes; }
     public long getTotalPesquisadores() { return totalPesquisadores; }
     public long getTotalArtigos() { return totalArtigos; }
     public long getTotalLivros() { return totalLivros; }

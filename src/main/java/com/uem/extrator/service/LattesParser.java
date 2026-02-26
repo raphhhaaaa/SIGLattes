@@ -39,7 +39,6 @@ public class LattesParser {
 
         ordenarAtividades(curriculo);
 
-        System.out.println(xmlConteudo);
 
         return curriculo;
     }
@@ -412,7 +411,7 @@ public class LattesParser {
         String nomeLimpo = limparString(nomeCurso);
 
         // se após a limpeza sobrou nada ou se era só um texto gigante
-        if (nomeLimpo.isEmpty() || nomeLimpo.length() >= 15) {
+        if (nomeLimpo.isEmpty() || nomeLimpo.length() >= 150) {
             return new Curso("Outros / Nome não padronizado");
         }
         Curso curso = new Curso(nomeLimpo);

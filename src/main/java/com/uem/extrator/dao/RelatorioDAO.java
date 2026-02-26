@@ -54,11 +54,7 @@ public class RelatorioDAO {
                             .append("AND (v.anoFim IS NULL OR p.anoConclusao <= v.anoFim) ");
                     hql.append("GROUP BY p.anoConclusao ORDER BY p.anoConclusao DESC");
                 } else {
-                    if (termoBusca.equals("EVENTO")) {
-                        hql.append("AND (p.tipo = 'EVENTO' OR p.tipo = 'CONGRESSO') ");
-                    } else {
-                        hql.append("AND p.tipo = :termo ");
-                    }
+                    hql.append("AND p.tipo = :termo ");
                     // Para produção, usamos o ano da produção
                     hql.append("AND p.ano >= v.anoInicio ")
                             .append("AND (v.anoFim IS NULL OR p.ano <= v.anoFim) ");
@@ -71,20 +67,17 @@ public class RelatorioDAO {
                     hql.append("SELECT f.anoConclusao, COUNT(f) FROM Formacao f WHERE f.tipoFormacao = :termo GROUP BY f.anoConclusao ORDER BY f.anoConclusao DESC");
                 } else {
                     hql.append("SELECT p.ano, COUNT(DISTINCT p.hashTitulo) FROM Producao p ");
-                    if (termoBusca.equals("EVENTO")) {
-                        hql.append("WHERE (p.tipo = 'EVENTO' OR p.tipo = 'CONGRESSO') ");
-                    } else {
-                        hql.append("WHERE p.tipo = :termo ");
-                    }
+
+                    hql.append("WHERE p.tipo = :termo ");
+
                     hql.append("GROUP BY p.ano ORDER BY p.ano DESC");
                 }
             }
 
             Query<Object[]> query = session.createQuery(hql.toString(), Object[].class);
 
-            if (!termoBusca.equals("IGNORE")) {
-                query.setParameter("termo", termoBusca);
-            }
+            query.setParameter("termo", termoBusca);
+
 
             if (filtrarInstituicao) {
                 query.setParameter("nomeInst", nomeInstituicao.toUpperCase());
@@ -135,11 +128,7 @@ public class RelatorioDAO {
             if (isFormacao) {
                 hql.append("AND p.tipoFormacao = :termo ");
             } else {
-                if (termoBusca.equals("IGNORE")) {
-                    hql.append("AND (p.tipo = 'EVENTO' OR p.tipo = 'CONGRESSO') ");
-                } else {
-                    hql.append("AND p.tipo = :termo ");
-                }
+                hql.append("AND p.tipo = :termo ");
             }
 
             // 5. Filtro de Data (Vínculo) - Apenas se estiver filtrando por instituição
@@ -219,6 +208,7 @@ public class RelatorioDAO {
         Session session = HibernateUtil.getSessionFactory().openSession();
         try {
             boolean filtrarInstituicao = nomeInstituicao != null && !nomeInstituicao.equals("TODAS");
+
             StringBuilder hql = new StringBuilder("SELECT COUNT(DISTINCT p.hashTitulo) FROM Producao p ");
             String termoBusca = "";
 
@@ -231,28 +221,19 @@ public class RelatorioDAO {
 
             if (filtrarInstituicao) {
                 hql.append("JOIN p.curriculo c JOIN c.atuacoes a JOIN a.instituicao i JOIN a.vinculos v WHERE upper(i.nomeInstituicao) = :nomeInst ");
-
-                if (termoBusca.equals("EVENTO")) {
-                    hql.append("AND (p.tipo = 'EVENTO' OR p.tipo = 'CONGRESSO') ");
-                } else {
-                    hql.append("AND p.tipo = :termo ");
-                }
+                hql.append("AND p.tipo = :termo ");
                 hql.append("AND p.ano >= v.anoInicio AND (v.anoFim IS NULL OR p.ano <= v.anoFim) ");
             } else {
-                if (termoBusca.equals("EVENTO")) {
-                    hql.append("WHERE (p.tipo = 'EVENTO' OR p.tipo = 'CONGRESSO') ");
-                } else {
-                    hql.append("WHERE p.tipo = :termo ");
-                }
+                hql.append("WHERE p.tipo = :termo ");
             }
 
             Query<Long> query = session.createQuery(hql.toString(), Long.class);
 
+            // Injeta o parâmetro de forma obrigatória e livre de IFs para todos os tipos!
+            query.setParameter("termo", termoBusca);
+
             if (filtrarInstituicao) {
                 query.setParameter("nomeInst", nomeInstituicao.toUpperCase());
-            }
-            if (!termoBusca.equals("EVENTO")) {
-                query.setParameter("termo", termoBusca);
             }
 
             Long total = query.uniqueResult();

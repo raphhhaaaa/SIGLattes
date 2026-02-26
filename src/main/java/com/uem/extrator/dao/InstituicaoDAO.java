@@ -23,17 +23,15 @@ public class InstituicaoDAO {
         try {
             session = HibernateUtil.getSessionFactory().openSession();
 
-            // Usamos SQL Nativo com índices.
-            // Importante: Tiramos o COUNT do banco se ele for o gargalo.
-            // O objetivo aqui é apenas os NOMES para o filtro.
-            String sql = "SELECT DISTINCT nm_instituicao, 0 " + // O '0' é apenas para manter o contrato do Object[]
+            String sql = "SELECT nm_instituicao, COUNT(*) AS qtd " +
                     "FROM INSTITUICAO " +
                     "WHERE nm_instituicao IS NOT NULL " +
                     "AND (nm_instituicao LIKE 'UNIVERSIDADE%' " +
                     "     OR nm_instituicao LIKE 'INSTITUTO%' " +
                     "     OR nm_instituicao LIKE 'FACULDADE%' " +
                     "     OR nm_instituicao LIKE 'CENTRO%') " +
-                    "ORDER BY nm_instituicao ASC";
+                    "GROUP BY nm_instituicao " +
+                    "ORDER BY qtd DESC";
 
             List<Object[]> resultados = session.createNativeQuery(sql).list();
 

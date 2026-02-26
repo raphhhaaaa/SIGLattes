@@ -119,7 +119,7 @@
                                         <combobox model="@load(vm.listaOpcoes)"
                                                   selectedItem="@bind(vm.opcaoSelecionada)"
                                                   width="100%"
-                                                  onSelect="@command('carregarDados')"
+                                                  onSelect="@command('alterarTipoProducao')"
                                                   placeholder="Selecione o tipo..."
                                                   readonly="true"
                                                   sclass="form-control-sm"/>
@@ -130,7 +130,7 @@
                                         <combobox model="@load(vm.listaInstituicoes)"
                                                   selectedItem="@bind(vm.instituicaoSelecionada)"
                                                   width="100%"
-                                                  onSelect="@command('carregarDados')"
+                                                  onSelect="@command('alterarInstituicao')"
                                                   readonly="true"
                                                   sclass="form-control-sm"/>
                                     </div>
