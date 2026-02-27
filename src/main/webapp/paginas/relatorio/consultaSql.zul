@@ -71,7 +71,7 @@
                 </span>
             </div>
 
-            <div sclass="card-body p-0 d-flex flex-column align-items-center justify-content-center" vflex="1">
+            <div sclass="card-body p-0 flex-column align-items-center justify-content-center" vflex="1">
 
                 <label value="O resultado da sua consulta aparecerá aqui."
                        visible="@load(empty vm.linhas)"
