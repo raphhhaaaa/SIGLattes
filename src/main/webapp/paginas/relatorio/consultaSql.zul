@@ -1,4 +1,10 @@
 <?page title="Consulta SQL Avançada" contentType="text/html;charset=UTF-8"?>
+<?link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico"?>
+<?taglib uri="http://www.zkoss.org/dsp/web/core" prefix="c"?>
+<?link rel="stylesheet" type="text/css" href="/css/bootstrap.css"?>
+<?link rel="stylesheet" type="text/css" href="/css/zkbootstrap.css"?>
+<?link rel="stylesheet" type="text/css" href="/css/fontawesome.css"?>
+
 <zk xmlns="http://www.zkoss.org/2005/zul" xmlns:n="native">
     <window apply="org.zkoss.bind.BindComposer"
             viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ConsultaSqlVM')"
@@ -14,7 +20,7 @@
             <n:h3 class="m-0 text-dark" style="font-weight: 600; font-size: 1.5rem;">
                 <n:i class="fas fa-database text-primary mr-2"></n:i> Console SQL
             </n:h3>
-            <span sclass="badge badge-danger p-2 shadow-sm" tooltiptext="Acesso restrito. Cuidado ao manipular dados.">
+            <span sclass="badge badge-danger p-2 shadow-sm" tooltiptext="Acesso restrito. Cuidado ao manipular dados." style="color: black;">
                 <n:i class="fas fa-shield-alt mr-1"></n:i> Nível Administrador
             </span>
         </n:div>
@@ -30,7 +36,7 @@
                 <div style="position: relative; margin-top: 15px;">
                     <textbox value="@bind(vm.sqlQuery)" multiline="true" rows="6" hflex="1"
                              style="font-family: 'Consolas', 'Courier New', monospace; font-size: 14px; background-color: white; color: black; padding: 15px; border-radius: 6px; border: 1px solid #1e2127; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);"
-                             placeholder="-- Digite sua consulta aqui...&#10;SELECT c.nm_completo, count(p.id) as total_producoes &#10;FROM CURRICULO c &#10;JOIN PRODUCAO p ON c.cd_cnpq = p.curriculo_id &#10;GROUP BY c.nm_completo ORDER BY total_producoes DESC LIMIT 10;" />
+                             placeholder="-- Digite sua consulta aqui...&#10;Ex: SELECT c.nm_completo, count(p.id) as total_producoes &#10;FROM CURRICULO c &#10;JOIN PRODUCAO p ON c.cd_cnpq = p.curriculo_id &#10;GROUP BY c.nm_completo ORDER BY total_producoes DESC LIMIT 10;" />
 
                     <span style="position: absolute; top: 10px; right: 15px; color: #5c6370; font-family: monospace; font-size: 12px; pointer-events: none; font-weight: bold;">SQL</span>
                 </div>
@@ -60,14 +66,19 @@
                     <n:i class="fas fa-table mr-2"></n:i> Resultado da Consulta
                 </n:h6>
 
-                <span sclass="badge badge-success p-2 shadow-sm" visible="@load(not empty vm.linhas)" style="font-size: 0.85rem;">
+                <span sclass="badge badge-success p-2 shadow-sm" visible="@load(not empty vm.linhas)" style="font-size: 0.85rem; color: black;">
                     <n:i class="fas fa-check-circle mr-1"></n:i> <label value="@load(vm.linhas.size())"/> linhas retornadas
                 </span>
             </div>
 
-            <div sclass="card-body p-0" vflex="1">
-                <listbox model="@load(vm.linhas)" emptyMessage="O resultado da sua consulta aparecerá aqui."
-                         vflex="1" mold="paging" pageSize="15" style="border: none;" sizedByContent="true" span="true">
+            <div sclass="card-body p-0 d-flex flex-column align-items-center justify-content-center" vflex="1">
+
+                <label value="O resultado da sua consulta aparecerá aqui."
+                       visible="@load(empty vm.linhas)"
+                       style="color: #858796; font-weight: 600; font-size: 1.1rem; padding: 20px;" />
+
+                <listbox model="@load(vm.linhas)" visible="@load(not empty vm.linhas)"
+                         vflex="1" mold="paging" pageSize="15" style="border: none; min-width: 350px;" sizedByContent="false" span="true">
 
                     <listhead children="@load(vm.colunas)" sizable="true">
                         <template name="children" var="col">

@@ -77,11 +77,11 @@
             <div id="divRelatorios" visible="false" sclass="bg-white">
                 <zk if="${sessionScope.usuario_logado.admin}">
                 <a href="/paginas/relatorio/consultaSql.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
-                    <n:i class="fas fa-terminal"></n:i> Consulta SQL Manual
+                    <n:i class="fas fa-database"></n:i> Consulta SQL Manual
                 </a>
                 </zk>
                 <a href="/paginas/relatorio/relatorioDinamico.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
-                    <n:i class="fa-solid fa-pen-to-square"></n:i> Análise Dinâmica
+                    <n:i class="fa-solid fa-clipboard"></n:i> Análise Dinâmica
                 </a>
             </div>
 
