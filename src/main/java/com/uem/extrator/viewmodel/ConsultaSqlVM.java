@@ -1,5 +1,10 @@
 package com.uem.extrator.viewmodel;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.zkoss.zk.ui.Sessions;
+import com.uem.extrator.model.Usuario;
+import com.uem.extrator.service.AuditLogService;
 import com.mysql.cj.xdevapi.Client;
 import com.uem.extrator.model.Usuario;
 import com.uem.extrator.util.HibernateUtil;
@@ -24,10 +29,12 @@ import java.util.List;
 
 public class ConsultaSqlVM {
 
+    private static final Logger log = LoggerFactory.getLogger(ConsultaSqlVM.class);
     private String sqlQuery;
     private List<String> colunas = new ArrayList<>();
     private List<List<Object>> linhas = new ArrayList<>();
     private boolean executando = false;
+
 
     @Init
     public void init() {
@@ -42,6 +49,7 @@ public class ConsultaSqlVM {
     @Command
     @NotifyChange({"colunas", "linhas", "executando"})
     public void executarQuery() {
+
         if (sqlQuery == null || sqlQuery.trim().isEmpty()) {
             Clients.showNotification("Digite uma consulta SQL.", "warning", null, null, 3000);
             return;
@@ -60,6 +68,12 @@ public class ConsultaSqlVM {
         Session session = null;
 
         try {
+            Usuario usuarioLogado = (Usuario) Sessions.getCurrent().getAttribute("usuario_logado");
+
+            String loginUsuario = (usuarioLogado != null) ? usuarioLogado.getLogin() : "SISTEMA";
+
+            AuditLogService logService = new AuditLogService();
+
             session = HibernateUtil.getSessionFactory().openSession();
 
             // JDBC puro dentro do Hibernate para conseguir extrair o nome das colunas dinamicamente
@@ -78,7 +92,7 @@ public class ConsultaSqlVM {
                         }
 
                         // extrair os dados linha a linha (limite padrão em 500 para não travar o navegador)
-                        int limite = 500;
+                        int limite = 10000;
                         int count = 0;
                         while (rs.next() && count < limite) {
                             List<Object> linha = new ArrayList<>();
@@ -97,6 +111,7 @@ public class ConsultaSqlVM {
                 }
             });
 
+            logService.registrarLogGeral("CONSOLE_SQL", loginUsuario, "O usuário " + loginUsuario + " executou a query: " + this.sqlQuery + " | " + linhas.size() + " linhas retornadas");
             Clients.showNotification("Consulta executada com sucesso. Linhas retornadas: " + linhas.size(), "info", null, null, 3000);
 
         } catch (Exception e) {
