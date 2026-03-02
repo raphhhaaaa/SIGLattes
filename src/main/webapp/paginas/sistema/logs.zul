@@ -28,7 +28,10 @@
             }
         </style>
 
-        <div sclass="container-fluid flex-grow-1" style="padding: 20px;">
+        <div sclass="container-fluid flex-grow-1" style="padding: 20px;"
+             apply="org.zkoss.bind.BindComposer"
+             viewModel="@id('vm') @init('com.uem.extrator.viewmodel.LogVM')">
+
             <div sclass="row">
                 <div sclass="col-md-12">
 
@@ -41,9 +44,7 @@
                                     sclass="btn btn-sm btn-outline-light"/>
                         </div>
 
-                        <div sclass="card-body"
-                             apply="org.zkoss.bind.BindComposer"
-                             viewModel="@id('vm') @init('com.uem.extrator.viewmodel.LogVM')">
+                        <div sclass="card-body">
 
                             <div sclass="alert alert-secondary mb-3">
                                 <n:i class="fa fa-info-circle"></n:i>
@@ -60,6 +61,12 @@
                             <separator height="10px"/>
                             <label value="* Exibindo registros mais recentes primeiro." sclass="text-muted small"/>
 
+                            <space hflex="1"/>
+
+                            <button label="Apagar Logs"
+                                    onClick="@command('apagarLog')"
+                                    iconSclass="fa-solid fa-trash"
+                                    sclass="btn btn-sm btn-outline-danger"/>
                         </div>
                     </div>
                 </div>

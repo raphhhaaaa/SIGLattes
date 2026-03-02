@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -143,17 +144,17 @@ public class AuditLogService {
         return CAMINHO_LOG;
     }
 
-//    public void apagarLog() {
-//        try {
-//            Path path = Paths.get(getCaminhoArquivo());
-//            boolean apagou = Files.deleteIfExists(path); // Deleta se existir
-//            if (apagou) {
-//                System.out.println("Arquivo deletado.");
-//            } else {
-//                System.out.println("Arquivo não encontrado.");
-//            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
+    public void apagarLog() {
+        try {
+            Path path = Paths.get(getCaminhoArquivo());
+            boolean apagou = Files.deleteIfExists(path); // Deleta se existir
+            if (apagou) {
+                System.out.println("Arquivo deletado.");
+            } else {
+                System.out.println("Arquivo não encontrado.");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }
