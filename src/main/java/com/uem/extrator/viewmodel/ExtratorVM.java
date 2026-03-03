@@ -688,19 +688,25 @@ public class ExtratorVM {
                 if (dado.length() == 11) {
                     atualizarLogBatch(desktop, "["+(i+1)+"/"+total+"] CPF "+dado+"...");
                     String conv = lattesService.buscarIdPorDados(dado, "", "");
-                    if(conv != null && !conv.isEmpty()) idBusca = conv;
-                    else {
+                    if(conv != null && !conv.isEmpty()) {
+                        idBusca = conv;
+                    } else {
                         erro++;
-                        AuditLogService.registrarExtracao("LOTE_CPF", login, false, dado, "CPF não convertido" );
+                        // Ajustado para refletir a real recusa do CNPq
+                        AuditLogService.registrarExtracao("LOTE_CPF_NAO_ENCONTRADO", login, false, dado, "CNPq não retornou ID Lattes para este CPF");
                         continue;
                     }
                 }
+
                 if (idBusca.length() != 16) { erro++; continue; }
 
-                // -- verifica o id já existe no banco, se existir, pula, se não, prossegue.
+                // -- verifica se o id já existe no banco, se existir, pula, se não, prossegue.
                 if (curriculoDAO.existe(idBusca)) {
                     sucesso++;
                     atualizarLogBatch(desktop, "⏩ ["+(i+1)+"/"+total+"] ID " + idBusca + " já cadastrado. Pulando...\n");
+
+                    // --- NOVA AUDITORIA CORRETA PARA CURRÍCULOS SKIPPADOS ---
+                    AuditLogService.registrarExtracao("LOTE_PULADO", login, true, idBusca, "Currículo já existente no banco (Ignorado)");
                     continue;
                 }
 
@@ -720,14 +726,14 @@ public class ExtratorVM {
                     atualizarLogBatch(desktop, "❌ Falha.\n");
 
                     // log de falha
-                    AuditLogService.registrarExtracao("LOTE", login, false, idBusca, "Não encontrado/Vazio");
+                    AuditLogService.registrarExtracao("LOTE", login, false, idBusca, "Não encontrado/Vazio no CNPq");
                 }
             } catch(Exception e){
                 erro++;
                 atualizarLogBatch(desktop, "❌ Erro.\n");
 
                 // log de erro técnico
-                AuditLogService.registrarExtracao("LOTE", login, false, dado, "Erro: " + e.getMessage());
+                AuditLogService.registrarExtracao("LOTE_ERRO", login, false, dado, "Erro técnico: " + e.getMessage());
             }
         }
         atualizarLogBatch(desktop, "\n🏁 FIM! OK: "+sucesso+" | Erros: "+erro);
