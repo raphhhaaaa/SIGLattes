@@ -395,14 +395,14 @@ public class ExtratorVM {
                     SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
                     String dataFormatada = sdf.format(dataNascimentoInput);
 
-                    // CORREÇÃO: Forçar CAIXA ALTA para garantir o match no banco do CNPq
-                    String nomeEnvio = nomeInput.trim().toUpperCase();
+                    // remove espaços excedentes
+                    String nomeEnvio = nomeInput.trim();
 
                     // Passamos null no CPF, o LattesService converte para ""
                     idEncontrado = lattesService.buscarIdPorDados(null, nomeEnvio, dataFormatada);
                 }
 
-                if (idEncontrado != null && !idEncontrado.isEmpty() && !idEncontrado.equals("0")) {
+                if (idEncontrado != null && !idEncontrado.isEmpty() && !idEncontrado.equals("0") && idEncontrado.length() == 16) {
                     this.idLattesInput = idEncontrado;
                     atualizarTela(desktop, "idLattesInput");
                     atualizarLog(desktop, "ID Encontrado: " + idEncontrado + ". Baixando...");
@@ -411,7 +411,7 @@ public class ExtratorVM {
                 } else {
                     // loga falha
                     AuditLogService.registrarExtracao(tipoBusca, login, false, termoBusca, "Pesquisador não localizado na busca");
-                    finalizarProcesso(desktop, "❌ Pesquisador não encontrado. Tente verificar a data de nascimento.", false);
+                    finalizarProcesso(desktop, "❌ Pesquisador não encontrado. Tente verificar o nome exato e a data de nascimento.", false);
                 }
             } catch (Exception e) {
                 e.printStackTrace();

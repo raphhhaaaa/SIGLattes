@@ -155,11 +155,23 @@ public class LattesService {
     public String buscarIdPorDados(String cpf, String nome, String data) throws Exception {
         ILattesSOAP port = criarCliente();
 
-        String cpfEnvio = (cpf == null) ? "" : cpf;
-        String nomeEnvio = (nome == null) ? "" : nome;
-        String dataEnvio = (data == null) ? "" : data;
+        System.out.println(">>> [SOAP CNPQ] Enviando -> CPF: [" + cpf + "] NOME: [" + nome + "] DATA: [" + data + "]" );
 
-        return port.getIdentificadorCNPq(cpfEnvio, nomeEnvio, dataEnvio);
+        String resposta = port.getIdentificadorCNPq(cpf, nome, data);
+
+        System.out.println(">>> [SOAP CNPQ] Resposta: [" + resposta + "]");
+
+        if (resposta == null || resposta.trim().isEmpty()) {
+            System.out.println(port.getOcorrenciaCV(resposta));
+            throw new Exception("Erro de CNPq: ID vazio ou nulo." + resposta);
+        }
+
+        if (resposta.length() != 16) {
+            System.out.println(port.getOcorrenciaCV(resposta));
+            throw new Exception("Erro de CNPq: " + resposta);
+        }
+        System.out.println(port.getOcorrenciaCV(resposta));
+        return resposta;
     }
 
     // Metodo chamado pelo ExtratorVM (Recebe o Map de parâmetros)
