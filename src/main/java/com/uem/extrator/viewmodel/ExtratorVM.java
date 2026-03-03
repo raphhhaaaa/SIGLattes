@@ -395,8 +395,8 @@ public class ExtratorVM {
                     SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
                     String dataFormatada = sdf.format(dataNascimentoInput);
 
-                    // CORREÇÃO: Forçar CAIXA ALTA para garantir o match no banco do CNPq
-                    String nomeEnvio = nomeInput.trim().toUpperCase();
+                    // remove espaços excedentes
+                    String nomeEnvio = nomeInput.trim();
 
                     // Passamos null no CPF, o LattesService converte para ""
                     idEncontrado = lattesService.buscarIdPorDados(null, nomeEnvio, dataFormatada);
