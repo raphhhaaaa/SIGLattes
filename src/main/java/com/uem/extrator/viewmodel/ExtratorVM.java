@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -69,11 +68,11 @@ public class ExtratorVM {
     private String statusClasse;
     private String statusIcone;
 
+    // Gerenciamento de Threads - limite inicial de 10 simultâneas
+    private static final ExecutorService executor = Executors.newFixedThreadPool(500);
+
     // Controle de verificação de atualizações
     private boolean verificandoAtualizacoes = false;
-
-    // Gerenciamento de Threads - limite inicial de 10 simultâneas
-    private static final ExecutorService executor = Executors.newFixedThreadPool(30);
 
     // aba atualizações //
     private List<Curriculo> listaDesatualizados = new ArrayList<>();
