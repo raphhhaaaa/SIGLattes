@@ -21,7 +21,7 @@ import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.util.Clients;
 import org.zkoss.zk.ui.event.EventListener;
 
-
+import java.util.concurrent.atomic.AtomicInteger;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStreamReader;
@@ -34,6 +34,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 public class ExtratorVM {
 
@@ -69,7 +70,7 @@ public class ExtratorVM {
     private String statusIcone;
 
     // Gerenciamento de Threads - limite inicial de 10 simultâneas
-    private static final ExecutorService executor = Executors.newFixedThreadPool(500);
+    private static final ExecutorService executor = Executors.newFixedThreadPool(30);
 
     // Controle de verificação de atualizações
     private boolean verificandoAtualizacoes = false;
@@ -542,13 +543,17 @@ public class ExtratorVM {
         if (!desktop.isServerPushEnabled()) desktop.enableServerPush(true);
 
         List<String> linhas = lerArquivo(media);
+
+        // remove CPFs ou IDs duplicados presentes no arquivo .txt
+        linhas = linhas.stream().distinct().collect(Collectors.toList());
+
         if (linhas.isEmpty()) {
             this.logBatch += "⚠️ Arquivo vazio/inválido.";
             this.processando = false;
             return;
         }
         this.logBatch += "✅ " + linhas.size() + " linhas. Iniciando...\n----------------\n";
-        executor.submit(() -> processarLote(desktop, linhas));
+        processarLote(desktop, linhas);
     }
 
     // UPLOAD MANUAL (XML/ZIP)
@@ -696,85 +701,94 @@ public class ExtratorVM {
 
     private void processarLote(Desktop desktop, List<String> ids) {
         int total = ids.size();
-        int sucesso = 0;
-        int erro = 0;
 
-        // captura login
+        // Usamos AtomicInteger porque várias threads vão atualizar os números ao mesmo tempo
+        AtomicInteger sucesso = new AtomicInteger(0);
+        AtomicInteger erro = new AtomicInteger(0);
+        AtomicInteger concluidos = new AtomicInteger(0);
+
         String login = (usuarioLogado != null) ? usuarioLogado.getLogin() : "ANONIMO";
 
         for (int i = 0; i < total; i++) {
+            final int index = i;
+            final String dado = ids.get(index);
 
-            if (this.cancelarLote) {
-                atualizarLogBatch(desktop, "\n⚠ PROCESSAMENTO INTERROMPIDO PELO UTILIZADOR!\n");
-                break;
-            }
+            executor.submit(() -> {
+                if (this.cancelarLote) {
+                    atualizarLogBatch(desktop, "\n⚠ PROCESSAMENTO INTERROMPIDO PELO UTILIZADOR!\n");
+                    finalizarTarefa(desktop, concluidos, total, sucesso, erro);
+                    return;
+                }
 
-            String dado = ids.get(i);
-            try {
-                String idBusca = dado;
-                if (dado.length() == 11) {
-                    atualizarLogBatch(desktop, "["+(i+1)+"/"+total+"] CPF "+dado+"...");
-                    String conv = lattesService.buscarIdPorDados(dado, "", "");
-                    if(conv != null && !conv.isEmpty()) {
-                        idBusca = conv;
-                    } else {
-                        erro++;
-                        // Ajustado para refletir a real recusa do CNPq
-                        AuditLogService.registrarExtracao("LOTE_CPF_NAO_ENCONTRADO", login, false, dado, "CNPq não retornou ID Lattes para este CPF");
-                        continue;
+                try {
+                    String idBusca = dado;
+                    if (dado.length() == 11) {
+                        atualizarLogBatch(desktop, "["+(index+1)+"/"+total+"] CPF "+dado+"...\n");
+                        String conv = lattesService.buscarIdPorDados(dado, "", "");
+                        if(conv != null && !conv.isEmpty()) {
+                            idBusca = conv;
+                        } else {
+                            erro.incrementAndGet();
+                            AuditLogService.registrarExtracao("LOTE_CPF_NAO_ENCONTRADO", login, false, dado, "CNPq não retornou ID Lattes para este CPF");
+                            finalizarTarefa(desktop, concluidos, total, sucesso, erro);
+                            return;
+                        }
                     }
+
+                    if (idBusca.length() != 16) {
+                        erro.incrementAndGet();
+                        finalizarTarefa(desktop, concluidos, total, sucesso, erro);
+                        return;
+                    }
+
+                    if (curriculoDAO.existe(idBusca)) {
+                        sucesso.incrementAndGet();
+                        atualizarLogBatch(desktop, "⏩  ["+(index+1)+"/"+total+"] ID " + idBusca + " já cadastrado. Pulando...\n");
+                        AuditLogService.registrarExtracao("LOTE_PULADO", login, true, idBusca, "Currículo já existente no banco (Ignorado)");
+                        finalizarTarefa(desktop, concluidos, total, sucesso, erro);
+                        return;
+                    }
+
+                    atualizarLogBatch(desktop, "["+(index+1)+"/"+total+"] ID "+idBusca+"...");
+                    Curriculo c = lattesService.getCurriculo(idBusca);
+
+                    if (c!=null) {
+                        curriculoDAO.salvar(c);
+                        sucesso.incrementAndGet();
+                        atualizarLogBatch(desktop, "✅ Salvo: "+c.getNomeCompleto()+"\n");
+                        AuditLogService.registrarExtracao("LOTE", login, true, c.getIdLattes(), c.getNomeCompleto());
+                    } else {
+                        erro.incrementAndGet();
+                        atualizarLogBatch(desktop, "❌ Falha. " + idBusca + "\n");
+                        AuditLogService.registrarExtracao("LOTE", login, false, idBusca, "Não encontrado/Vazio no CNPq");
+                    }
+                } catch(Exception e) {
+                    erro.incrementAndGet();
+                    atualizarLogBatch(desktop, "❌ Erro: " + e.getMessage() + "\n");
+                    AuditLogService.registrarExtracao("LOTE_ERRO", login, false, dado, "Erro técnico: " + e.getMessage());
                 }
 
-                if (idBusca.length() != 16) { erro++; continue; }
-
-                // -- verifica se o id já existe no banco, se existir, pula, se não, prossegue.
-//                if (curriculoDAO.existe(idBusca)) {
-//                    sucesso++;
-//                    atualizarLogBatch(desktop, "⏩ ["+(i+1)+"/"+total+"] ID " + idBusca + " já cadastrado. Pulando...\n");
-//
-//                    // --- NOVA AUDITORIA CORRETA PARA CURRÍCULOS SKIPPADOS ---
-//                    AuditLogService.registrarExtracao("LOTE_PULADO", login, true, idBusca, "Currículo já existente no banco (Ignorado)");
-//                    continue;
-//                }
-
-                atualizarLogBatch(desktop, "["+(i+1)+"/"+total+"] ID "+idBusca+"...");
-                Curriculo c = lattesService.getCurriculo(idBusca);
-
-                if (c!=null) {
-                    curriculoDAO.salvar(c);
-                    sucesso++;
-                    atualizarLogBatch(desktop, "✅ Salvo: "+c.getNomeCompleto()+"\n");
-
-                    // log de sucesso
-                    AuditLogService.registrarExtracao("LOTE", login, true, c.getIdLattes(), c.getNomeCompleto());
-                }
-                else {
-                    erro++;
-                    atualizarLogBatch(desktop, "❌ Falha.\n");
-
-                    // log de falha
-                    AuditLogService.registrarExtracao("LOTE", login, false, idBusca, "Não encontrado/Vazio no CNPq");
-                }
-            } catch(Exception e){
-                erro++;
-                atualizarLogBatch(desktop, "❌ Erro: " + e.getMessage() + "\n");
-
-                // log de erro técnico
-                AuditLogService.registrarExtracao("LOTE_ERRO", login, false, dado, "Erro técnico: " + e.getMessage());
-            }
+                finalizarTarefa(desktop, concluidos, total, sucesso, erro);
+            });
         }
-        atualizarLogBatch(desktop, "\n🏁 FIM! OK: "+sucesso+" | Erros: "+erro);
+    }
 
-        // Finaliza processo de lote
-        try {
-            if (desktop != null && desktop.isAlive()) {
-                Executions.schedule(desktop, event -> {
-                    this.processando = false;
-                    org.zkoss.bind.BindUtils.postNotifyChange(null, null, ExtratorVM.this, "processando");
-                    Clients.showNotification("Lote concluído!", "info", null, null, 3000);
-                }, new Event("onUpdate"));
-            }
-        } catch (Exception e) {}
+
+    private void finalizarTarefa(Desktop desktop, AtomicInteger concluidos, int total, AtomicInteger sucesso, AtomicInteger erro) {
+        int fim = concluidos.incrementAndGet();
+        if (fim == total) {
+            atualizarLogBatch(desktop, "\n🏁 FIM! OK: " + sucesso.get() + " | Erros: " + erro.get() + "\n");
+            try {
+                if (desktop != null && desktop.isAlive()) {
+                    Executions.schedule(desktop, event -> {
+                        this.processando = false;
+                        org.zkoss.bind.BindUtils.postNotifyChange(null, null, ExtratorVM.this, "processando");
+                        Clients.showNotification("Lote concluído com sucesso!", "info", null, null, 3000);
+                        atualizarDashboard();
+                    }, new Event("onUpdate"));
+                }
+            } catch (Exception e) {}
+        }
     }
 
     private void atualizarLogBatch(Desktop desktop, String msg) {

@@ -13,19 +13,15 @@ import java.util.List;
 
 public class AuditLogService {
 
-    // Mantemos o formatador de data antigo para a interface não perceber a mudança
     private static final SimpleDateFormat SDF_LOG = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    // 1. Assinatura mantida idêntica
     public static void log(String acao, String usuario, String detalhes) {
         new AuditLogService().registrarLogGeral(acao, usuario, detalhes);
     }
 
-    // 2. Assinatura mantida idêntica (usado lá no ExtratorVM)
     public static void registrarExtracao(String tipoExtracao, String usuario, boolean sucesso, String idLattes, String nomePesquisador) {
         if (!ConfigManager.getInstance().isAuditQueries()) { return; }
 
-        // Mantém a regra de status para sabermos se foi pulado, erro, sucesso, etc.
         String acao = sucesso ? "EXTRACAO_SUCESSO" : "EXTRACAO_FALHA";
         if (tipoExtracao.contains("PULADO") || tipoExtracao.contains("ERRO") || tipoExtracao.contains("NAO_ENCONTRADO")) {
             acao = tipoExtracao;
@@ -41,7 +37,6 @@ public class AuditLogService {
         salvarNoBanco(acao, usuario, idLattes, detalhes);
     }
 
-    // 3. REMOVIDO O SYNCHRONIZED - O gargalo foi eliminado!
     public void registrarLogGeral(String acao, String usuario, String detalhes) {
         if (!isAuditoriaHabilitada(acao)) {
             return;
@@ -49,7 +44,6 @@ public class AuditLogService {
         salvarNoBanco(acao, usuario, "N/A", detalhes);
     }
 
-    // 4. Lógica original de verificação mantida
     private boolean isAuditoriaHabilitada(String acao) {
         ConfigManager config = ConfigManager.getInstance();
         if (acao.startsWith("LOGIN")) return config.isAuditLogins();
@@ -58,12 +52,11 @@ public class AuditLogService {
         return true;
     }
 
-    // 5. REMOVIDO O SYNCHRONIZED - Antigo método de processamento agora salva no BD
     public void registrarProcessamento(String idLattes) {
         salvarNoBanco("PROCESSAMENTO", "SISTEMA", idLattes, "Processamento registrado");
     }
 
-    // 6. Contagem para o Dashboard: Assinatura mantida (long), mas agora faz um SELECT COUNT instantâneo
+    // contagem para a dashboard
     public long contarProcessamentosHoje() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.createQuery(
@@ -75,17 +68,15 @@ public class AuditLogService {
         }
     }
 
-    // 7. O PULO DO GATO: Retorna List<String> para o LogVM antigo não quebrar!
     public List<String> lerLogCompleto() {
         List<String> linhas = new ArrayList<>();
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            // Traz apenas os 500 mais recentes para proteger a memória RAM
+            // Traz apenas os 5000 mais recentes para proteger a memória RAM
             List<LogAuditoria> logs = session.createQuery("FROM LogAuditoria ORDER BY dataHora DESC", LogAuditoria.class)
-                    .setMaxResults(500)
+                    .setMaxResults(5000)
                     .list();
 
             for (LogAuditoria log : logs) {
-                // Reconstrói a string idêntica ao que o arquivo de texto gerava
                 String linha = String.format("%s | %-15s | %-15s | %s",
                         SDF_LOG.format(log.getDataHora()),
                         log.getTipo(),
@@ -99,12 +90,11 @@ public class AuditLogService {
         return linhas;
     }
 
-    // 8. Assinatura mantida - Retorna um texto simbólico para a tela não dar erro
+    // Retorna um texto simbólico para a tela não dar erro
     public String getCaminhoArquivo() {
         return "Armazenado com segurança no Banco de Dados (MySQL)";
     }
 
-    // 9. Assinatura mantida - Agora faz um DELETE FROM na tabela
     public void apagarLog() {
         Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
@@ -122,7 +112,7 @@ public class AuditLogService {
         }
     }
 
-    // --- MÉTODO PRIVADO NOVO --- Responsável por encapsular o Hibernate de forma assíncrona e rápida
+    // --- encapsula o Hibernate de forma assincrona e rapida ---
     private static void salvarNoBanco(String tipo, String usuario, String identificador, String mensagem) {
         Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
