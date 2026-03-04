@@ -32,6 +32,8 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ExtratorVM {
 
@@ -65,6 +67,9 @@ public class ExtratorVM {
     private String statusTexto;
     private String statusClasse;
     private String statusIcone;
+
+    // Gerenciamento de Threads - limite inicial de 10 simultâneas
+    private static final ExecutorService executor = Executors.newFixedThreadPool(500);
 
     // Controle de verificação de atualizações
     private boolean verificandoAtualizacoes = false;
@@ -118,7 +123,7 @@ public class ExtratorVM {
         final Desktop desktop = Executions.getCurrent().getDesktop();
         if (!desktop.isServerPushEnabled()) desktop.enableServerPush(true);
 
-        new Thread(() -> {
+        executor.submit(() -> {
             try {
                 List<Curriculo> listaLocal = curriculoDAO.listarTodos();
                 int contador = 0;
@@ -148,7 +153,7 @@ public class ExtratorVM {
             } catch (Exception e) {
                 this.verificandoAtualizacoes = false;
             }
-        }).start();
+        });
     }
 
     private void atualizarTextoDesatualizados(Desktop desktop, String texto) {
@@ -173,7 +178,7 @@ public class ExtratorVM {
         final Desktop desktop = Executions.getCurrent().getDesktop();
         if (!desktop.isServerPushEnabled()) desktop.enableServerPush(true);
 
-        new Thread(() -> {
+        executor.submit(() -> {
             List<Curriculo> locais = curriculoDAO.listarTodos();
             int total = locais.size();
             int atual = 0;
@@ -201,7 +206,7 @@ public class ExtratorVM {
 
             atualizarLogAtualizacao(desktop, "\n✅ Concluído. " + listaDesatualizados.size() + " desatualizados.");
             finalizarProcesso(desktop, "Verificação concluída!", true);
-        }).start();
+        });
     }
 
     @Command
@@ -227,7 +232,7 @@ public class ExtratorVM {
         // Copia a lista para evitar erro de concorrência ao remover itens
         List<Curriculo> paraAtualizar = new ArrayList<>(this.listaDesatualizados);
 
-        new Thread(() -> {
+        executor.submit(() -> {
             int total = paraAtualizar.size();
             int count = 0;
 
@@ -260,7 +265,7 @@ public class ExtratorVM {
             // Atualiza o dashboard geral (os cards)
             Executions.schedule(desktop, event -> atualizarDashboard(), new Event("onUpdate"));
 
-        }).start();
+        });
     }
 
     @Command
@@ -270,7 +275,7 @@ public class ExtratorVM {
         final Desktop desktop = Executions.getCurrent().getDesktop();
         if (!desktop.isServerPushEnabled()) desktop.enableServerPush(true);
 
-        new Thread(() -> {
+        executor.submit(() -> {
             try {
                 Curriculo novo = lattesService.getCurriculo(item.getIdLattes());
                 if (novo != null) {
@@ -284,7 +289,7 @@ public class ExtratorVM {
             } catch (Exception e) {
                 finalizarProcesso(desktop, "Erro: " + e.getMessage(), false);
             }
-        }).start();
+        });
     }
 
     @Command
@@ -378,7 +383,7 @@ public class ExtratorVM {
 
         final String login = (usuarioLogado != null) ? usuarioLogado.getLogin() : "ANONIMO";
 
-        new Thread(() -> {
+        executor.submit(() -> {
             try {
                 String idEncontrado = null;
                 String tipoBusca = (abaSelecionada == 1) ? "POR_CPF" : "POR_NOME"; // define o tipo da busca
@@ -422,7 +427,7 @@ public class ExtratorVM {
 
                 finalizarProcesso(desktop, "❌ Erro na busca: " + e.getMessage(), false);
             }
-        }).start();
+        });
     }
 
     @Command
@@ -442,7 +447,7 @@ public class ExtratorVM {
         this.logStatus = "Iniciando download direto...";
         this.barraVisivel = true;
 
-        new Thread(() -> executarExtracaoInternal(desktop, idLattesInput, "POR_ID")).start();
+        executor.submit(() -> executarExtracaoInternal(desktop, idLattesInput, "POR_ID"));
     }
 
     private void executarExtracaoInternal(Desktop desktop, String id, String tipoOrigem) {
@@ -543,7 +548,7 @@ public class ExtratorVM {
             return;
         }
         this.logBatch += "✅ " + linhas.size() + " linhas. Iniciando...\n----------------\n";
-        new Thread(() -> processarLote(desktop, linhas)).start();
+        executor.submit(() -> processarLote(desktop, linhas));
     }
 
     // UPLOAD MANUAL (XML/ZIP)
@@ -580,7 +585,7 @@ public class ExtratorVM {
         final byte[] byteData = isBinary ? media.getByteData() : null;
         final String stringData = !isBinary ? media.getStringData() : null;
 
-        new Thread(() -> {
+        executor.submit(() -> {
             try {
                 atualizarLog(desktop, "Descompactando/Lendo arquivo...");
                 String xmlConteudo = "";
@@ -660,7 +665,7 @@ public class ExtratorVM {
                 AuditLogService.registrarExtracao("UPLOAD_MANUAL", login, false, "N/A", "ERRO: " + e.getMessage());
                 finalizarProcesso(desktop, "Falha técnica ao processar arquivo: " + e.getMessage(), false);
             }
-        }).start();
+        });
     }
 
     @Command
@@ -723,14 +728,14 @@ public class ExtratorVM {
                 if (idBusca.length() != 16) { erro++; continue; }
 
                 // -- verifica se o id já existe no banco, se existir, pula, se não, prossegue.
-                if (curriculoDAO.existe(idBusca)) {
-                    sucesso++;
-                    atualizarLogBatch(desktop, "⏩ ["+(i+1)+"/"+total+"] ID " + idBusca + " já cadastrado. Pulando...\n");
-
-                    // --- NOVA AUDITORIA CORRETA PARA CURRÍCULOS SKIPPADOS ---
-                    AuditLogService.registrarExtracao("LOTE_PULADO", login, true, idBusca, "Currículo já existente no banco (Ignorado)");
-                    continue;
-                }
+//                if (curriculoDAO.existe(idBusca)) {
+//                    sucesso++;
+//                    atualizarLogBatch(desktop, "⏩ ["+(i+1)+"/"+total+"] ID " + idBusca + " já cadastrado. Pulando...\n");
+//
+//                    // --- NOVA AUDITORIA CORRETA PARA CURRÍCULOS SKIPPADOS ---
+//                    AuditLogService.registrarExtracao("LOTE_PULADO", login, true, idBusca, "Currículo já existente no banco (Ignorado)");
+//                    continue;
+//                }
 
                 atualizarLogBatch(desktop, "["+(i+1)+"/"+total+"] ID "+idBusca+"...");
                 Curriculo c = lattesService.getCurriculo(idBusca);
@@ -843,7 +848,7 @@ public class ExtratorVM {
         }
 
         // 4. Inicia a Thread de trabalho pesado
-        new Thread(() -> {
+        executor.submit(() -> {
             try {
                 // Vai na internet buscar os dados (Lento)
                 Integer cits = BibliometriaService.buscarCitacoes(artigo.getDoi());
@@ -872,7 +877,7 @@ public class ExtratorVM {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }).start();
+        });
     }
 
     // Getters
