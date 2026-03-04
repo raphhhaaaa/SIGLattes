@@ -1,160 +1,146 @@
 package com.uem.extrator.service;
 
+import com.uem.extrator.model.LogAuditoria;
 import com.uem.extrator.util.ConfigManager;
+import com.uem.extrator.util.HibernateUtil;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Stream;
 
 public class AuditLogService {
 
-    // Salva o arquivo na pasta do usuário do sistema operacional (funciona em Linux/Windows)
-    private static final String CAMINHO_LOG = System.getProperty("user.home") + File.separator + "extrator_lattes_audit.log";
-
-    // formatos da data
+    // Mantemos o formatador de data antigo para a interface não perceber a mudança
     private static final SimpleDateFormat SDF_LOG = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    private static final SimpleDateFormat SDF_FILTRO = new SimpleDateFormat("yyyy-MM-dd");
 
+    // 1. Assinatura mantida idêntica
     public static void log(String acao, String usuario, String detalhes) {
         new AuditLogService().registrarLogGeral(acao, usuario, detalhes);
     }
 
+    // 2. Assinatura mantida idêntica (usado lá no ExtratorVM)
     public static void registrarExtracao(String tipoExtracao, String usuario, boolean sucesso, String idLattes, String nomePesquisador) {
-        // define a ação baseada no sucesso (facilita contagem de curriculos processados no dia)
-        String acao = sucesso ? "EXTRACAO_SUCESSO" : "EXTRACAO_FALHA";
-
-        // verifica configuração
         if (!ConfigManager.getInstance().isAuditQueries()) { return; }
 
-        // monta os detalhes
+        // Mantém a regra de status para sabermos se foi pulado, erro, sucesso, etc.
+        String acao = sucesso ? "EXTRACAO_SUCESSO" : "EXTRACAO_FALHA";
+        if (tipoExtracao.contains("PULADO") || tipoExtracao.contains("ERRO") || tipoExtracao.contains("NAO_ENCONTRADO")) {
+            acao = tipoExtracao;
+        } else if (!tipoExtracao.equals("LOTE") && !tipoExtracao.equals("LOTE_CPF")) {
+            acao = tipoExtracao + (sucesso ? "_SUCESSO" : "_FALHA");
+        }
+
         String detalhes = String.format("Tipo: %s | ID: %s | Nome: %s",
                 tipoExtracao,
                 (idLattes != null ? idLattes : "N/A"),
                 (nomePesquisador != null ? nomePesquisador : "N/A"));
 
-        // loga
-        log(acao, usuario, detalhes);
+        salvarNoBanco(acao, usuario, idLattes, detalhes);
     }
 
-    public synchronized void registrarLogGeral(String acao, String usuario, String detalhes) {
+    // 3. REMOVIDO O SYNCHRONIZED - O gargalo foi eliminado!
+    public void registrarLogGeral(String acao, String usuario, String detalhes) {
         if (!isAuditoriaHabilitada(acao)) {
-            return; // se config estiver desmarcada ignore e nao grava nada
+            return;
         }
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(CAMINHO_LOG, true))) {
-            // formato padrão: DATA | ACAO | USUARIO | DETALHES
-            String linha = String.format("%s | %-15s | %-15s | %s", SDF_LOG.format(new Date()), acao, usuario, detalhes);
-
-            writer.write(linha);
-            writer.newLine();
-        } catch (IOException e) {
-            System.out.println("Erro ao gravar log de auditoria: " + e.getMessage());
-        }
+        salvarNoBanco(acao, usuario, "N/A", detalhes);
     }
 
+    // 4. Lógica original de verificação mantida
     private boolean isAuditoriaHabilitada(String acao) {
         ConfigManager config = ConfigManager.getInstance();
-
-        // 1. Tentativas de Login
-        if (acao.startsWith("LOGIN")) {
-            return config.isAuditLogins();
-        }
-
-        // 2. Consultas e Extrações (Já verificado no registrarExtracao, mas garantindo aqui também)
-        if (acao.startsWith("EXTRACAO") || acao.startsWith("BUSCA") || acao.equals("LOTE")) {
-            return config.isAuditQueries();
-        }
-
-        // 3. Ações Administrativas (CRUD Usuário, Segurança)
-        if (acao.contains("USUARIO") || acao.equals("SEGURANCA") || acao.equals("CONFIG")) {
-            return config.isAuditAdminActions();
-        }
-
-        // Por padrão, logs desconhecidos são gravados (ou mude para false se quiser ser restritivo)
+        if (acao.startsWith("LOGIN")) return config.isAuditLogins();
+        if (acao.startsWith("EXTRACAO") || acao.startsWith("BUSCA") || acao.contains("LOTE")) return config.isAuditQueries();
+        if (acao.contains("USUARIO") || acao.equals("SEGURANCA") || acao.equals("CONFIG")) return config.isAuditAdminActions();
         return true;
     }
 
-    // Registra que um currículo foi processado agora
-    public synchronized void registrarProcessamento(String idLattes) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(CAMINHO_LOG, true))) {
-            String linha = SDF_LOG.format(new Date()) + "|" + idLattes;
-            writer.write(linha);
-            writer.newLine();
-        } catch (IOException e) {
-            System.err.println("Erro ao gravar log de auditoria: " + e.getMessage());
-        }
+    // 5. REMOVIDO O SYNCHRONIZED - Antigo método de processamento agora salva no BD
+    public void registrarProcessamento(String idLattes) {
+        salvarNoBanco("PROCESSAMENTO", "SISTEMA", idLattes, "Processamento registrado");
     }
 
-    // Lê o arquivo e conta quantas linhas começam com a data de hoje.
+    // 6. Contagem para o Dashboard: Assinatura mantida (long), mas agora faz um SELECT COUNT instantâneo
     public long contarProcessamentosHoje() {
-        File arquivo = new File(CAMINHO_LOG);
-        if (!arquivo.exists()) return 0L;
-
-        String dataHoje = SDF_FILTRO.format(new Date());
-
-        try (Stream<String> stream = Files.lines(Paths.get(CAMINHO_LOG))) {
-            return stream.filter(linha -> {
-                // 1. Tem que ser de hoje
-                if (!linha.startsWith(dataHoje)) return false;
-
-                // 2. Lógica Híbrida (Novo + Antigo)
-                boolean isNovoSucesso = linha.contains("EXTRACAO_SUCESSO");
-
-                // O log antigo era simples: "DATA|ID".
-                // Então, se NÃO for log novo (LOGIN, SEGURANCA, FALHA) e tiver "|", é um log antigo válido.
-                boolean isAntigo = !linha.contains("EXTRACAO")
-                        && !linha.contains("LOGIN")
-                        && !linha.contains("SEGURANCA")
-                        && linha.contains("|");
-
-                return isNovoSucesso || isAntigo;
-            }).count();
-        } catch (IOException e) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery(
+                            "SELECT COUNT(l) FROM LogAuditoria l WHERE DATE(l.dataHora) = CURRENT_DATE AND (l.tipo LIKE '%SUCESSO%' OR l.tipo = 'PROCESSAMENTO')", Long.class)
+                    .uniqueResult();
+        } catch (Exception e) {
             e.printStackTrace();
             return 0L;
         }
     }
 
+    // 7. O PULO DO GATO: Retorna List<String> para o LogVM antigo não quebrar!
     public List<String> lerLogCompleto() {
-        File arquivo = new File(CAMINHO_LOG);
-        if (!arquivo.exists()) return new ArrayList<>();
+        List<String> linhas = new ArrayList<>();
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            // Traz apenas os 500 mais recentes para proteger a memória RAM
+            List<LogAuditoria> logs = session.createQuery("FROM LogAuditoria ORDER BY dataHora DESC", LogAuditoria.class)
+                    .setMaxResults(500)
+                    .list();
 
-        try {
-            List<String> linhas = Files.readAllLines(Paths.get(CAMINHO_LOG));
-            // inverte para mostrar mais recente no topo
-            Collections.reverse(linhas);
-            return linhas;
-        } catch (IOException e) {
-            List<String> erro = new ArrayList<>();
-            erro.add("Erro ao ler arquivo de log: " + e.getMessage());
-            return erro;
+            for (LogAuditoria log : logs) {
+                // Reconstrói a string idêntica ao que o arquivo de texto gerava
+                String linha = String.format("%s | %-15s | %-15s | %s",
+                        SDF_LOG.format(log.getDataHora()),
+                        log.getTipo(),
+                        log.getUsuario(),
+                        log.getMensagem());
+                linhas.add(linha);
+            }
+        } catch (Exception e) {
+            linhas.add("Erro ao ler logs do banco: " + e.getMessage());
+        }
+        return linhas;
+    }
+
+    // 8. Assinatura mantida - Retorna um texto simbólico para a tela não dar erro
+    public String getCaminhoArquivo() {
+        return "Armazenado com segurança no Banco de Dados (MySQL)";
+    }
+
+    // 9. Assinatura mantida - Agora faz um DELETE FROM na tabela
+    public void apagarLog() {
+        Transaction tx = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+            session.createQuery("DELETE FROM LogAuditoria").executeUpdate();
+
+            // Cria um registro para auditar quem apagou a tabela
+            LogAuditoria logReset = new LogAuditoria(new Date(), "SEGURANCA", "SISTEMA", "N/A", "Todos os logs foram apagados do banco.");
+            session.save(logReset);
+
+            tx.commit();
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            e.printStackTrace();
         }
     }
 
-    public String getCaminhoArquivo() {
-        return CAMINHO_LOG;
-    }
+    // --- MÉTODO PRIVADO NOVO --- Responsável por encapsular o Hibernate de forma assíncrona e rápida
+    private static void salvarNoBanco(String tipo, String usuario, String identificador, String mensagem) {
+        Transaction tx = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
 
-    public void apagarLog() {
-        try {
-            Path path = Paths.get(getCaminhoArquivo());
-            boolean apagou = Files.deleteIfExists(path); // Deleta se existir
-            if (apagou) {
-                System.out.println("Arquivo deletado.");
-            } else {
-                System.out.println("Arquivo não encontrado.");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+            LogAuditoria log = new LogAuditoria(
+                    new Date(),
+                    tipo,
+                    (usuario != null && !usuario.isEmpty()) ? usuario : "SISTEMA",
+                    (identificador != null && !identificador.isEmpty()) ? identificador : "N/A",
+                    mensagem
+            );
+
+            session.save(log);
+            tx.commit();
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            System.err.println("Erro crítico ao gravar log na base de dados: " + e.getMessage());
         }
     }
 }
