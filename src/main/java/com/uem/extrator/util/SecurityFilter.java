@@ -1,60 +1,84 @@
 package com.uem.extrator.util;
 
+import com.uem.extrator.model.Usuario;
+
 import javax.servlet.*;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
-import java.rmi.server.ServerCloneException;
+import java.util.Arrays;
+import java.util.List;
 
 @WebFilter("*.zul")
 public class SecurityFilter implements Filter {
 
+    // rotas públicas (qualquer pessoa da internet pode entrar)
+    private static final List<String> PUBLIC_WHITELIST = Arrays.asList(
+            "/login.zul"
+    );
+
+    // rotas do usuário COMUM
+    private static final List<String> COMMOM_USER_WHITELIST  = Arrays.asList(
+            "/index.zul",
+            "/navbar.zul",
+            "/header.zul",
+            "/footer.zul",
+            "/menubar.zul",
+            "/detalhes.zul",
+            "/paginas/modalDetalhes.zul",
+            "/paginas/pessoa/pessoaList.zul",
+            "/paginas/instituicao/instituicaoList.zul",
+            "/paginas/curso/cursoList.zul",
+            "/paginas/relatorio/relatorioDinamico.zul",
+            "/paginas/ferramentas/verificacao.zul"
+    );
+
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-            throws IOException, ServletException {
+        throws IOException, ServletException {
 
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse res = (HttpServletResponse) response;
         HttpSession session = req.getSession(false);
 
-        // onde usuario quer ir
         String url = req.getRequestURI();
+        String contextPath = req.getContextPath();
 
-        // quem é o usuario
+        // remove o contexto para analisar somente o caminho
+        String path = url.substring(contextPath.length());
+
         Object usuarioLogado = (session != null) ? session.getAttribute("usuario_logado") : null;
 
-        // 1. Se for a página de login, deixa passar.
-        // 2. Se for recurso estático (CSS, IMAGEM, JS), deixa passar (geralmente não cai aqui por causa do *.zul, mas por segurança).
-        // 3. Se estiver logado, deixa passar.
-        // 4. SENÃO -> manda para o login.
-
-        boolean isLoginPage = url.endsWith("login.zul");
-
-        if (usuarioLogado != null) {
-            // cast para modelo de usuario
-            com.uem.extrator.model.Usuario usuario = (com.uem.extrator.model.Usuario) usuarioLogado;
-
-            // define as rotas restritas e administradoras
-            boolean isAreaRestrita = url.contains("/paginas/sistema")
-                    || url.contains("/paginas/ferramentas/config.zul")
-                    || url.contains("/paginas/relatorio/consultaSql.zul");
-
-            if (isAreaRestrita && !usuario.isAdmin()) {
-                // usuario comum tenta acessar área de admin: redireciona para página principal
-                res.sendRedirect(req.getContextPath() + "/index.zul");
-                return;
-            }
-
-            // se tem permissão, deixa passar
+        // regra 1: se for página publica, deixa passar
+        if (PUBLIC_WHITELIST.stream().anyMatch(path::contains)) {
             chain.doFilter(request, response);
-        } else if (isLoginPage) {
-            // não está logado, mas está na página de login, deixa passar
+            return;
+        }
+
+        // regra 2: se não for pública e não está logado, manda para o login
+        if (usuarioLogado == null) {
+            res.sendRedirect(contextPath + "/login.zul");
+            return;
+        }
+
+        // SISTEMA DE AUTORIZAÇÃO
+        Usuario usuario = (Usuario) usuarioLogado;
+
+        // regra 3: se for admin tem passe para o sistema inteiro
+        if (usuario.isAdmin()) {
             chain.doFilter(request, response);
+            return;
+        }
+
+        // regra 4: se for usuário comum, verifica a white-list
+        boolean isPermitido = COMMOM_USER_WHITELIST.stream().anyMatch(path::contains);
+
+        if (isPermitido) {
+            chain.doFilter(request, response); // esta na lista pode passar
         } else {
-            // nega acesso: manda para login
-            res.sendRedirect(req.getContextPath() + "/login.zul");
+            res.sendRedirect(contextPath + "/index.zul");
         }
     }
 
