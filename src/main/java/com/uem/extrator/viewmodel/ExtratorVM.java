@@ -23,6 +23,7 @@ import org.zkoss.zk.ui.event.EventListener;
 
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
@@ -588,20 +589,41 @@ public class ExtratorVM {
                 if (nomeArquivo.endsWith(".zip")) {
                     if (!isBinary) throw new Exception("O navegador não enviou o ZIP em formato binário.");
 
-                    try (java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(new java.io.ByteArrayInputStream(byteData))) {
-                        java.util.zip.ZipEntry entry = zis.getNextEntry();
-                        if (entry != null) {
-                            xmlConteudo = new String(zis.readAllBytes(), StandardCharsets.ISO_8859_1);
-                        } else {
-                            throw new Exception("Arquivo ZIP vazio ou inválido.");
+                    java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(byteData);
+                    java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(bais);
+
+                    java.util.zip.ZipEntry zipEntry = zis.getNextEntry();
+                    if (zipEntry == null) {
+                        zis.close();
+                        throw new Exception("O arquivo ZIP está vazio ou num formato não suportado.");
+                    }
+
+                    // --- PROTEÇÃO CONTRA ZIP BOMB (Limite de 50MB) ---
+                    java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                    byte[] buffer = new byte[8192];
+                    int count = 0;
+                    long totalBytesLidos = 0;
+                    long limiteMaximo = 50 * 1024 * 1024; // 50 Megabytes
+
+                    while ((count = zis.read(buffer)) != -1) {
+                        totalBytesLidos += count;
+                        if (totalBytesLidos > limiteMaximo) {
+                            zis.closeEntry();
+                            zis.close();
+                            throw new SecurityException("Erro de Segurança: Arquivo excede o limite de 50MB.");
                         }
+                        baos.write(buffer, 0, count);
                     }
+
+                    // Converte os bytes seguros numa String
+                    xmlConteudo = baos.toString(StandardCharsets.ISO_8859_1);
+
+                    zis.closeEntry();
+                    zis.close();
+
                 } else {
-                    if (isBinary) {
-                        xmlConteudo = new String(byteData, StandardCharsets.ISO_8859_1); // Padrão do Lattes
-                    } else {
-                        xmlConteudo = stringData;
-                    }
+                    // Se for XML direto (seu código original de leitura de string aqui)
+                    xmlConteudo = isBinary ? new String(byteData, StandardCharsets.ISO_8859_1) : stringData;
                 }
 
                 atualizarLog(desktop, "Extraindo ID Lattes...");
@@ -730,7 +752,7 @@ public class ExtratorVM {
                 }
             } catch(Exception e){
                 erro++;
-                atualizarLogBatch(desktop, "❌ Erro.\n");
+                atualizarLogBatch(desktop, "❌ Erro: " + e.getMessage() + "\n");
 
                 // log de erro técnico
                 AuditLogService.registrarExtracao("LOTE_ERRO", login, false, dado, "Erro técnico: " + e.getMessage());

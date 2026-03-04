@@ -30,7 +30,7 @@ public class RelatorioDAO {
                     hql.append("WHERE p.tipoFormacao = :termo ");
                     hql.append("AND EXISTS ( ");
                     hql.append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i JOIN a.vinculos v ");
-                    hql.append("  WHERE a.curriculo = p.curriculo AND upper(i.nomeInstituicao) = :nomeInst ");
+                    hql.append("  WHERE a.curriculo = p.curriculo AND i.nomeInstituicao = :nomeInst ");
                     hql.append("  AND p.anoConclusao >= v.anoInicio AND (v.anoFim IS NULL OR p.anoConclusao <= v.anoFim) ");
                     hql.append(") ");
                     hql.append("GROUP BY p.anoConclusao ORDER BY p.anoConclusao DESC");
@@ -39,7 +39,7 @@ public class RelatorioDAO {
                     hql.append("WHERE p.tipo = :termo ");
                     hql.append("AND EXISTS ( ");
                     hql.append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i JOIN a.vinculos v ");
-                    hql.append("  WHERE a.curriculo = p.curriculo AND upper(i.nomeInstituicao) = :nomeInst ");
+                    hql.append("  WHERE a.curriculo = p.curriculo AND i.nomeInstituicao = :nomeInst ");
                     hql.append("  AND p.ano >= v.anoInicio AND (v.anoFim IS NULL OR p.ano <= v.anoFim) ");
                     hql.append(") ");
                     hql.append("GROUP BY p.ano ORDER BY p.ano DESC");
@@ -97,7 +97,7 @@ public class RelatorioDAO {
             if (filtrarInstituicao) {
                 hql.append("AND EXISTS ( ");
                 hql.append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i JOIN a.vinculos v ");
-                hql.append("  WHERE a.curriculo = p.curriculo AND upper(i.nomeInstituicao) = :nomeInst ");
+                hql.append("  WHERE a.curriculo = p.curriculo AND i.nomeInstituicao = :nomeInst ");
                 if (isFormacao) {
                     hql.append("  AND p.anoConclusao >= v.anoInicio AND (v.anoFim IS NULL OR p.anoConclusao <= v.anoFim) ");
                 } else {
@@ -142,8 +142,8 @@ public class RelatorioDAO {
 
             StringBuilder hql = new StringBuilder("SELECT COUNT(c.idLattes) FROM Curriculo c ");
             hql.append("WHERE EXISTS ( ");
-            hql.append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i JOIN a.vinculos v ");
-            hql.append("  WHERE a.curriculo = c AND upper(i.nomeInstituicao) = :nomeInst ");
+            hql.append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i ");
+            hql.append("  WHERE a.curriculo = c AND i.nomeInstituicao = :nomeInst ");
             hql.append(") ");
 
             Query<Long> query = session.createQuery(hql.toString(), Long.class);
@@ -179,7 +179,7 @@ public class RelatorioDAO {
             if (filtrarInstituicao) {
                 hql.append("AND EXISTS ( ");
                 hql.append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i JOIN a.vinculos v ");
-                hql.append("  WHERE a.curriculo = p.curriculo AND upper(i.nomeInstituicao) = :nomeInst ");
+                hql.append("  WHERE a.curriculo = p.curriculo AND i.nomeInstituicao = :nomeInst ");
                 hql.append("  AND p.ano >= v.anoInicio AND (v.anoFim IS NULL OR p.ano <= v.anoFim) ");
                 hql.append(") ");
             }

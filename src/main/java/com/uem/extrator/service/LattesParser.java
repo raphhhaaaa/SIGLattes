@@ -21,7 +21,17 @@ public class LattesParser {
 
     public Curriculo parse(String xmlConteudo, String idLattes) throws Exception {
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+
+        // BLINDAGEM CONTRA XXE //
+
+        dbFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        dbFactory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        dbFactory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        dbFactory.setXIncludeAware(false);
+        dbFactory.setExpandEntityReferences(false);
+
         DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+
         InputSource is = new InputSource(new StringReader(xmlConteudo));
         Document doc = dBuilder.parse(is);
         doc.getDocumentElement().normalize();
@@ -578,11 +588,11 @@ public class LattesParser {
         if (texto == null || texto.isEmpty()) return null;
         try {
             String limpo = texto.toLowerCase().replaceAll("\\s+", "");
-            MessageDigest md = MessageDigest.getInstance("MD5");
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
             byte[] messageDigest = md.digest(limpo.getBytes());
             BigInteger no = new BigInteger(1, messageDigest);
             String hashText = no.toString(16);
-            while (hashText.length() < 32) {
+            while (hashText.length() < 64) {
                 hashText = "0" + hashText;
             }
             return hashText;

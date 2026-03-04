@@ -29,7 +29,7 @@ public class Producao {
     @Column(name = "ds_titulo", length = 1000)
     private String titulo;
 
-    @Column(name = "hash_titulo", length = 32)
+    @Column(name = "hash_titulo", length = 64)
     private String hashTitulo;
 
     @Column(name = "ano_producao")
