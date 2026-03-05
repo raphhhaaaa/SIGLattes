@@ -3,6 +3,7 @@ package com.uem.extrator.service;
 import com.sun.jdi.event.ExceptionEvent;
 import com.uem.extrator.dao.CurriculoDAO;
 import com.uem.extrator.model.Curriculo;
+import com.uem.extrator.model.Producao;
 import com.uem.extrator.util.ConfigManager;
 import javax.xml.namespace.QName;
 import javax.xml.ws.Service;
@@ -131,7 +132,7 @@ public class LattesService {
             System.out.println("Enriquecendo " + curriculo.getProducoes().size() + " produções com métricas...");
 
             // usa parallelStream para fazer várias requisições HTTP ao mesmo tempo
-            curriculo.getProducoes().parallelStream().forEach(artigo -> {
+            for (Producao artigo : curriculo.getProducoes()) {
                 String doi = artigo.getDoi();
 
                 // inicializa com padrão para não ficar null no banco
@@ -148,11 +149,13 @@ public class LattesService {
                         artigo.setCitacoes(cits);
                         artigo.setStatusAcesso(acesso[0]);
                         artigo.setDataAtualizacaoMetricas(new Date());
+
+                        Thread.sleep(300);
                     } catch (Exception e) {
                         System.err.println("Erro ao buscar métricas para DOI " + doi + ": " + e.getMessage());
                     }
                 }
-            });
+            }
             System.out.print(">>> Enriquecimento concluído.");
         }
     }

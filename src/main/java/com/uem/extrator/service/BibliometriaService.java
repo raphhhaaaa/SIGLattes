@@ -22,6 +22,8 @@ public class BibliometriaService {
             .proxy(ProxySelector.of(null))
             .build();
 
+    private static long ultimaRequisicao = 0;
+
     public static Integer buscarCitacoes(String doi) {
         if (doi == null || doi.trim().isEmpty()) return null;
 
@@ -106,7 +108,20 @@ public class BibliometriaService {
         return null;
     }
 
-    private static String fazerRequisicao(String url, String servico, String identificador) throws Exception {
+    private static synchronized String fazerRequisicao(String url, String servico, String identificador) throws Exception {
+        // --- SEMÁFORO DE TRÁFEGO ---
+        // Garante que o sistema espera SEMPRE 500 milissegundos (meio segundo)
+        long agora = System.currentTimeMillis();
+        long diferenca = agora - ultimaRequisicao;
+        if (diferenca < 500) {
+            try {
+                Thread.sleep(500 - diferenca);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        ultimaRequisicao = System.currentTimeMillis();
+
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .timeout(Duration.ofSeconds(20))
@@ -118,6 +133,10 @@ public class BibliometriaService {
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
         // --- ADICIONAMOS ESTE LOG PARA DIAGNÓSTICO ---
+        if (response.statusCode() == 404) {
+            return null; // o artigo/autor simplesmente não existe na base de dados do serviço.
+        }
+
         if (response.statusCode() == 429) {
             System.err.println("🚨 BLOQUEIO DO " + servico + " (Erro 429)! O servidor pediu para abrandarmos. Identificador: " + identificador);
             return null;
