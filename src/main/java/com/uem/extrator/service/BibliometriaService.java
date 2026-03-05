@@ -1,5 +1,7 @@
 package com.uem.extrator.service;
 
+import com.sun.xml.bind.v2.runtime.output.SAXOutput;
+
 import java.net.ProxySelector;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -73,7 +75,38 @@ public class BibliometriaService {
         return new String[]{"-", "secondary"};
     }
 
-    private static String fazerRequisicao(String url, String servico, String doiOriginal) throws Exception {
+    public static Integer buscarIndiceH(String nomeAutor) {
+        if (nomeAutor == null || nomeAutor.trim().isEmpty()) return null;
+
+        try {
+            // codifica nome para URL
+            String nomeEncoded = URLEncoder.encode(nomeAutor.trim(), StandardCharsets.UTF_8.toString());
+
+            // procura o autor no OpenAlex
+            String url = "https://api.openalex.org/authors?search=" + nomeEncoded + "&mailto=extrator@uem.br";
+
+            System.out.println(">>> OpenAlex buscando INDICE H: " + url);
+            String json = fazerRequisicao(url, "OpenAlex", nomeAutor);
+
+            if (json == null || !json.contains("\"results\"")) return null;
+
+            // como o openalex devolve uma lista ordenada por relevancia, o primeiro resultado
+            // é o mais provavel de ser o nosso autor, então capturamos ele
+            Matcher m = Pattern.compile("\"h_index\"\\s*:\\s*(\\d+)").matcher(json);
+            if (m.find()) {
+                int hIndex = Integer.parseInt(m.group(1));
+                System.out.println(">>> [OpenAlex] SUCESSO! Autor: " + nomeAutor + " -> Índice H: " + hIndex);
+                return hIndex;
+            } else {
+                System.out.println(">>> [OpenAlex] VAZIO: O autor '" + nomeAutor + "' não foi encontrado com este nome exato.");
+            }
+        } catch (Exception e) {
+            System.err.println("Erro OpenAlex [" + nomeAutor + "]: " + e.getMessage());
+        }
+        return null;
+    }
+
+    private static String fazerRequisicao(String url, String servico, String identificador) throws Exception {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .timeout(Duration.ofSeconds(20))
@@ -84,8 +117,18 @@ public class BibliometriaService {
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        if (response.statusCode() == 404) return null;
-        if (response.statusCode() >= 300) return null;
+        // --- ADICIONAMOS ESTE LOG PARA DIAGNÓSTICO ---
+        if (response.statusCode() == 429) {
+            System.err.println("🚨 BLOQUEIO DO " + servico + " (Erro 429)! O servidor pediu para abrandarmos. Identificador: " + identificador);
+            return null;
+        }
+
+        if (response.statusCode() >= 300) {
+            if (!servico.equals("OpenAlex")) { // Oculta erros 404 normais de artigos para não poluir o log
+                System.err.println("⚠️ Falha no " + servico + " (Erro " + response.statusCode() + ") para: " + identificador);
+            }
+            return null;
+        }
 
         return response.body();
     }

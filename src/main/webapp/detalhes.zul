@@ -91,7 +91,20 @@
             </groupbox>
 
             <groupbox closable="false" mold="3d">
-                <caption label="Produção Bibliográfica" iconSclass="z-icon-book"/>
+                <caption label="Produção Bibliográfica" iconSclass="z-icon-book" sclass="d-flex align-items-center">
+
+                    <span visible="@load(vm.curriculo.indiceH ne null)"
+                          class="badge bg-primary px-2 py-1"
+                          style="box-shadow: 0 2px 4px rgba(0,0,0,0.2);"
+                          tooltiptext="Índice H geral do Pesquisador (Fonte: OpenAlex)">
+
+                        <n:i class="fas fa-chart-line me-1"></n:i>
+                        Índice H do Pesquisador: <space spacing="1px"/>
+                        <label value="@load(vm.curriculo.indiceH)"
+                               style="font-weight: bold; color: white; font-size: 1rem;"/>
+                    </span>
+
+                </caption>
 
                 <listbox model="@load(vm.curriculo.producoes)" height="300px" emptyMessage="Nenhuma produção registrada.">
                     <listhead>

@@ -120,7 +120,14 @@ public class LattesService {
      * em paralelo para agilizar o processo.
      */
     private void enriquecerCurriculoComMetricas(Curriculo curriculo) {
-        if (curriculo != null && curriculo.getProducoes() != null && !curriculo.getProducoes().isEmpty()){
+        if (curriculo != null) {
+            String nomeAutor = curriculo.getNomeCompleto();
+            System.out.println("Buscando Índice H para: " + nomeAutor);
+            Integer indiceH = BibliometriaService.buscarIndiceH(nomeAutor);
+            curriculo.setIndiceH(indiceH);
+        }
+
+        if (curriculo.getProducoes() != null && !curriculo.getProducoes().isEmpty()){
             System.out.println("Enriquecendo " + curriculo.getProducoes().size() + " produções com métricas...");
 
             // usa parallelStream para fazer várias requisições HTTP ao mesmo tempo
@@ -140,7 +147,6 @@ public class LattesService {
 
                         artigo.setCitacoes(cits);
                         artigo.setStatusAcesso(acesso[0]);
-
                         artigo.setDataAtualizacaoMetricas(new Date());
                     } catch (Exception e) {
                         System.err.println("Erro ao buscar métricas para DOI " + doi + ": " + e.getMessage());

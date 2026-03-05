@@ -28,6 +28,9 @@ public class Curriculo {
     @Column(name = "nm_citacao", length = 1000)
     private String nomeCitacao;
 
+    @Column(name = "indice_h")
+    private Integer indiceH;
+
     @Column(name = "ds_orcid", length = 50)
     private String orcid;
 
@@ -103,6 +106,9 @@ public class Curriculo {
 
     public List<Atuacao> getAtuacoes() { return atuacoes; }
     public void setAtuacoes(List<Atuacao> atuacoes) { this.atuacoes = atuacoes; }
+
+    public Integer getIndiceH() { return indiceH; }
+    public void setIndiceH(Integer indiceH) { this.indiceH = indiceH; }
 
     // Metodos auxiliares
 
