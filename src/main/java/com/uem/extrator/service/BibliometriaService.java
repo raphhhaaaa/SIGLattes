@@ -1,7 +1,9 @@
 package com.uem.extrator.service;
 
 import com.sun.xml.bind.v2.runtime.output.SAXOutput;
+import org.hibernate.internal.util.collections.ConcurrentReferenceHashMap;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.net.ProxySelector;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -22,7 +24,8 @@ public class BibliometriaService {
             .proxy(ProxySelector.of(null))
             .build();
 
-    private static long ultimaRequisicao = 0;
+    // gestão de tráfego independente por API
+    private static final ConcurrentHashMap<String, Long> controleTrafego = new ConcurrentHashMap<>();
 
     public static Integer buscarCitacoes(String doi) {
         if (doi == null || doi.trim().isEmpty()) return null;
@@ -31,11 +34,16 @@ public class BibliometriaService {
             String doiEncoded = limparEEncodarDoi(doi, true);
             String url = "https://api.crossref.org/works/" + doiEncoded + "?mailto=extrator@uem.br";
 
+            System.out.println(">>> CROSSREF BUSCANDO: " + url);
             String json = fazerRequisicao(url, "CrossRef", doi);
             if (json == null) return null;
 
             Matcher m = Pattern.compile("\"is-referenced-by-count\"\\s*:\\s*(\\d+)").matcher(json);
-            if (m.find()) return Integer.parseInt(m.group(1));
+            if (m.find()) {
+                Integer cits = Integer.parseInt(m.group(1));
+                System.out.println(">>> [CrossRef] SUCESSO: " + doi + "-> " + cits + " citações.");
+                return cits;
+            }
 
         } catch (Exception e) {
             System.err.println("Erro CrossRef [" + doi + "]: " + e.getMessage());
@@ -108,19 +116,22 @@ public class BibliometriaService {
         return null;
     }
 
-    private static synchronized String fazerRequisicao(String url, String servico, String identificador) throws Exception {
-        // --- SEMÁFORO DE TRÁFEGO ---
-        // Garante que o sistema espera SEMPRE 500 milissegundos (meio segundo)
-        long agora = System.currentTimeMillis();
-        long diferenca = agora - ultimaRequisicao;
-        if (diferenca < 500) {
-            try {
-                Thread.sleep(500 - diferenca);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+    private static String fazerRequisicao(String url, String servico, String identificador) throws Exception {
+        // --- SEMÁFORO INTELIGENTE DE TRÁFEGO ---
+        if (servico.equals("CrossRef") || servico.equals("")) {
+            // Tranca a fila APENAS para este servico específico. um nao atrapalha o outro
+            synchronized (servico.intern()) {
+                long agora = System.currentTimeMillis();
+                long ultima = controleTrafego.getOrDefault(servico, 0L);
+                long diferenca = agora - ultima;
+
+                // atraso de 100ms (mais ou menos ~6 requisições por segundo)
+                if (diferenca < 300) {
+                    Thread.sleep(300 - diferenca);
+                }
+                controleTrafego.put(servico, System.currentTimeMillis());
             }
         }
-        ultimaRequisicao = System.currentTimeMillis();
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))

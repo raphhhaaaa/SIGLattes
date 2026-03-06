@@ -132,7 +132,7 @@ public class LattesService {
             System.out.println("Enriquecendo " + curriculo.getProducoes().size() + " produções com métricas...");
 
             // usa parallelStream para fazer várias requisições HTTP ao mesmo tempo
-            for (Producao artigo : curriculo.getProducoes()) {
+            curriculo.getProducoes().parallelStream().forEach(artigo -> {
                 String doi = artigo.getDoi();
 
                 // inicializa com padrão para não ficar null no banco
@@ -150,12 +150,11 @@ public class LattesService {
                         artigo.setStatusAcesso(acesso[0]);
                         artigo.setDataAtualizacaoMetricas(new Date());
 
-                        Thread.sleep(300);
                     } catch (Exception e) {
                         System.err.println("Erro ao buscar métricas para DOI " + doi + ": " + e.getMessage());
                     }
                 }
-            }
+            });
             System.out.print(">>> Enriquecimento concluído.");
         }
     }

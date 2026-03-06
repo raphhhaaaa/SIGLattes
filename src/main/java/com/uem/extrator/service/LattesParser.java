@@ -66,7 +66,18 @@ public class LattesParser {
                 }
                 //                          //
                 cv.setNomeCitacao(nomeCitacao);
-                cv.setOrcid(dados.getAttribute("ORCID-ID"));
+
+                String orcidBruto = dados.getAttribute("ORCID-ID");
+                if (orcidBruto != null && !orcidBruto.trim().isEmpty()) {
+                    // padrão oficial do orcid, 4 blocos de 4 dígitos (o ultimo pode se X)
+                    java.util.regex.Matcher m = java.util.regex.Pattern
+                            .compile("([0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X])")
+                            .matcher(orcidBruto.toUpperCase());
+
+                    if (m.find()) {
+                        cv.setOrcid(m.group(1));    // salva apenas os 16 dígitos limpos
+                    }
+                }
 
                 NodeList nResumo = dados.getElementsByTagName("RESUMO-CV");
                 if (nResumo.getLength() > 0) {
