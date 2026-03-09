@@ -134,5 +134,28 @@ public class Producao {
     }
 
     public void setCorAcesso(String corAcesso) {}
+
+    public String getQualisDescricao() {
+        if (this.isbnIssn == null || !"ARTIGO".equalsIgnoreCase(this.tipo)) {
+            return "-";
+        }
+        // Faz a busca direta no banco usando o DAO
+        com.uem.extrator.dao.QualisDAO dao = new com.uem.extrator.dao.QualisDAO();
+        com.uem.extrator.model.Qualis q = dao.buscarPorIssn(this.isbnIssn);
+        return (q != null) ? q.getEstrato() : "S/N";
+    }
+
+    public String getQualisCor() {
+        String nota = getQualisDescricao();
+        if (nota.equals("-") || nota.equals("S/N")) return "badge bg-secondary";
+
+        switch (nota.toUpperCase()) {
+            case "A1": case "A2": return "badge bg-success";
+            case "B1": case "B2": return "badge bg-primary";
+            case "B3": case "B4": return "badge bg-info text-dark";
+            case "C": return "badge bg-warning text-dark";
+            default: return "badge bg-secondary";
+        }
+    }
 }
 

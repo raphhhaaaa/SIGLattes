@@ -1,13 +1,7 @@
 package com.uem.extrator.viewmodel;
 
-import com.uem.extrator.dao.CurriculoDAO;
-import com.uem.extrator.dao.CursoDAO;
-import com.uem.extrator.dao.InstituicaoDAO;
-import com.uem.extrator.dao.ProducaoDAO;
-import com.uem.extrator.model.Curriculo;
-import com.uem.extrator.model.Curso;
-import com.uem.extrator.model.Instituicao;
-import com.uem.extrator.model.Producao;
+import com.uem.extrator.dao.*;
+import com.uem.extrator.model.*;
 import com.uem.extrator.service.BibliometriaService;
 import org.zkoss.bind.BindUtils;
 import org.zkoss.bind.annotation.*;
@@ -160,6 +154,39 @@ public class ListagemVM {
             win.doModal();
         } else {
             org.zkoss.zk.ui.util.Clients.showNotification("Erro ao carregar detalhes", "error", null, null, 2000);
+        }
+    }
+
+    public String obterNotaQualis(Producao producao) {
+        // se não for artigo ou não tiver ISSN, não tem qualis
+        if (producao.getIsbnIssn() == null || !"ARTIGO".equalsIgnoreCase(producao.getTipo())) {
+            return "-";
+        }
+
+        QualisDAO qualisDAO = new QualisDAO();
+        Qualis q = qualisDAO.buscarPorIssn(producao.getIsbnIssn());
+
+        return (q != null && q.getEstrato() != null) ? q.getEstrato() : "S/N";
+    }
+
+    public String ObterClasseCorQualis(Producao producao) {
+        String nota = obterNotaQualis(producao);
+        if (nota == null) return "badge bg-secondary";
+
+        switch (nota.toUpperCase().trim()) {
+            case "A1":
+            case "A2":
+                return "badge bg-success"; // Verde para o topo
+            case "B1":
+            case "B2":
+                return "badge bg-primary"; // Azul para muito bom
+            case "B3":
+            case "B4":
+                return "badge bg-info text-dark"; // Azul claro
+            case "C":
+                return "badge bg-warning text-dark"; // Amarelo
+            default:
+                return "badge bg-secondary"; // Cinzento para Sem Nota ou "-"
         }
     }
 

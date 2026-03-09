@@ -1,0 +1,45 @@
+package com.uem.extrator.model;
+
+import javax.persistence.*;
+import java.io.Serializable;
+
+
+@Entity
+@Table(name = "QUALIS",  schema = "LATTESEXTRATOR")
+public class Qualis {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "issn", length = 20, unique = true, nullable = false)
+    private String issn;
+
+    @Column(name = "nm_revista", length = 500)
+    private String nomeRevista;
+
+    @Column(name = "estrato", length = 5)
+    private String estrato;
+
+    public Qualis() {}
+
+    public Qualis(String issn, String nomeRevista, String estrato) {
+        this.issn = issn;
+        this.nomeRevista = nomeRevista;
+        this.estrato = estrato;
+    }
+
+    // Getters e Setters
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getIssn() { return issn; }
+    public void setIssn(String issn) { this.issn = issn; }
+
+    public String getNomeRevista() { return nomeRevista; }
+    public void setNomeRevista(String nomeRevista) { this.nomeRevista = nomeRevista; }
+
+    public String getEstrato() { return estrato; }
+    public void setEstrato(String estrato) { this.estrato = estrato; }
+}

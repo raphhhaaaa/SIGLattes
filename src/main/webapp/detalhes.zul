@@ -99,37 +99,61 @@
                           tooltiptext="Índice H geral do Pesquisador (Fonte: OpenAlex)">
 
                         <n:i class="fas fa-chart-line me-1"></n:i>
-                        Índice H do Pesquisador: <space spacing="1px"/>
+                        <label value="Índice H de "/> <label value="@load(vm.curriculo.nomeCompleto)" />: <space spacing="1px"/>
                         <label value="@load(vm.curriculo.indiceH)"
                                style="font-weight: bold; color: white; font-size: 1rem;"/>
                     </span>
 
                 </caption>
 
-                <listbox model="@load(vm.curriculo.producoes)" height="300px" emptyMessage="Nenhuma produção registrada.">
+                <listbox model="@load(vm.curriculo.producoes)" emptyMessage="Nenhuma produção encontrada."
+                         style="border:none;" sclass="table-hover">
+
                     <listhead>
-                        <listheader label="Tipo" width="100px" style="font-weight:bold"/>
-                        <listheader label="Título"/>
-                        <listheader label="Ano" width="80px" align="center"/>
-                        <listheader label="Citações" width="80px" align="center" tooltiptext="Fonte: CrossRef"/>
-                        <listheader label="Acesso" width="100px" align="center" tooltiptext="Fonte: Unpaywall"/>
+                        <listheader label="Tipo / Título" width="70%" />
+                        <listheader label="Ano" width="10%" align="center"/>
+                        <listheader label="Citações" width="10%" align="center" />
+                        <listheader label="Acesso" width="10%" align="center" />
                     </listhead>
+
                     <template name="model">
                         <listitem>
-                            <listcell label="@load(each.tipo)"/>
 
                             <listcell>
                                 <vlayout spacing="0">
-                                    <label value="@load(each.titulo)" style="font-size:12px;"/>
-                                    <label value="@load(each.nomeVeiculo ne null ? each.nomeVeiculo : each.nomeEvento)"
-                                           style="font-size:10px; color:#888;"/>
-                                    <label value="@load(each.doi)" visible="@load(not empty each.doi)"
-                                           style="font-size:9px; color:#aaa; font-family:monospace;"/>
+                                    <hlayout valign="middle" spacing="5px">
+                                        <span class="@load(each.tipo eq 'ARTIGO' ? 'badge bg-success' :
+                                                          (each.tipo eq 'LIVRO' ? 'badge bg-warning text-dark' : 'badge bg-secondary'))"
+                                                style="font-size:14px;" xmlns:n="native">
+                                            <label value="@load(each.tipo)"/>
+                                        </span>
+                                    </hlayout>
+
+                                    <vlayout spacing="0">
+                                        <label value="@load(each.titulo)" style="font-size:12px;"/>
+
+                                        <hlayout valign="middle" spacing="5px">
+                                            <label value="@load(each.nomeVeiculo ne null ? each.nomeVeiculo : each.nomeEvento)"
+                                                   style="font-size:10px; color:#888;"/>
+
+                                            <label value=" | " visible="@load(each.tipo eq 'ARTIGO')"/>
+
+                                            <label value="Nota Qualis: " style="font-size: 10px; color: black; font-weight: bold;" visible="@load(each.tipo eq 'ARTIGO')"/>
+
+                                            <label value="@load(each.qualisDescricao)"
+                                                   sclass="@load(each.qualisCor)"
+                                                   visible="@load(each.tipo eq 'ARTIGO')"
+                                                   style="font-size:9px; font-weight:bold; color:white; padding: 0px 4px; border-radius: 3px;"/>
+                                        </hlayout>
+
+                                        <label value="@load(each.doi)" visible="@load(not empty each.doi)"
+                                               style="font-size:9px; color:#aaa; font-family:monospace;"/>
+                                    </vlayout>
                                 </vlayout>
                             </listcell>
 
                             <listcell>
-                                    <label value ="@load(each.ano)"/>
+                                <label value ="@load(each.ano)"/>
                             </listcell>
 
                             <listcell>
@@ -142,6 +166,7 @@
                                        sclass="@load('text-'.concat(each.corAcesso))"
                                        style="font-size:9px; font-weight: bold;"/>
                             </listcell>
+
                         </listitem>
                     </template>
                 </listbox>
