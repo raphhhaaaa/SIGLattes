@@ -83,4 +83,28 @@ public class ProducaoDAO {
             session.close();
         }
     }
+
+    public void salvarEmLote(List<Producao> producoes)  {
+        Transaction transaction = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
+
+            for (int i = 0; i < producoes.size(); i++) {
+                session.saveOrUpdate(producoes.get(i));
+
+                // a cada 50 registros, descarrega para a base de dados e limpa a RAM
+                if (i > 0 && i % 50 == 0) {
+                    session.flush();
+                    session.clear();
+                }
+            }
+
+            transaction.commit();
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
+            e.printStackTrace();
+        }
+    }
 }

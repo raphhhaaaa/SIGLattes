@@ -92,8 +92,11 @@ public class BibliometriaService {
             // codifica nome para URL
             String nomeEncoded = URLEncoder.encode(nomeAutor.trim(), StandardCharsets.UTF_8.toString());
 
+            // chave API
+            String openAlexKey = "WHkqNSaIoPulKtpI0ESSd3";
+
             // procura o autor no OpenAlex
-            String url = "https://api.openalex.org/authors?search=" + nomeEncoded + "&mailto=extrator@uem.br";
+            String url = "https://api.openalex.org/authors?search=" + nomeEncoded + "&api_key=" + openAlexKey;
 
             System.out.println(">>> OpenAlex buscando INDICE H: " + url);
             String json = fazerRequisicao(url, "OpenAlex", nomeAutor);
@@ -118,7 +121,7 @@ public class BibliometriaService {
 
     private static String fazerRequisicao(String url, String servico, String identificador) throws Exception {
         // --- SEMÁFORO INTELIGENTE DE TRÁFEGO ---
-        if (servico.equals("CrossRef") || servico.equals("")) {
+        if (servico.equals("CrossRef") || servico.equals("OpenAlex")) {
             // Tranca a fila APENAS para este servico específico. um nao atrapalha o outro
             synchronized (servico.intern()) {
                 long agora = System.currentTimeMillis();
@@ -126,8 +129,8 @@ public class BibliometriaService {
                 long diferenca = agora - ultima;
 
                 // atraso de 100ms (mais ou menos ~6 requisições por segundo)
-                if (diferenca < 300) {
-                    Thread.sleep(300 - diferenca);
+                if (diferenca < 150) {
+                    Thread.sleep(150 - diferenca);
                 }
                 controleTrafego.put(servico, System.currentTimeMillis());
             }

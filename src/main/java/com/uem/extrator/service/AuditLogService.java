@@ -22,7 +22,7 @@ public class AuditLogService {
     public static void registrarExtracao(String tipoExtracao, String usuario, boolean sucesso, String idLattes, String nomePesquisador) {
         if (!ConfigManager.getInstance().isAuditQueries()) { return; }
 
-        String acao = sucesso ? "EXTRACAO_SUCESSO" : "EXTRACAO_FALHA";
+        String acao = sucesso ? "LOTE_SUCESSO" : "LOTE_FALHA";
         if (tipoExtracao.contains("PULADO") || tipoExtracao.contains("ERRO") || tipoExtracao.contains("NAO_ENCONTRADO")) {
             acao = tipoExtracao;
         } else if (!tipoExtracao.equals("LOTE") && !tipoExtracao.equals("LOTE_CPF")) {
@@ -60,7 +60,7 @@ public class AuditLogService {
     public long contarProcessamentosHoje() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.createQuery(
-                            "SELECT COUNT(l) FROM LogAuditoria l WHERE DATE(l.dataHora) = CURRENT_DATE AND (l.tipo LIKE '%SUCESSO%' OR l.tipo = 'PROCESSAMENTO')", Long.class)
+                            "SELECT COUNT(l) FROM LogAuditoria l WHERE DATE(l.dataHora) = CURRENT_DATE AND (l.tipo LIKE '%CPF%' OR l.tipo LIKE '%ID%' OR l.tipo LIKE '%LOTE%') ", Long.class)
                     .uniqueResult();
         } catch (Exception e) {
             e.printStackTrace();
