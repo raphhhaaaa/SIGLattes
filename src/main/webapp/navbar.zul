@@ -83,6 +83,9 @@
                 <a href="/paginas/relatorio/relatorioDinamico.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
                     <n:i class="fa-solid fa-clipboard"></n:i> Análise Dinâmica
                 </a>
+                <a href="/paginas/relatorio/relatorioRevistas.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
+                    <n:i class="fas fa-book-open"></n:i> Relatório de Revistas
+                </a>
             </div>
 
             <zk if="${sessionScope.usuario_logado.admin}">
