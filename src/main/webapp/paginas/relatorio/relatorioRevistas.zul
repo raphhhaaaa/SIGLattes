@@ -5,24 +5,32 @@
 <?link rel="stylesheet" type="text/css" href="/css/zkbootstrap.css"?>
 <?link rel="stylesheet" type="text/css" href="/css/fontawesome.css"?>
 
+
+
 <zk xmlns:n="native" xmlns:w="client">
+
+    <style>
+        .z-combobox-button {
+        right: 0px !important;
+        background: transparent !important;
+        }
+        /* Ajuste para as abas ficarem bonitas no bootstrap */
+        .nav-tabs { border-bottom: 1px solid #dee2e6; }
+        .z-tab-selected { font-weight: bold; background: #fff; border-top: 2px solid #007bff; }
+
+    </style>
+
     <window apply="org.zkoss.bind.BindComposer"
             viewModel="@id('vm') @init('com.uem.extrator.viewmodel.RelatorioRevistasVM')"
             style="padding: 25px; background-color: #f8f9fa; min-height: 100vh;">
 
-        <div sclass="d-flex justify-content-between align-items-center mb-4">
-            <div sclass="d-flex align-items-center">
-                <button tooltiptext="Voltar para a página anterior" iconSclass="fas fa-arrow-left"
-                        sclass="btn btn-secondary me-3 shadow-sm" w:onClick="window.history.back();" />
-                <n:h2 style="margin: 0; color: #2c3e50; font-weight: bold;">
-                    <n:i class="fas fa-chart-pie text-primary me-2"></n:i>
-                    Análise de Revistas Científicas
-                </n:h2>
-            </div>
-
-            <button label="Exportar CSV" iconSclass="fas fa-file-excel"
-                    sclass="btn btn-sm btn-outline-success" onClick="@command('exportarCSV')" style="margin-top: 15px; margin-right: 15px; font-size: 15px;" />
-
+        <div sclass="d-flex align-items-center mb-4">
+            <button label="Voltar" tooltiptext="Voltar para a página anterior" iconSclass="fas fa-arrow-left"
+                    sclass="btn btn-outline-secondary me-3 shadow-sm" w:onClick="window.history.back();" style="margin: 10px;"/>
+            <n:h2 style="margin: 0; color: #2c3e50; font-weight: bold;">
+                <n:i class="fas fa-chart-pie text-primary me-2"></n:i>
+                Análise de Revistas Científicas
+            </n:h2>
         </div>
 
         <div sclass="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
@@ -30,11 +38,11 @@
                 <hlayout spacing="15px" valign="middle">
                     <vlayout hflex="1">
                         <label value="Buscar por Revista ou ISSN:" style="font-weight: 600; font-size: 13px; color: #555;" />
-                        <textbox value="@bind(vm.filtroBusca)" onOK="@command('filtrar')" placeholder="Digite o nome ou código e tecle Enter..." sclass="form-control" />
+                        <textbox value="@bind(vm.filtroBusca)" onOK="@command('filtrar')" placeholder="Digite o nome ou código aqui..." sclass="form-control" />
                     </vlayout>
 
                     <vlayout width="200px">
-                        <label value="Filtrar por Qualis:" style="font-weight: 600; font-size: 13px; color: #555;" />
+                        <label value="Filtrar por Qualis:" style="font-weight: bold; font-size: 13px; color: #777;" />
                         <combobox value="@bind(vm.filtroQualis)" onChange="@command('filtrar')" readonly="true" width="100%">
                             <comboitem label="Todos" value="Todos" />
                             <comboitem label="A1" value="A1" />
@@ -51,9 +59,13 @@
                     </vlayout>
 
                     <div style="padding-top: 20px;" sclass="d-flex align-items-end">
-                        <hlayout spacing="10px">
+                        <hlayout spacing="10px" valign="middle">
                             <button label="Pesquisar" iconSclass="fas fa-search" sclass="btn btn-outline-primary" onClick="@command('filtrar')" />
                             <button label="Limpar" iconSclass="fas fa-eraser" sclass="btn btn-outline-secondary" onClick="@command('limparFiltros')" />
+
+                            <div style="border-left: 1px solid #ccc; height: 30px; margin: 0 5px;"></div>
+
+                            <button label="Exportar CSV" iconSclass="fas fa-file-excel" sclass="btn btn-outline-success shadow-sm" onClick="@command('exportarCSV')" />
                         </hlayout>
                     </div>
                 </hlayout>
@@ -66,7 +78,7 @@
                     <n:i class="fas fa-list me-2"></n:i> Listagem Oficial Qualis CAPES
                 </n:span>
                 <n:span class="badge bg-primary shadow-sm" style="font-size: 14px; padding: 8px 12px;">
-                    Total de Revistas Encontradas: <label value="@load(vm.listaRelatorio.size())" style="font-weight: bold; font-size: 15px;" />
+                    Revistas Encontradas: <label value="@load(vm.listaRelatorio.size())" style="font-weight: bold; font-size: 15px;" />
                 </n:span>
             </div>
 
