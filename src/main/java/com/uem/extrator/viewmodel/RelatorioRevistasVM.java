@@ -7,14 +7,21 @@ import org.hibernate.query.NativeQuery;
 import org.zkoss.bind.annotation.Init;
 import org.zkoss.bind.annotation.Command;
 import org.zkoss.zul.Filedownload;
+import org.zkoss.bind.annotation.NotifyChange;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class RelatorioRevistasVM {
 
-    private List<RelatorioRevistaDTO> listaRelatorio;
+    private List<RelatorioRevistaDTO> listaRelatorio; // guarda apenas o que vai ser mostrado na tela
+    private List<RelatorioRevistaDTO> listaCompleta; // guarda tudo o que veio do banco
+
+    // filtros
+    private String filtroBusca = "";
+    private String filtroQualis = "Todos";
 
     @Init
     public void init() {
@@ -23,6 +30,7 @@ public class RelatorioRevistasVM {
 
     private void carregarDados() {
         listaRelatorio = new ArrayList<>();
+        listaCompleta = new ArrayList<>();
 
         String sql = "SELECT " +
                 // Pega o nome oficial do Qualis. Se não tiver (S/N), pega o que o professor digitou.
@@ -47,11 +55,51 @@ public class RelatorioRevistasVM {
                 String qualis = row[2] != null ? row[2].toString() : null;
                 Long qtd = ((Number) row[3]).longValue();
 
-                listaRelatorio.add(new RelatorioRevistaDTO(revista, issn, qualis, qtd));
+                listaCompleta.add(new RelatorioRevistaDTO(revista, issn, qualis, qtd));
             }
+            aplicarFiltros();
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    @Command
+    @NotifyChange("listaRelatorio")
+    public void filtrar() {
+        aplicarFiltros();
+    }
+
+    @Command
+    @NotifyChange({"listaRelatorios", "filtroBusca", "filtroQualis"})
+    public void limparFiltros() {
+        this.filtroBusca = "";
+        this.filtroQualis = "Todos";
+        aplicarFiltros();
+    }
+
+    private void aplicarFiltros() {
+        if (listaCompleta == null) return;
+
+        listaRelatorio = listaCompleta.stream().filter(item -> {
+            // 1. Filtro de Busca (Texto)
+            boolean bateBusca = true;
+            if (filtroBusca != null && !filtroBusca.trim().isEmpty()) {
+                String termo = filtroBusca.toLowerCase().trim();
+                boolean bateNome = item.getNomeRevista() != null && item.getNomeRevista().toLowerCase().contains(termo);
+                boolean bateIssn = item.getIssn() != null && item.getIssn().toLowerCase().contains(termo);
+                bateBusca = bateNome || bateIssn;
+            }
+
+            // 2. Filtro de Qualis (Combobox) - Agora à prova de falhas!
+            boolean bateQualis = true;
+            if (filtroQualis != null && !filtroQualis.trim().isEmpty() && !filtroQualis.equalsIgnoreCase("Todos")) {
+                // Remove espaços invisíveis que possam vir da tela
+                String qualisSelecionado = filtroQualis.trim();
+                bateQualis = item.getQualis().equalsIgnoreCase(qualisSelecionado);
+            }
+
+            return bateBusca && bateQualis; // Só mostra se passar nos dois testes
+        }).collect(Collectors.toList());
     }
 
     @Command
@@ -71,8 +119,14 @@ public class RelatorioRevistasVM {
         Filedownload.save(bytes, "text/csv", "Relatorio_Revistas_Qualis.csv");
     }
 
+    // Getters e Setters
+
     public List<RelatorioRevistaDTO> getListaRelatorio() {
         return listaRelatorio;
     }
+    public String getFiltroBusca() { return filtroBusca; }
+    public void setFiltroBusca(String filtroBusca) { this.filtroBusca = filtroBusca; }
+    public String getFiltroQualis() { return filtroQualis; }
+    public void setFiltroQualis(String filtroQualis) { this.filtroQualis = filtroQualis; }
 }
 

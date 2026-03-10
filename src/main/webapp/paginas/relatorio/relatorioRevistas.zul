@@ -12,10 +12,8 @@
 
         <div sclass="d-flex justify-content-between align-items-center mb-4">
             <div sclass="d-flex align-items-center">
-
-                <button label="Voltar" tooltiptext="Voltar para a página anterior" iconSclass="fas fa-arrow-left"
+                <button tooltiptext="Voltar para a página anterior" iconSclass="fas fa-arrow-left"
                         sclass="btn btn-secondary me-3 shadow-sm" w:onClick="window.history.back();" />
-
                 <n:h2 style="margin: 0; color: #2c3e50; font-weight: bold;">
                     <n:i class="fas fa-chart-pie text-primary me-2"></n:i>
                     Análise de Revistas Científicas
@@ -24,21 +22,56 @@
 
             <button label="Exportar CSV" iconSclass="fas fa-file-excel"
                     sclass="btn btn-sm btn-outline-success" onClick="@command('exportarCSV')" style="margin-top: 15px; margin-right: 15px; font-size: 15px;" />
+
+        </div>
+
+        <div sclass="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
+            <div sclass="card-body p-3">
+                <hlayout spacing="15px" valign="middle">
+                    <vlayout hflex="1">
+                        <label value="Buscar por Revista ou ISSN:" style="font-weight: 600; font-size: 13px; color: #555;" />
+                        <textbox value="@bind(vm.filtroBusca)" onOK="@command('filtrar')" placeholder="Digite o nome ou código e tecle Enter..." sclass="form-control" />
+                    </vlayout>
+
+                    <vlayout width="200px">
+                        <label value="Filtrar por Qualis:" style="font-weight: 600; font-size: 13px; color: #555;" />
+                        <combobox value="@bind(vm.filtroQualis)" onChange="@command('filtrar')" readonly="true" width="100%">
+                            <comboitem label="Todos" value="Todos" />
+                            <comboitem label="A1" value="A1" />
+                            <comboitem label="A2" value="A2" />
+                            <comboitem label="A3" value="A3" />
+                            <comboitem label="A4" value="A4" />
+                            <comboitem label="B1" value="B1" />
+                            <comboitem label="B2" value="B2" />
+                            <comboitem label="B3" value="B3" />
+                            <comboitem label="B4" value="B4" />
+                            <comboitem label="C" value="C" />
+                            <comboitem label="S/N" value="S/N" />
+                        </combobox>
+                    </vlayout>
+
+                    <div style="padding-top: 20px;" sclass="d-flex align-items-end">
+                        <hlayout spacing="10px">
+                            <button label="Pesquisar" iconSclass="fas fa-search" sclass="btn btn-outline-primary" onClick="@command('filtrar')" />
+                            <button label="Limpar" iconSclass="fas fa-eraser" sclass="btn btn-outline-secondary" onClick="@command('limparFiltros')" />
+                        </hlayout>
+                    </div>
+                </hlayout>
+            </div>
         </div>
 
         <div sclass="card shadow-lg border-0" style="border-radius: 12px; overflow: hidden;">
-
-            <div sclass="card-header bg-primary text-white p-3 d-flex justify-content-between align-items-center">
+            <div sclass="card-header bg-dark text-white p-3 d-flex justify-content-between align-items-center">
                 <n:span style="font-size: 16px; font-weight: 500;">
                     <n:i class="fas fa-list me-2"></n:i> Listagem Oficial Qualis CAPES
                 </n:span>
-                <n:span class="badge bg-white text-black shadow-sm" style="font-size: 14px; padding: 8px 12px;">
-                    Total de Revistas: <label value="@load(vm.listaRelatorio.size())" style="font-weight: bold; font-size: 15px;" />
+                <n:span class="badge bg-primary shadow-sm" style="font-size: 14px; padding: 8px 12px;">
+                    Total de Revistas Encontradas: <label value="@load(vm.listaRelatorio.size())" style="font-weight: bold; font-size: 15px;" />
                 </n:span>
             </div>
 
             <div sclass="card-body p-0">
-                <listbox model="@load(vm.listaRelatorio)" emptyMessage="Nenhuma revista encontrada com base nas produções atuais."
+                <listbox model="@load(vm.listaRelatorio)" emptyMessage="Nenhuma revista atende aos filtros atuais."
                          sclass="table table-striped table-hover mb-0" mold="paging" pageSize="15"
                          style="border: none;">
 
@@ -54,19 +87,16 @@
                             <listcell>
                                 <label value="@load(each.nomeRevista)" style="font-weight: 600; color: #2c3e50; font-size: 14px;" />
                             </listcell>
-
                             <listcell>
                                 <span sclass="badge bg-light text-dark border" style="font-family: monospace; font-size: 12px; letter-spacing: 1px; padding: 5px 8px;">
                                     <label value="@load(each.issn)" />
                                 </span>
                             </listcell>
-
                             <listcell>
                                 <span sclass="@load(each.qualisCor)" style="font-size: 13px; padding: 6px 14px; border-radius: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                     <label value="@load(each.qualis)" style="font-weight: 900; letter-spacing: 0.5px;" />
                                 </span>
                             </listcell>
-
                             <listcell>
                                 <div sclass="d-flex justify-content-center align-items-center">
                                     <span style="font-size: 15px; font-weight: bold; color: #0d6efd; background-color: #e9ecef; border-radius: 50%; min-width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
@@ -74,7 +104,6 @@
                                     </span>
                                 </div>
                             </listcell>
-
                         </listitem>
                     </template>
                 </listbox>
