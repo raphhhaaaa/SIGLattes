@@ -25,14 +25,16 @@ public class RelatorioRevistasVM {
         listaRelatorio = new ArrayList<>();
 
         String sql = "SELECT " +
-                "  p.nm_veiculo AS revista, " +
+                // Pega o nome oficial do Qualis. Se não tiver (S/N), pega o que o professor digitou.
+                "  COALESCE(MAX(q.nm_revista), MAX(p.nm_veiculo)) AS revista, " +
                 "  p.cd_isbn_issn AS issn, " +
                 "  q.estrato AS qualis, " +
                 "  COUNT(p.id) AS qtd " +
                 "FROM PRODUCAO p " +
                 "LEFT JOIN QUALIS q ON REPLACE(p.cd_isbn_issn, '-', '') = REPLACE(q.issn, '-', '') " +
                 "WHERE p.tp_producao = 'ARTIGO' AND p.cd_isbn_issn IS NOT NULL AND p.cd_isbn_issn != '' " +
-                "GROUP BY p.nm_veiculo, p.cd_isbn_issn, q.estrato " +
+                // Agora agrupamos APENAS pelo ISSN e Nota. Tudo que for igual se junta num só!
+                "GROUP BY p.cd_isbn_issn, q.estrato " +
                 "ORDER BY q.estrato ASC, qtd DESC";
 
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
