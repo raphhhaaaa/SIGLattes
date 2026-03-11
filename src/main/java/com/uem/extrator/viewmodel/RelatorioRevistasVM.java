@@ -90,7 +90,7 @@ public class RelatorioRevistasVM {
                 bateBusca = bateNome || bateIssn;
             }
 
-            // 2. Filtro de Qualis (Combobox) - Agora à prova de falhas!
+            // 2. Filtro de Qualis (Combobox)
             boolean bateQualis = true;
             if (filtroQualis != null && !filtroQualis.trim().isEmpty() && !filtroQualis.equalsIgnoreCase("Todos")) {
                 // Remove espaços invisíveis que possam vir da tela

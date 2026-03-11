@@ -241,7 +241,7 @@ public class AutomacaoService {
             return;
         }
 
-        // Controle de “SPAM” (verifica se já envio hoje)
+        // Controle de “SPAM” (verifica se já enviou hoje)
         // cria um arquivo oculto na pasta do usuario para marcar o dia
         File controle = new File(System.getProperty("user.home") + File.separator + ".lattes_weekly_report.dat");
         if (controle.exists()) {

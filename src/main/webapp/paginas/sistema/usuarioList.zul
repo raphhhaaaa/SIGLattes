@@ -33,14 +33,14 @@
                     <div sclass="col-md-6" style="display: flex; align-items: center;">
                         <button label="Voltar ao Início"
                                 iconSclass="z-icon-arrow-left"
-                                sclass="btn btn-secondary"
+                                sclass="btn btn-outline-secondary"
                                 height="38px"
                                 href="/index.zul"/> </div>
 
                     <div sclass="col-md-6" style="display: flex; justify-content: flex-end;">
                         <button label="Novo Usuário"
                                 iconSclass="z-icon-plus"
-                                sclass="btn btn-success"
+                                sclass="btn btn-outline-success"
                                 height="38px"
                                 onClick="@command('novoUsuario')"/>
                     </div>
