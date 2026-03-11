@@ -12,6 +12,8 @@ import org.zkoss.zk.ui.Sessions;
 import org.zkoss.zk.ui.util.Clients;
 import org.zkoss.zul.Filedownload;
 import org.zkoss.zul.ListModelList;
+import org.zkoss.zk.ui.util.Clients;
+import java.util.stream.Collectors;
 
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
@@ -24,7 +26,7 @@ public class RelatorioDinamicoVM {
     private RelatorioDAO dao = new RelatorioDAO();
     private InstituicaoDAO instituicaoDAO = new InstituicaoDAO();
 
-    // Dados do Gráfico
+    // Dados dos Gráficos
     private ListModelList<ItemGrafico> dadosGrafico = new ListModelList<>();
     private ListModelList<ItemGrafico> dadosGraficoOrdenado = new ListModelList<>();
     private Long totalGeral = 0L;
@@ -35,6 +37,8 @@ public class RelatorioDinamicoVM {
     private long totalArtigos = 0L;
     private long totalLivros = 0L;
     private long totalEventos = 0L;
+    private long totalDoutorados = 0L;
+    private long totalMestrados = 0L;
 
     // --- FILTROS ---
     private ListModelList<String> listaOpcoes = new ListModelList<>(Arrays.asList(
@@ -79,7 +83,7 @@ public class RelatorioDinamicoVM {
 
     // Chamado apenas quando a INSTITUIÇÃO muda (Recalcula TUDO)
     @Command
-    @NotifyChange({"dadosGrafico", "dadosGraficoOrdenado", "totalGeral", "tituloGrafico", "totalPesquisadores", "totalArtigos", "totalLivros", "totalEventos"})
+    @NotifyChange({"dadosGrafico", "dadosGraficoOrdenado", "totalGeral", "tituloGrafico", "totalPesquisadores", "totalArtigos", "totalLivros", "totalEventos", "modeloPizzaGeral", "modeloPizzaPesquisadores"})
     public void alterarInstituicao() {
         atualizarKPIs(instituicaoSelecionada);
         atualizarGrafico();
@@ -87,7 +91,7 @@ public class RelatorioDinamicoVM {
 
     // Chamado apenas quando o TIPO DE GRÁFICO muda (Não mexe nos KPIs)
     @Command
-    @NotifyChange({"dadosGrafico", "dadosGraficoOrdenado", "totalGeral", "tituloGrafico"})
+    @NotifyChange({"dadosGrafico", "dadosGraficoOrdenado", "totalGeral", "tituloGrafico", "modeloPizzaGeral", "modeloPizzaPesquisadores"})
     public void alterarTipoProducao() {
         atualizarGrafico();
     }
@@ -131,6 +135,7 @@ public class RelatorioDinamicoVM {
 
                 this.dadosGraficoOrdenado.addAll(this.dadosGrafico);
                 this.dadosGraficoOrdenado.sort(Comparator.comparingInt(ItemGrafico::getAno));
+                atualizarGraficosPizza();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -144,9 +149,70 @@ public class RelatorioDinamicoVM {
             this.totalArtigos = dao.contarTotalProducao("ARTIGO", instituicao);
             this.totalLivros = dao.contarTotalProducao("LIVRO", instituicao);
             this.totalEventos = dao.contarTotalProducao("EVENTO", instituicao);
+            this.totalDoutorados = dao.contarTotalProducao("DOUTORADO", instituicao);
+            this.totalMestrados = dao.contarTotalProducao("MESTRADO", instituicao);
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void atualizarGraficosPizza() {
+        // 1. Montar dados do Gráfico Geral AGORA COM AS 5 CATEGORIAS
+        String jsonGeral = String.format("{ \"labels\": [\"Artigos\", \"Livros\", \"Eventos\", \"Doutorados\", \"Mestrados\"], \"data\": [%d, %d, %d, %d, %d] }",
+                totalArtigos, totalLivros, totalEventos, totalDoutorados, totalMestrados);
+
+        // 2. Montar dados do Top 5 Pesquisadores (Isto mantém-se igual)
+        StringBuilder labelsTop5 = new StringBuilder("[");
+        StringBuilder dataTop5 = new StringBuilder("[");
+
+        try {
+            String chave = mapaDeChaves.get(opcaoSelecionada);
+            List<?> listaDetalhada = dao.listarDadosDetalhados(chave, instituicaoSelecionada);
+
+            if (listaDetalhada != null && !listaDetalhada.isEmpty()) {
+                Map<String, Integer> contagem = new HashMap<>();
+
+                for (Object obj : listaDetalhada) {
+                    String nome = null;
+
+                    // Verifica se o item é uma Producao (Artigo, Livro) ou Formacao (Mestrado, Doutorado)
+                    if (obj instanceof com.uem.extrator.model.Producao) {
+                        nome = ((com.uem.extrator.model.Producao) obj).getCurriculo().getNomeCompleto();
+                    } else if (obj instanceof com.uem.extrator.model.Formacao) {
+                        nome = ((com.uem.extrator.model.Formacao) obj).getCurriculo().getNomeCompleto();
+                    }
+
+                    if (nome != null) {
+                        String[] partes = nome.split(" ");
+                        String nomeCurto = partes[0] + (partes.length > 1 ? " " + partes[partes.length - 1] : "");
+                        contagem.put(nomeCurto, contagem.getOrDefault(nomeCurto, 0) + 1);
+                    }
+                }
+
+                // Ordena e pega os top 5
+                List<Map.Entry<String, Integer>> top5 = contagem.entrySet().stream()
+                        .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
+                        .limit(5)
+                        .collect(Collectors.toList());
+
+                for (int i = 0; i < top5.size(); i++) {
+                    labelsTop5.append("\"").append(top5.get(i).getKey()).append("\"");
+                    dataTop5.append(top5.get(i).getValue());
+                    if (i < top5.size() - 1) {
+                        labelsTop5.append(",");
+                        dataTop5.append(",");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        labelsTop5.append("]");
+        dataTop5.append("]");
+
+        String jsonTop5 = "{ \"labels\": " + labelsTop5.toString() + ", \"data\": " + dataTop5.toString() + " }";
+
+        Clients.evalJavaScript("desenharGraficos(" + jsonGeral + ", " + jsonTop5 + ");");
     }
 
     // --- EXPORTAÇÕES ---
@@ -258,6 +324,7 @@ public class RelatorioDinamicoVM {
     public long getTotalArtigos() { return totalArtigos; }
     public long getTotalLivros() { return totalLivros; }
     public long getTotalEventos() { return totalEventos; }
+
 
     public static class ItemGrafico {
         private Integer ano;

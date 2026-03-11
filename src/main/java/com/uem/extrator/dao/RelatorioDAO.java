@@ -165,23 +165,39 @@ public class RelatorioDAO {
         try {
             boolean filtrarInstituicao = nomeInstituicao != null && !nomeInstituicao.equals("TODAS");
             String termoBusca = "";
+            boolean isFormacao = false;
 
             switch (tipoRelatorio) {
                 case "ARTIGO": termoBusca = "ARTIGO"; break;
                 case "LIVRO": termoBusca = "LIVRO"; break;
                 case "EVENTO": termoBusca = "EVENTO"; break;
+                case "DOUTORADO": termoBusca = "DOUTORADO"; isFormacao = true; break;
+                case "MESTRADO": termoBusca = "MESTRADO"; isFormacao = true; break;
                 default: return 0L;
             }
 
-            StringBuilder hql = new StringBuilder("SELECT COUNT(DISTINCT p.hashTitulo) FROM Producao p ");
-            hql.append("WHERE p.tipo = :termo ");
+            StringBuilder hql = new StringBuilder();
 
-            if (filtrarInstituicao) {
-                hql.append("AND EXISTS ( ");
-                hql.append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i JOIN a.vinculos v ");
-                hql.append("  WHERE a.curriculo = p.curriculo AND i.nomeInstituicao = :nomeInst ");
-                hql.append("  AND p.ano >= v.anoInicio AND (v.anoFim IS NULL OR p.ano <= v.anoFim) ");
-                hql.append(") ");
+            // Se for Mestrado ou Doutorado, tem de pesquisar na tabela Formacao
+            if (isFormacao) {
+                hql.append("SELECT COUNT(f.id) FROM Formacao f WHERE f.tipoFormacao = :termo ");
+                if (filtrarInstituicao) {
+                    hql.append("AND EXISTS ( ");
+                    hql.append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i JOIN a.vinculos v ");
+                    hql.append("  WHERE a.curriculo = f.curriculo AND i.nomeInstituicao = :nomeInst ");
+                    hql.append("  AND f.anoConclusao >= v.anoInicio AND (v.anoFim IS NULL OR f.anoConclusao <= v.anoFim) ");
+                    hql.append(") ");
+                }
+            } else {
+                // Se for Artigo, Livro ou Evento, pesquisa na tabela Producao
+                hql.append("SELECT COUNT(DISTINCT p.hashTitulo) FROM Producao p WHERE p.tipo = :termo ");
+                if (filtrarInstituicao) {
+                    hql.append("AND EXISTS ( ");
+                    hql.append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i JOIN a.vinculos v ");
+                    hql.append("  WHERE a.curriculo = p.curriculo AND i.nomeInstituicao = :nomeInst ");
+                    hql.append("  AND p.ano >= v.anoInicio AND (v.anoFim IS NULL OR p.ano <= v.anoFim) ");
+                    hql.append(") ");
+                }
             }
 
             Query<Long> query = session.createQuery(hql.toString(), Long.class);

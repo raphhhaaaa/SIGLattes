@@ -241,7 +241,80 @@
                                     </div>
                                 </tabpanel>
                             </tabpanels>
-                        </tabbox> </div>
+                        </tabbox>
+                        <n:script src="https://cdn.jsdelivr.net/npm/chart.js"></n:script>
+
+                        <n:script>
+                            var chartGeral = null;
+                            var chartPesquisadores = null;
+
+                            function desenharGraficos(dadosGeral, dadosTop5) {
+                            // Desenha Gráfico Geral
+                            var ctxGeral = document.getElementById('canvasGeral');
+                            if (ctxGeral) {
+                            if (chartGeral) chartGeral.destroy(); // Apaga o anterior se existir
+                            chartGeral = new Chart(ctxGeral.getContext('2d'), {
+                            type: 'pie',
+                            data: {
+                            labels: dadosGeral.labels,
+                            datasets: [{
+                            data: dadosGeral.data,
+                            backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8']
+                            }]
+                            },
+                            options: { responsive: true, maintainAspectRatio: false }
+                            });
+                            }
+
+                            // Desenha Gráfico Top 5
+                            var ctxTop5 = document.getElementById('canvasTop5');
+                            if (ctxTop5) {
+                            if (chartPesquisadores) chartPesquisadores.destroy();
+                            chartPesquisadores = new Chart(ctxTop5.getContext('2d'), {
+                            type: 'pie',
+                            data: {
+                            labels: dadosTop5.labels,
+                            datasets: [{
+                            data: dadosTop5.data,
+                            backgroundColor: ['#e74c3c', '#8e44ad', '#3498db', '#e67e22', '#2ecc71']
+                            }]
+                            },
+                            options: { responsive: true, maintainAspectRatio: false }
+                            });
+                            }
+                            }
+                        </n:script>
+
+                        <div sclass="row mt-5 mb-5">
+                            <div sclass="col-md-6">
+                                <div sclass="card shadow-sm h-100">
+                                    <div sclass="card-header bg-light">
+                                        <n:h6 style="margin: 0; color: #444; font-weight: bold;">
+                                            <n:i class="fa fa-pie-chart mr-2 text-primary"></n:i>
+                                            Visão Geral da Instituição
+                                        </n:h6>
+                                    </div>
+                                    <div sclass="card-body" style="height: 350px;">
+                                        <n:canvas id="canvasGeral"></n:canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div sclass="col-md-6">
+                                <div sclass="card shadow-sm h-100">
+                                    <div sclass="card-header bg-light">
+                                        <n:h6 style="margin: 0; color: #444; font-weight: bold;">
+                                            <n:i class="fa fa-trophy mr-2 text-warning"></n:i>
+                                            Top 5 Pesquisadores (<label value="@load(vm.opcaoSelecionada)" />)
+                                        </n:h6>
+                                    </div>
+                                    <div sclass="card-body" style="height: 350px;">
+                                        <n:canvas id="canvasTop5"></n:canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
