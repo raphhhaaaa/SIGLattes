@@ -23,6 +23,45 @@ public class CurriculoDAO {
         try {
             session.beginTransaction();
 
+            Curriculo curriculoExistente = session.createQuery("FROM Curriculo c WHERE c.idLattes = :idLattes ", Curriculo.class)
+                    .setParameter("idLattes", curriculo.getIdLattes())
+                    .uniqueResult();
+
+            if (curriculoExistente != null) {
+                // transfere o ID do banco para o objeto novo. Isso garante que o Hibernate faça um UPDATE na
+                // "capa" do currículo (nome, data, etc) em vez de criar um novo.
+                curriculo.setIdLattes(curriculoExistente.getIdLattes());
+                String idInterno = curriculoExistente.getIdLattes();
+
+                // remove o objeto antigo da memoria do hibernate
+                session.evict(curriculoExistente);
+
+                // apaga as sub-tabelas velhas antes de inserir as novas
+                // ( feito na ordem para nao quebrar as chaves estrangeiras)
+
+                // 1. Limpa as subtabelas de Atuação
+                session.createQuery("DELETE FROM Vinculo v WHERE v.atuacao.id IN (SELECT a.id FROM Atuacao a WHERE a.curriculo.idLattes = :id)")
+                        .setParameter("id", idInterno).executeUpdate();
+
+                session.createQuery("DELETE FROM AtividadeItem ai WHERE ai.atividade.id IN (SELECT atv.id FROM Atividade atv WHERE atv.atuacao.id IN (SELECT a.id FROM Atuacao a WHERE a.curriculo.idLattes = :id))")
+                        .setParameter("id", idInterno).executeUpdate();
+
+                session.createQuery("DELETE FROM Atividade atv WHERE atv.atuacao.id IN (SELECT a.id FROM Atuacao a WHERE a.curriculo.idLattes = :id)")
+                        .setParameter("id", idInterno).executeUpdate();
+
+                session.createQuery("DELETE FROM Atuacao a WHERE a.curriculo.idLattes = :id")
+                        .setParameter("id", idInterno).executeUpdate();
+
+                // 2. Limpa Produções e Formações
+                session.createQuery("DELETE FROM Formacao f WHERE f.curriculo.idLattes = :id")
+                        .setParameter("id", idInterno).executeUpdate();
+
+                session.createQuery("DELETE FROM Producao p WHERE p.curriculo.idLattes = :id")
+                        .setParameter("id", idInterno).executeUpdate();
+            }
+
+
+
             // CACHE LOCAL: Evita duplicar cursos iguais dentro do MESMO currículo
             // Ex: Se o cara tem Graduação em 'História' e Mestrado em 'História',
             // garante que usamos a mesma instância de objeto Curso.
