@@ -52,7 +52,7 @@ public class SecurityFilter implements Filter {
         Object usuarioLogado = (session != null) ? session.getAttribute("usuario_logado") : null;
 
         // regra 1: se for página publica, deixa passar
-        if (PUBLIC_WHITELIST.stream().anyMatch(path::contains)) {
+        if (PUBLIC_WHITELIST.stream().anyMatch(path::equals)) {
             chain.doFilter(request, response);
             return;
         }
@@ -73,7 +73,7 @@ public class SecurityFilter implements Filter {
         }
 
         // regra 4: se for usuário comum, verifica a white-list
-        boolean isPermitido = COMMOM_USER_WHITELIST.stream().anyMatch(path::contains);
+        boolean isPermitido = COMMOM_USER_WHITELIST.stream().anyMatch(path::equals);
 
         if (isPermitido) {
             chain.doFilter(request, response); // esta na lista pode passar
