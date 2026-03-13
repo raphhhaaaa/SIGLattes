@@ -91,7 +91,7 @@ public class RelatorioDinamicoVM {
 
     // Chamado apenas quando o TIPO DE GRÁFICO muda (Não mexe nos KPIs)
     @Command
-    @NotifyChange({"dadosGrafico", "dadosGraficoOrdenado", "totalGeral", "tituloGrafico", "modeloPizzaGeral", "modeloPizzaPesquisadores"})
+    @NotifyChange({"dadosGrafico", "dadosGraficoOrdenado", "totalGeral", "tituloGrafico"})
     public void alterarTipoProducao() {
         atualizarGrafico();
     }
