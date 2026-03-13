@@ -20,7 +20,7 @@ public class UsuarioVM {
     private List<Usuario> listaUsuarios;
     private Usuario usuarioEdicao; // o usuário sendo criado/editado no modal
     private String senhaTemporaria; // campo auxiliar para a senha no formulario
-    private boolean modoEdicao = false; // controla se o modal está visíveç
+    private boolean modoEdicao = false; // controla se o modal está visível
 
     @Init
     public void init() {
@@ -40,7 +40,7 @@ public class UsuarioVM {
     }
 
     @Command
-    @NotifyChange({"usuarioEdicao", "modoEdicao", "senhTemporaria"})
+    @NotifyChange({"usuarioEdicao", "modoEdicao", "senhaTemporaria"})
     public void editarUsuario(@org.zkoss.bind.annotation.BindingParam("u") Usuario u) {
         this.usuarioEdicao = u;
         this.senhaTemporaria = ""; // não mostramos senha antiga, deixa vazio

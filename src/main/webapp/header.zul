@@ -2,47 +2,47 @@
 <zk xmlns="http://www.zkoss.org/2005/zul" xmlns:n="native" xmlns:w="client">
 
     <style>
-        /* Força a classe text-danger a funcionar dentro dos menus do ZK */
         .z-menuitem.text-danger .z-menuitem-content,
         .z-menuitem.text-danger .z-menuitem-text,
         .z-menuitem.text-danger i {
-        color: #dc3545 !important; /* Cor vermelha do Bootstrap */
+        color: #dc3545 !important;
         }
 
-        /* Efeito visual ao passar o mouse (vermelho mais escuro) */
         .z-menuitem.text-danger:hover .z-menuitem-content {
         color: #a71d2a !important;
-        background-color: #f8d7da; /* Fundo rosado de alerta */
+        background-color: #f8d7da;
         }
     </style>
 
     <n:nav class="navbar pt-0 pl-0 pb-2" style="background-color: white; background-image:url(${c:encodeURL('/images/header_background.png')  }); background-repeat: repeat-x; background-position: bottom;">
-        <div class="container-fluid p-0">
-            <n:a href="/ExtratorLattes" style="text-decoration: none">
-            <div class="d-flex pull-left m-0 h4">
-                <div>
-                    <image src="/images/header_logo.png" style="height:70px"/>
+
+        <div class="container-fluid p-0 d-flex w-100 flex-nowrap justify-content-between align-items-center">
+
+            <n:a href="/ExtratorLattes" style="text-decoration: none" class="text-truncate">
+                <div class="d-flex align-items-center m-0 h4 text-truncate">
+                    <div>
+                        <image src="/images/header_logo.png" style="height:70px"/>
+                    </div>
+                    <div class="ml-2 text-truncate">
+                        Extrator Lattes - UEM
+                        <n:small class="text-body-secondary text-truncate">Sistema de Gestão de Currículos Lattes</n:small>
+                    </div>
                 </div>
-                <div class="align-self-center">
-                    Extrator Lattes - UEM
-                    <n:small class="text-body-secondary">Sistema de Gestão de Currículos Lattes</n:small>
-                </div>
-            </div>
             </n:a>
-            <div sclass="pull-right">
+
+            <div class="ml-auto flex-shrink-0" style="margin-right: 15px;">
                 <button sclass="btn btn-light"
                         iconSclass="z-icon-user"
                         label="@load('Olá, '.concat(vm.usuarioLogado.nome))"
                         popup="menuUsuario, position=after_end"
-                        style="left:-15px; position: relative; font-weight: bold;"/>
-
-                <menupopup id="menuUsuario">
-                    <menuitem label="Sair do Sistema"
-                              iconSclass="z-icon-sign-out text-danger"
-                              sclass="text-danger font-weight-bold"
-                              onClick="@command('logout')"/>
-                </menupopup>
+                        style="font-weight: bold; white-space: nowrap;"/> <menupopup id="menuUsuario">
+                <menuitem label="Sair do Sistema"
+                          iconSclass="z-icon-sign-out text-danger"
+                          sclass="text-danger font-weight-bold"
+                          onClick="@command('logout')"/>
+            </menupopup>
             </div>
+
         </div>
     </n:nav>
 </zk>
