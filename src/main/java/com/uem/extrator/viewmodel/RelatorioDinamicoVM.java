@@ -83,7 +83,7 @@ public class RelatorioDinamicoVM {
 
     // Chamado apenas quando a INSTITUIÇÃO muda (Recalcula TUDO)
     @Command
-    @NotifyChange({"dadosGrafico", "dadosGraficoOrdenado", "totalGeral", "tituloGrafico", "totalPesquisadores", "totalArtigos", "totalLivros", "totalEventos", "modeloPizzaGeral", "modeloPizzaPesquisadores"})
+    @NotifyChange({"dadosGrafico", "dadosGraficoOrdenado", "totalGeral", "tituloGrafico", "totalPesquisadores", "totalArtigos", "totalLivros", "totalEventos", "totalDoutorados", "totalMestrados"})
     public void alterarInstituicao() {
         atualizarKPIs(instituicaoSelecionada);
         atualizarGrafico();
@@ -144,64 +144,47 @@ public class RelatorioDinamicoVM {
     }
 
     private void atualizarKPIs(String instituicao) {
-        try {
-            this.totalPesquisadores = dao.contarTotalPesquisadores(instituicao);
-            this.totalArtigos = dao.contarTotalProducao("ARTIGO", instituicao);
-            this.totalLivros = dao.contarTotalProducao("LIVRO", instituicao);
-            this.totalEventos = dao.contarTotalProducao("EVENTO", instituicao);
-            this.totalDoutorados = dao.contarTotalProducao("DOUTORADO", instituicao);
-            this.totalMestrados = dao.contarTotalProducao("MESTRADO", instituicao);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // Usa a query consolidada de alta performance
+        Map<String, Long> kpis = dao.obterTodosKPIs(instituicao);
+
+        this.totalPesquisadores = kpis.getOrDefault("PESQUISADORES", 0L);
+        this.totalArtigos = kpis.getOrDefault("ARTIGO", 0L);
+        this.totalLivros = kpis.getOrDefault("LIVRO", 0L);
+        this.totalEventos = kpis.getOrDefault("EVENTO", 0L);
+        this.totalDoutorados = kpis.getOrDefault("DOUTORADO", 0L);
+        this.totalMestrados = kpis.getOrDefault("MESTRADO", 0L);
     }
 
     private void atualizarGraficosPizza() {
-        // 1. Montar dados do Gráfico Geral AGORA COM AS 5 CATEGORIAS
         String jsonGeral = String.format("{ \"labels\": [\"Artigos\", \"Livros\", \"Eventos\", \"Doutorados\", \"Mestrados\"], \"data\": [%d, %d, %d, %d, %d] }",
                 totalArtigos, totalLivros, totalEventos, totalDoutorados, totalMestrados);
 
-        // 2. Montar dados do Top 5 Pesquisadores (Isto mantém-se igual)
         StringBuilder labelsTop5 = new StringBuilder("[");
         StringBuilder dataTop5 = new StringBuilder("[");
 
         try {
             String chave = mapaDeChaves.get(opcaoSelecionada);
-            List<?> listaDetalhada = dao.listarDadosDetalhados(chave, instituicaoSelecionada);
 
-            if (listaDetalhada != null && !listaDetalhada.isEmpty()) {
-                Map<String, Integer> contagem = new HashMap<>();
+            // Puxa os Top 5 direto da Base de Dados, em milissegundos
+            List<Object[]> top5 = dao.obterTop5Pesquisadores(chave, instituicaoSelecionada);
 
-                for (Object obj : listaDetalhada) {
-                    String nome = null;
+            for (int i = 0; i < top5.size(); i++) {
+                Object[] row = top5.get(i);
+                String nomeCompleto = (String) row[0];
+                Long quantidade = (Long) row[1];
 
-                    // Verifica se o item é uma Producao (Artigo, Livro) ou Formacao (Mestrado, Doutorado)
-                    if (obj instanceof com.uem.extrator.model.Producao) {
-                        nome = ((com.uem.extrator.model.Producao) obj).getCurriculo().getNomeCompleto();
-                    } else if (obj instanceof com.uem.extrator.model.Formacao) {
-                        nome = ((com.uem.extrator.model.Formacao) obj).getCurriculo().getNomeCompleto();
-                    }
-
-                    if (nome != null) {
-                        String[] partes = nome.split(" ");
-                        String nomeCurto = partes[0] + (partes.length > 1 ? " " + partes[partes.length - 1] : "");
-                        contagem.put(nomeCurto, contagem.getOrDefault(nomeCurto, 0) + 1);
-                    }
+                String nomeCurto = "Desconhecido";
+                if (nomeCompleto != null) {
+                    String[] partes = nomeCompleto.split(" ");
+                    nomeCurto = partes[0] + (partes.length > 1 ? " " + partes[partes.length - 1] : "");
                 }
 
-                // Ordena e pega os top 5
-                List<Map.Entry<String, Integer>> top5 = contagem.entrySet().stream()
-                        .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
-                        .limit(5)
-                        .collect(Collectors.toList());
+                labelsTop5.append("\"").append(nomeCurto).append("\"");
+                dataTop5.append(quantidade);
 
-                for (int i = 0; i < top5.size(); i++) {
-                    labelsTop5.append("\"").append(top5.get(i).getKey()).append("\"");
-                    dataTop5.append(top5.get(i).getValue());
-                    if (i < top5.size() - 1) {
-                        labelsTop5.append(",");
-                        dataTop5.append(",");
-                    }
+                if (i < top5.size() - 1) {
+                    labelsTop5.append(",");
+                    dataTop5.append(",");
                 }
             }
         } catch (Exception e) {
@@ -210,9 +193,7 @@ public class RelatorioDinamicoVM {
         labelsTop5.append("]");
         dataTop5.append("]");
 
-        String jsonTop5 = "{ \"labels\": " + labelsTop5.toString() + ", \"data\": " + dataTop5.toString() + " }";
-
-        Clients.evalJavaScript("desenharGraficos(" + jsonGeral + ", " + jsonTop5 + ");");
+        Clients.evalJavaScript("desenharGraficos(" + jsonGeral + ", { \"labels\": " + labelsTop5.toString() + ", \"data\": " + dataTop5.toString() + " });");
     }
 
     // --- EXPORTAÇÕES ---
@@ -324,6 +305,8 @@ public class RelatorioDinamicoVM {
     public long getTotalArtigos() { return totalArtigos; }
     public long getTotalLivros() { return totalLivros; }
     public long getTotalEventos() { return totalEventos; }
+    public long getTotalMestrados() { return totalMestrados; }
+    public long getTotalDoutorados() { return totalDoutorados; }
 
 
     public static class ItemGrafico {
