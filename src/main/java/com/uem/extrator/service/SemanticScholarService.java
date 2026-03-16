@@ -7,6 +7,8 @@ import com.google.gson.JsonObject;
 import com.uem.extrator.model.Curriculo;
 import com.uem.extrator.model.Producao;
 
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.ThreadLocalRandom.*;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -88,8 +90,9 @@ public class SemanticScholarService {
                 return null; // Achou o artigo, mas não o autor correspondente
 
             } else if (statusCode == 429) {
+                int tempoJitter = 3000 + ThreadLocalRandom.current().nextInt(2000);
                 System.out.println("Aviso Semantic: Rate Limit (429) atingido no H-Index. Tentativa " + tentativa + " de " + MAX_RETRIES + ". Aguardando 3s...");
-                dormir(3000); // Pausa longa para a API respirar
+                dormir(tempoJitter); // Pausa longa para a API respirar
             } else {
                 break; // Outro erro qualquer (404 Not Found, etc), aborta o loop
             }
@@ -151,8 +154,9 @@ public class SemanticScholarService {
                     break; // Sucesso! Sai do loop de retentativa e avança para o próximo lote
 
                 } else if (statusCode == 429) {
-                    System.out.println("Aviso Semantic: Rate Limit (429) atingido no Lote (Batch). Tentativa " + tentativa + " de " + MAX_RETRIES + ". Aguardando 3s...");
-                    dormir(3000); // Pausa longa e vai tentar o MESMO lote de novo no próximo ciclo do for
+                    int tempoJitter = 3000 + ThreadLocalRandom.current().nextInt(2000);
+                    System.out.println("Aviso Semantic: Rate Limit (429) atingido no Lote (Batch). Tentativa " + tentativa + " de " + MAX_RETRIES + ". Aguardando " + tempoJitter + "ms...");
+                    dormir(tempoJitter); // Pausa longa e vai tentar o MESMO lote de novo no próximo ciclo do for
                 } else {
                     break; // Outro erro, avança para o próximo lote para não travar a fila
                 }
