@@ -20,6 +20,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import com.uem.extrator.service.SemanticScholarService;
 
 public class LattesService {
 
@@ -95,9 +96,12 @@ public class LattesService {
                 String xmlConteudo = descompactarZip(zipBytes);
                 LattesParser parser = new LattesParser();
                 Curriculo curriculo = parser.parse(xmlConteudo, idLimpo);
+                List<Producao> producoes = curriculo.getProducoes();
 
                 // Sucesso! Sai do loop e enriquece
-                enriquecerCurriculoComMetricas(curriculo);
+               // enriquecerCurriculoComMetricas(curriculo);
+                SemanticScholarService semanticScholarService = new SemanticScholarService();
+                semanticScholarService.enriquecerDadosBibliometricos(curriculo, producoes);
                 return curriculo;
 
             } catch (Exception e) {
