@@ -8,7 +8,6 @@ import com.uem.extrator.model.Curriculo;
 import com.uem.extrator.model.Producao;
 
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.ThreadLocalRandom.*;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -91,7 +90,7 @@ public class SemanticScholarService {
 
             } else if (statusCode == 429) {
                 int tempoJitter = 3000 + ThreadLocalRandom.current().nextInt(2000);
-                System.out.println("Aviso Semantic: Rate Limit (429) atingido no H-Index. Tentativa " + tentativa + " de " + MAX_RETRIES + ". Aguardando 3s...");
+                System.out.println("Aviso Semantic: Rate Limit (429) atingido no H-Index. Tentativa " + tentativa + " de " + MAX_RETRIES + ". Aguardando " + tempoJitter + "ms...");
                 dormir(tempoJitter); // Pausa longa para a API respirar
             } else {
                 break; // Outro erro qualquer (404 Not Found, etc), aborta o loop
