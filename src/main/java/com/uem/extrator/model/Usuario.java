@@ -7,6 +7,7 @@ import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import org.mindrot.jbcrypt.*;
 
 @Entity
 @Table(name = "USUARIO", schema = "LATTESEXTRATOR", indexes = {
@@ -37,7 +38,7 @@ public class Usuario implements Serializable {
 
     public Usuario(String login, String senhaOriginal, String nome, boolean admin) {
         this.login = login;
-        this.senha = criptografar(senhaOriginal);
+        this.senha = BCrypt.hashpw(senhaOriginal,BCrypt.gensalt(12));
         this.nome = nome;
         this.admin = admin;
     }
@@ -47,6 +48,20 @@ public class Usuario implements Serializable {
     /**
      * Gera o Hash SHA-256 da senha.
      * Metodo estático para poder ser usado no Login também.
+     */
+
+    /**
+     *
+     * ^^^ metodo acima é antigo, apenas gerava hash SHA-256 cru, sem salt.
+     * gerando vulnerabilidades (hashes iguais para senhas iguais por exemplo)
+
+     * Novo metodo aplica salting (caracteres aleatorios) em todas as senhas criptografadas, logo após a aplicação
+     * do SHA-256, criando uma cryptpass forte e praticamente invulnerável. (usando BCrpyt)
+
+
+     * Permite retrocompatibilidade com o sha-256 puro, possibilitando aos usuarios com
+     * senha antiga que utilizem o sistema normalmente, entretanto, se for feito uma
+     * alteração da senha (recomendado) a atualização ja ira aplicar o salting automaticamente.
      */
 
     public static String criptografar(String senhaOriginal) {
@@ -71,7 +86,15 @@ public class Usuario implements Serializable {
     // verifica se a senha digitada bate com a senha criptografada do usuario
     public boolean validarSenha(String senhaDigitada) {
         if (this.senha == null || senhaDigitada == null) return false;
-        return this.senha.equals(criptografar(senhaDigitada));
+
+        // retrocompatibilidade: se detectar um hash sha-256 antigo (64 caracteres) usa a
+        // verificação antiga.
+        if (this.senha.length() == 64) {
+            return this.senha.equals(criptografar(senhaDigitada));
+        }
+
+        // se for uma "senha moderna", usa a verificação do Bcrypt
+        return BCrypt.checkpw(senhaDigitada, this.senha);
     }
 
     public Long getId() { return id; }
@@ -81,8 +104,9 @@ public class Usuario implements Serializable {
     public void setLogin(String login) { this.login = login; }
 
     public String getSenha() { return senha; }
-    public void setSenha(String senha) { this.senha = senha; }
-
+    public void setSenha(String senhaOriginal) {
+        this.senha = BCrypt.hashpw(senhaOriginal, BCrypt.gensalt(12));
+    }
     public String getNome() { return nome; }
     public void setNome(String nome) { this.nome = nome; }
 
