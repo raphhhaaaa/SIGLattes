@@ -55,9 +55,9 @@ Crie o schema no MySQL. O Hibernate encarrega-se de criar as tabelas automaticam
 CREATE DATABASE LATTESEXTRATOR;
 ```
 
-### 2. Instalação de depêndencias
-1. Instale o Maven no seu sistema caso não houver. 
-2. Rode o seguinte comando no cmd de sua IDE para instalar as depêndencias do projeto e construir a build executável:
+### 2. Instalação de dependências
+1. Instale o Maven no seu sistema caso ainda não o tenha. 
+2. Rode o seguinte comando no cmd de sua IDE para instalar as dependências do projeto e construir a build executável:
 ```bash 
 mvn clean install && mvn clean package
 ```
@@ -70,7 +70,7 @@ Antes de iniciar a aplicação, é obrigatório estabelecer o túnel para "engan
 
 ```bash
 # Execute no terminal e mantenha ABERTO.
-ssh ssh -N -L 8888:servicosweb.cnpq.br:80 pld@186.233.154.49 -p 9122 
+ssh -N -L 8888:servicosweb.cnpq.br:80 pld@186.233.154.49 -p 9122 
 ```
 ---
 

@@ -16,7 +16,7 @@
 
         <property name="connection.url">jdbc:mysql://localhost:3306/LATTESEXTRATOR?useTimezone=true&amp;serverTimezone=UTC&amp;allowPublicKeyRetrieval=true&amp;useSSL=false</property>
 
-        // credenciais
+        <!-- credenciais -->
         <property name="connection.username">root</property>
         <property name="connection.password">sua_senha_aqui</property>
 
