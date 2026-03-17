@@ -1,0 +1,149 @@
+<?page title="Relatório de Produtividade" contentType="text/html;charset=UTF-8"?>
+<?link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico"?>
+<?taglib uri="http://www.zkoss.org/dsp/web/core" prefix="c"?>
+<?link rel="stylesheet" type="text/css" href="/css/bootstrap.css"?>
+<?link rel="stylesheet" type="text/css" href="/css/zkbootstrap.css"?>
+<?link rel="stylesheet" type="text/css" href="/css/fontawesome.css"?>
+
+<zk xmlns:n="native" xmlns:x="xhtml">
+
+    <window apply="org.zkoss.bind.BindComposer"
+            viewModel="@id('vm') @init('com.uem.extrator.viewmodel.RelatorioProdutividadeVM')"
+            width="100%">
+
+        <include src="/header.zul" />
+        <include src="/navbar.zul" />
+
+        <div class="container-fluid pt-4 pb-5">
+            <div class="row mb-3">
+                <div class="col-12">
+                    <n:h3 class="text-primary" style="font-weight: bold;">
+                        <n:i class="fas fa-chart-line text-warning"></n:i> Relatório de Produtividade - Quem é Quem
+                    </n:h3>
+                    <n:p class="text-muted">Ranking de impacto bibliométrico e Índice H (Semantic Scholar)</n:p>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-5 border-0">
+                <div class="card-body bg-light rounded">
+                    <div class="row align-items-end">
+                        <div class="col-md-8">
+                            <n:label class="fw-bold mb-1">Instituição de Atuação:</n:label>
+                            <combobox model="@load(vm.instituicoes)" selectedItem="@bind(vm.instituicaoSelecionada)"
+                                      width="100%" placeholder="Selecione a Instituição para gerar o ranking..." readonly="true">
+                                <template name="model">
+                                    <comboitem label="@load(each)" />
+                                </template>
+                            </combobox>
+                        </div>
+                        <div class="col-md-4 text-right">
+                            <button label="Pesquisar" iconSclass="fas fa-search" zclass="btn btn-success me-2" onClick="@command('pesquisar')" />
+                            <button label="Limpar" iconSclass="fas fa-eraser" zclass="btn btn-outline-secondary" onClick="@command('limparFiltros')" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div visible="@load(not empty vm.listaProdutividade)">
+
+                <n:h4 class="mb-4 text-secondary fw-bold text-center">O Pódio da Instituição</n:h4>
+
+                <div class="row align-items-end justify-content-center mb-5 px-3">
+
+                    <div class="col-md-3 mb-3" visible="@load(not empty vm.segundoLugar)">
+                        <div class="card shadow-sm text-center border-secondary h-100" style="border-width: 2px !important; background-color: #f8f9fa;">
+                            <div class="card-body p-3">
+                                <n:h4 class="text-secondary fw-bold mb-1">#2</n:h4>
+                                <n:i class="fas fa-medal fa-2x text-secondary mb-2"></n:i>
+                                <n:h6 class="card-title fw-bold text-dark mt-2"><label value="@load(vm.segundoLugar.nomePesquisador)" /></n:h6>
+                                <n:div class="mt-2">
+                                    <n:span class="text-muted small">Índice H: </n:span>
+                                    <n:span class="fs-5 fw-bold text-primary"><label value="@load(vm.segundoLugar.indiceH)" /></n:span>
+                                </n:div>
+                                <n:div class="d-flex justify-content-center gap-2 text-muted mt-2" style="font-size: 0.8em;">
+                                    <n:span><n:i class="fas fa-quote-right"></n:i> <label value="@load(vm.segundoLugar.totalCitacoes)" /> Cit.</n:span>
+                                    <n:span><n:i class="fas fa-file-alt"></n:i> <label value="@load(vm.segundoLugar.totalArtigos)" /> Art.</n:span>
+                                </n:div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4" style="z-index: 10;" visible="@load(not empty vm.primeiroLugar)">
+                        <div class="card shadow-lg text-center border-warning" style="border-width: 3px !important; transform: scale(1.08); background-color: #fffaf0;">
+                            <div class="card-body p-4">
+                                <n:h3 class="text-warning fw-bold mb-1"><n:i class="fas fa-crown"></n:i> #1</n:h3>
+                                <n:i class="fas fa-trophy fa-4x text-warning mb-3"></n:i>
+                                <n:h5 class="card-title fw-bold text-dark"><label value="@load(vm.primeiroLugar.nomePesquisador)" /></n:h5>
+                                <n:div class="mt-3">
+                                    <n:span class="text-muted">Índice H: </n:span>
+                                    <n:span class="fs-1 fw-bold text-primary"><label value="@load(vm.primeiroLugar.indiceH)" /></n:span>
+                                </n:div>
+                                <n:div class="d-flex justify-content-center gap-3 text-muted small mt-3">
+                                    <n:span><n:i class="fas fa-quote-right"></n:i> <label value="@load(vm.primeiroLugar.totalCitacoes)" /> Citações</n:span>
+                                    <n:span><n:i class="fas fa-file-alt"></n:i> <label value="@load(vm.primeiroLugar.totalArtigos)" /> Artigos</n:span>
+                                </n:div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 mb-3" visible="@load(not empty vm.terceiroLugar)">
+                        <div class="card shadow-sm text-center h-100" style="border-color: #cd7f32; border-width: 2px !important; background-color: #fdfaf7;">
+                            <div class="card-body p-3">
+                                <n:h4 class="fw-bold mb-1" style="color: #cd7f32;">#3</n:h4>
+                                <n:i class="fas fa-medal fa-2x mb-2" style="color: #cd7f32;"></n:i>
+                                <n:h6 class="card-title fw-bold text-dark mt-2"><label value="@load(vm.terceiroLugar.nomePesquisador)" /></n:h6>
+                                <n:div class="mt-2">
+                                    <n:span class="text-muted small">Índice H: </n:span>
+                                    <n:span class="fs-5 fw-bold text-primary"><label value="@load(vm.terceiroLugar.indiceH)" /></n:span>
+                                </n:div>
+                                <n:div class="d-flex justify-content-center gap-2 text-muted mt-2" style="font-size: 0.8em;">
+                                    <n:span><n:i class="fas fa-quote-right"></n:i> <label value="@load(vm.terceiroLugar.totalCitacoes)" /> Cit.</n:span>
+                                    <n:span><n:i class="fas fa-file-alt"></n:i> <label value="@load(vm.terceiroLugar.totalArtigos)" /> Art.</n:span>
+                                </n:div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-dark text-white">
+                        <n:h6 class="mb-0 mt-1"><n:i class="fas fa-list-ol"></n:i> Classificação Geral</n:h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <listbox model="@load(vm.listaProdutividade)" emptyMessage="Nenhum dado encontrado para os filtros." mold="paging" pageSize="15">
+                            <listhead>
+                                <listheader label="#" width="60px" align="center" />
+                                <listheader label="Nome do Pesquisador" sort="auto(nomePesquisador)" />
+                                <listheader label="Índice H" width="120px" align="center" sort="auto(indiceH)" />
+                                <listheader label="Artigos (Total)" width="150px" align="center" sort="auto(totalArtigos)" />
+                                <listheader label="Citações" width="120px" align="center" sort="auto(totalCitacoes)" />
+                                <listheader label="Acesso Aberto" width="150px" align="center" sort="auto(taxaAcessoAberto)" />
+                                <listheader label="Ações" width="100px" align="center" />
+                            </listhead>
+                            <template name="model" var="item" status="s">
+                                <listitem>
+                                    <listcell label="@load(s.index + 1)" style="color: #6c757d;" />
+                                    <listcell label="@load(item.nomePesquisador)" style="font-weight: 600;" />
+                                    <listcell label="@load(item.indiceH)" style="font-weight: bold; color: #0d6efd; font-size: 1.1em;" />
+                                    <listcell label="@load(item.totalArtigos)" />
+                                    <listcell label="@load(item.totalCitacoes)" />
+                                    <listcell>
+                                        <n:span class="badge bg-info text-dark" style="font-size: 0.9em;">
+                                            <label value="@load(item.taxaAcessoAbertoFormatada)" />
+                                        </n:span>
+                                    </listcell>
+                                    <listcell>
+                                        <button iconSclass="fas fa-eye" zclass="btn btn-sm btn-info text-white" tooltiptext="Ver Detalhes do Currículo"
+                                                onClick="@command('visualizarCurriculo', id=item.curriculoId)" />
+                                    </listcell>
+                                </listitem>
+                            </template>
+                        </listbox>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </window>
+</zk>
