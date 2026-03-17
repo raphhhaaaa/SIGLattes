@@ -56,7 +56,7 @@
                                 <tabs>
                                     <tab label="Por ID Lattes" iconSclass="z-icon-id-card" disabled="@load(vm.processando)"/>
                                     <tab label="Por CPF" iconSclass="z-icon-list-alt" disabled="@load(vm.processando)"/>
-                                    <tab label="Por Nome/Data" iconSclass="z-icon-user" disabled="@load(vm.processando)"/>
+                                    <tab label="Por Nome/Data" iconSclass="z-icon-user" disabled="@load(vm.processando)" visible="false"/>
                                     <tab label="Extração em Lote (TXT)" iconSclass="z-icon-upload" disabled="@load(vm.processando)"/>
                                     <zk if="${sessionScope.usuario_logado.admin}">
                                         <tab label="Upload de XML" iconSclass="z-icon-file-archive-o" disabled="@load(vm.processando)"/>
