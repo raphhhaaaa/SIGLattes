@@ -20,8 +20,10 @@ public class CurriculoDAO {
     private CursoDAO cursoDAO = new CursoDAO();
 
     public void salvar(Curriculo curriculo) {
+
         synchronized (CurriculoDAO.class) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
+
+            Session session = HibernateUtil.getSessionFactory().openSession();
             try {
                 session.beginTransaction();
 
@@ -36,15 +38,13 @@ public class CurriculoDAO {
 
                     // ===============================================================
                     // REDE DE SEGURANÇA (FALLBACK BIBLIOMÉTRICO)
-                    // Se a API externa falhar, garantimos que os dados do banco NÃO são zerados!
+                    // Se a API externa falhar, garante que os dados do banco NÃO são zerados!
                     // ===============================================================
 
-                    // 1. Resgata o Índice H antigo se a API retornou Nulo/Zero
                     if (curriculo.getIndiceH() == null || curriculo.getIndiceH() == 0) {
                         curriculo.setIndiceH(curriculoExistente.getIndiceH());
                     }
 
-                    // 2. Mapeia as Produções antigas para resgatar as Citações e Status de Acesso
                     Map<String, Producao> mapProducoesAntigas = new HashMap<>();
                     if (curriculoExistente.getProducoes() != null) {
                         for (Producao pAntiga : curriculoExistente.getProducoes()) {
@@ -74,11 +74,9 @@ public class CurriculoDAO {
                             }
                         }
                     }
-                    // ===============================================================
 
                     session.evict(curriculoExistente);
 
-                    // Continua com a deleção segura e normal
                     session.createQuery("DELETE FROM Vinculo v WHERE v.atuacao.id IN (SELECT a.id FROM Atuacao a WHERE a.curriculo.idLattes = :id)")
                             .setParameter("id", idInterno).executeUpdate();
 

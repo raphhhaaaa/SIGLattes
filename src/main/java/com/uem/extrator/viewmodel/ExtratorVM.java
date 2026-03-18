@@ -124,35 +124,52 @@ public class ExtratorVM {
         final Desktop desktop = Executions.getCurrent().getDesktop();
         if (!desktop.isServerPushEnabled()) desktop.enableServerPush(true);
 
-        executor.submit(() -> {
+        Executors.newSingleThreadExecutor().submit(() -> {
             try {
-                List<Curriculo> listaLocal = curriculoDAO.listarTodos();
-                int contador = 0;
-                for (Curriculo local : listaLocal) {
-                    // SE A TELA JÁ FECHOU, PARA A THREAD IMEDIATAMENTE
-                    if (!desktop.isAlive()) {
-                        return;
-                    }
-                    if (isDesatualizado(local)) contador++;
+                List<Object[]> resumos = curriculoDAO.listarResumoParaVerificacao();
+                int total = resumos.size();
+
+                if (total == 0) {
+                    this.verificandoAtualizacoes = false;
+                    atualizarTextoDesatualizados(desktop, "0");
+                    return;
                 }
 
-                final String resultado = String.valueOf(contador);
+                java.util.concurrent.atomic.AtomicInteger concluidos = new java.util.concurrent.atomic.AtomicInteger(0);
+                java.util.concurrent.atomic.AtomicInteger contador = new java.util.concurrent.atomic.AtomicInteger(0);
 
-                // Só agenda a atualização se o desktop ainda estiver vivo
-                if (desktop.isAlive()) {
-                    try {
-                        Executions.schedule(desktop, event -> {
-                            this.textoDesatualizados = resultado;
-                            this.verificandoAtualizacoes = false;
-                            org.zkoss.bind.BindUtils.postNotifyChange(null, null, ExtratorVM.this, "textoDesatualizados");
-                        }, new Event("onUpdate"));
-                    } catch (Exception ex) {
-                        // Ignora erro de desktop indisponível (o usuário mudou de página)
-                    }
+                for (Object[] resumo : resumos) {
+                    executor.submit(() -> {
+                        try {
+                            // SE A TELA JÁ FECHOU, PARA A THREAD IMEDIATAMENTE
+                            if (!desktop.isAlive()) return;
+
+                            // Cria o "Curriculo Fantasma" levíssimo para poupar RAM
+                            Curriculo curriculoLeve = new Curriculo();
+                            curriculoLeve.setIdLattes((String) resumo[0]);
+                            curriculoLeve.setDataAtualizacao((java.util.Date) resumo[1]);
+
+                            if (isDesatualizado(curriculoLeve)) {
+                                contador.incrementAndGet();
+                            }
+                        } catch (Exception e) {
+                            // Ignora erros isolados de rede
+                        } finally {
+                            int atual = concluidos.incrementAndGet();
+
+                            // Apenas a última thread atualiza o valor na tela
+                            if (atual == total) {
+                                this.verificandoAtualizacoes = false;
+                                atualizarTextoDesatualizados(desktop, String.valueOf(contador.get()));
+                            }
+                        }
+                    });
                 }
 
             } catch (Exception e) {
                 this.verificandoAtualizacoes = false;
+                atualizarTextoDesatualizados(desktop, "Erro");
+                System.err.println("Erro ao verificar desatualizados no Dashboard: " + e.getMessage());
             }
         });
     }
@@ -174,44 +191,102 @@ public class ExtratorVM {
         this.processando = true;
         this.cancelarAtualizacao = false;
         this.listaDesatualizados.clear();
-        this.logAtualizacao = "Iniciando verificação completa...\n";
+        this.logAtualizacao = "Iniciando verificação paralela...\n";
 
-        final Desktop desktop = Executions.getCurrent().getDesktop();
+        final org.zkoss.zk.ui.Desktop desktop = org.zkoss.zk.ui.Executions.getCurrent().getDesktop();
         if (!desktop.isServerPushEnabled()) desktop.enableServerPush(true);
 
-        List<Curriculo> locais = curriculoDAO.listarTodos();
-        int total = locais.size();
+        List<Object[]> resumos = curriculoDAO.listarResumoParaVerificacao();
+        final int total = resumos.size();
 
-        AtomicInteger concluidos = new AtomicInteger(0);
-        AtomicInteger encontrados = new AtomicInteger(0);
+        final java.util.concurrent.atomic.AtomicInteger concluidos = new java.util.concurrent.atomic.AtomicInteger(0);
+        final java.util.concurrent.atomic.AtomicInteger encontrados = new java.util.concurrent.atomic.AtomicInteger(0);
+        final java.util.concurrent.atomic.AtomicInteger progressoVisual = new java.util.concurrent.atomic.AtomicInteger(0);
 
-        for (Curriculo c : locais) {
+        final java.util.concurrent.ConcurrentLinkedQueue<String> filaLogs = new java.util.concurrent.ConcurrentLinkedQueue<>();
+        final java.util.concurrent.ConcurrentLinkedQueue<Curriculo> filaCurriculos = new java.util.concurrent.ConcurrentLinkedQueue<>();
+
+        executor.submit(() -> {
+            while (concluidos.get() < total && !cancelarAtualizacao) {
+                try { Thread.sleep(1500); } catch (InterruptedException e) {}
+
+                StringBuilder sb = new StringBuilder();
+                String msg;
+                while ((msg = filaLogs.poll()) != null) { sb.append(msg); }
+
+                List<Curriculo> novosCurriculos = new ArrayList<>();
+                Curriculo c;
+                while ((c = filaCurriculos.poll()) != null) { novosCurriculos.add(c); }
+
+                if (sb.length() > 0 || !novosCurriculos.isEmpty()) {
+                    if (desktop != null && desktop.isAlive()) {
+                        org.zkoss.zk.ui.Executions.schedule(desktop, event -> {
+                            this.logAtualizacao += sb.toString();
+
+                            // LIMITE DE MEMÓRIA: Mantém apenas os últimos 30.000 caracteres no navegador!
+                            if (this.logAtualizacao.length() > 30000) {
+                                this.logAtualizacao = "...\n[Log truncado para economizar memória]\n" +
+                                        this.logAtualizacao.substring(this.logAtualizacao.length() - 30000);
+                            }
+
+                            this.listaDesatualizados.addAll(novosCurriculos);
+                            org.zkoss.bind.BindUtils.postNotifyChange(null, null, this, "logAtualizacao");
+                            org.zkoss.bind.BindUtils.postNotifyChange(null, null, this, "listaDesatualizados");
+                        }, new org.zkoss.zk.ui.event.Event("onUIUpdate"));
+                    }
+                }
+            }
+        });
+
+        // 2. AS 30 THREADS TRABALHADORAS (Consultam na API e jogam na Caixa de Correio)
+        for (Object[] resumo : resumos) {
+            final String idLattes = (String) resumo[0];
+            final java.util.Date dataAtualizacaoLocal = (java.util.Date) resumo[1];
+            final String nomeCompleto = (String) resumo[2];
+
             executor.submit(() -> {
                 if (this.cancelarAtualizacao) {
-                    finalizarVerificacao(desktop, concluidos, total, encontrados);
+                    finalizarVerificacaoSegura(desktop, concluidos, total, encontrados, filaLogs);
                     return;
                 }
 
+                int atual = progressoVisual.incrementAndGet();
+
                 try {
-                    if (isDesatualizado(c)) {
-                        adicionarNaLista(desktop, c);
+                    // O Curriculo Fantasma para o isDesatualizado ler a data sem explodir a memória
+                    Curriculo curriculoLeve = new Curriculo();
+                    curriculoLeve.setIdLattes(idLattes);
+                    curriculoLeve.setDataAtualizacao(dataAtualizacaoLocal);
+                    curriculoLeve.setNomeCompleto(nomeCompleto);
+
+                    if (isDesatualizado(curriculoLeve)) {
+                        filaCurriculos.add(curriculoLeve);
                         encontrados.incrementAndGet();
-                        atualizarLogAtualizacao(desktop, "⚠️ Desatualizado: " + c.getNomeCompleto() + "\n");
+                        filaLogs.add(String.format("[%d/%d] ⚠️ Desatualizado: %s\n", atual, total, nomeCompleto));
                     }
                 } catch (Exception e) {
-                    atualizarLogAtualizacao(desktop, "❌ Erro ao checar " + c.getNomeCompleto() + "\n");
+                    filaLogs.add(String.format("[%d/%d] ❌ Erro ao checar %s\n", atual, total, nomeCompleto));
                 } finally {
-                    finalizarVerificacao(desktop, concluidos, total, encontrados);
+                    finalizarVerificacaoSegura(desktop, concluidos, total, encontrados, filaLogs);
                 }
             });
         }
     }
 
-    private void finalizarVerificacao(Desktop desktop, AtomicInteger concluidos, int total, AtomicInteger encontrados) {
+    private void finalizarVerificacaoSegura(org.zkoss.zk.ui.Desktop desktop, java.util.concurrent.atomic.AtomicInteger concluidos, int total, java.util.concurrent.atomic.AtomicInteger encontrados, java.util.concurrent.ConcurrentLinkedQueue<String> filaLogs) {
         int atual = concluidos.incrementAndGet();
-        if (atual == total || this.cancelarAtualizacao) {
-            atualizarLogAtualizacao(desktop,"\n✅ Verificação concluída. " + encontrados.get() + " currículos necessitam de atualização.");
-            finalizarProcesso(desktop, "Verificação finalizada!", true);
+
+        if (atual == total) {
+            if (this.cancelarAtualizacao) {
+                filaLogs.add("\n🛑 [Processo interrompido pelo usuário]\n");
+            }
+            filaLogs.add("\n✅ Verificação concluída. " + encontrados.get() + " currículos necessitam de atualização.\n");
+
+            if (desktop != null && desktop.isAlive()) {
+                org.zkoss.zk.ui.Executions.schedule(desktop, event -> {
+                    finalizarProcesso(desktop, "Verificação finalizada!", true);
+                }, new org.zkoss.zk.ui.event.Event("onFinish"));
+            }
         }
     }
 
@@ -225,65 +300,105 @@ public class ExtratorVM {
     @NotifyChange({"listaDesatualizados", "processando", "logAtualizacao"})
     public void atualizarTodosDesatualizados() {
         if (listaDesatualizados.isEmpty()) {
-            Clients.showNotification("A lista está vazia.", "warning", null, null, 3000);
+            org.zkoss.zk.ui.util.Clients.showNotification("A lista está vazia.", "warning", null, null, 3000);
             return;
         }
 
         this.processando = true;
         this.cancelarAtualizacao = false;
-        this.logAtualizacao += "\n--------------------------\nIniciando atualização em massa...\n";
+        this.logAtualizacao += "\n--------------------------\nIniciando atualização em massa PARALELA...\n";
 
-        final Desktop desktop = Executions.getCurrent().getDesktop();
+        final org.zkoss.zk.ui.Desktop desktop = org.zkoss.zk.ui.Executions.getCurrent().getDesktop();
         if (!desktop.isServerPushEnabled()) desktop.enableServerPush(true);
 
-        // Copia a lista para evitar erro de concorrência ao remover itens
         List<Curriculo> paraAtualizar = new ArrayList<>(this.listaDesatualizados);
-        int total = paraAtualizar.size();
+        final int total = paraAtualizar.size();
 
-        // Contadores seguros
-        AtomicInteger concluidos = new AtomicInteger(0);
-        AtomicInteger sucesso = new AtomicInteger(0);
-        AtomicInteger erro = new AtomicInteger(0);
+        final java.util.concurrent.atomic.AtomicInteger concluidos = new java.util.concurrent.atomic.AtomicInteger(0);
+        final java.util.concurrent.atomic.AtomicInteger sucesso = new java.util.concurrent.atomic.AtomicInteger(0);
+        final java.util.concurrent.atomic.AtomicInteger erro = new java.util.concurrent.atomic.AtomicInteger(0);
+        final java.util.concurrent.atomic.AtomicInteger progressoVisual = new java.util.concurrent.atomic.AtomicInteger(0);
 
+        final java.util.concurrent.ConcurrentLinkedQueue<String> filaLogs = new java.util.concurrent.ConcurrentLinkedQueue<>();
+        final java.util.concurrent.ConcurrentLinkedQueue<Curriculo> curriculosRemover = new java.util.concurrent.ConcurrentLinkedQueue<>();
+
+        // 1. A THREAD MAESTRO (Controla a UI)
+        executor.submit(() -> {
+            while (concluidos.get() < total && !cancelarAtualizacao) {
+                try { Thread.sleep(1500); } catch (InterruptedException e) {}
+
+                StringBuilder sb = new StringBuilder();
+                String msg;
+                while ((msg = filaLogs.poll()) != null) { sb.append(msg); }
+
+                List<Curriculo> removerLista = new ArrayList<>();
+                Curriculo c;
+                while ((c = curriculosRemover.poll()) != null) { removerLista.add(c); }
+
+                if (sb.length() > 0 || !removerLista.isEmpty()) {
+                    if (desktop != null && desktop.isAlive()) {
+                        org.zkoss.zk.ui.Executions.schedule(desktop, event -> {
+                            this.logAtualizacao += sb.toString();
+
+                            // LIMITE DE MEMÓRIA (30k caracteres)
+                            if (this.logAtualizacao.length() > 30000) {
+                                this.logAtualizacao = "...\n[Log truncado]\n" + this.logAtualizacao.substring(this.logAtualizacao.length() - 30000);
+                            }
+
+                            this.listaDesatualizados.removeAll(removerLista);
+                            org.zkoss.bind.BindUtils.postNotifyChange(null, null, this, "logAtualizacao");
+                            org.zkoss.bind.BindUtils.postNotifyChange(null, null, this, "listaDesatualizados");
+                        }, new org.zkoss.zk.ui.event.Event("onUIUpdate"));
+                    }
+                }
+            }
+        });
+
+        // 2. WORKERS (AS 30 THREADS EXECUTORAS DE BACTH)
         for (Curriculo c : paraAtualizar) {
             executor.submit(() -> {
                 if (cancelarAtualizacao) {
-                    finalizarAtualizacaoLote(desktop, concluidos, total, sucesso, erro);
+                    finalizarAtualizacaoLoteSegura(desktop, concluidos, total, sucesso, erro, filaLogs);
                     return;
                 }
+
+                int atual = progressoVisual.incrementAndGet();
 
                 try {
                     Curriculo novo = lattesService.getCurriculo(c.getIdLattes());
                     if (novo != null) {
-                        curriculoDAO.salvar(novo); // O Semáforo que criamos no DAO vai gerenciar a fila do banco aqui!
-                        removerDaLista(desktop, c);
+                        curriculoDAO.salvar(novo);
+                        curriculosRemover.add(c);
                         sucesso.incrementAndGet();
-                        atualizarLogAtualizacao(desktop, " ✅ Sucesso: " + novo.getNomeCompleto() + "\n");
+                        filaLogs.add(String.format("[%d/%d] ✅ Sucesso: %s\n", atual, total, novo.getNomeCompleto()));
                     } else {
                         erro.incrementAndGet();
-                        atualizarLogAtualizacao(desktop, " ❌ Vazio/Erro: " + c.getNomeCompleto() + "\n");
+                        filaLogs.add(String.format("[%d/%d] ❌ Vazio/Erro: %s\n", atual, total, c.getNomeCompleto()));
                     }
                 } catch (Exception e) {
                     erro.incrementAndGet();
-                    atualizarLogAtualizacao(desktop, " ❌ Erro (" + c.getNomeCompleto() + "): " + e.getMessage() + "\n");
+                    filaLogs.add(String.format("[%d/%d] ❌ Erro (%s): %s\n", atual, total, c.getNomeCompleto(), e.getMessage()));
                 } finally {
-                    finalizarAtualizacaoLote(desktop, concluidos, total, sucesso, erro);
+                    finalizarAtualizacaoLoteSegura(desktop, concluidos, total, sucesso, erro, filaLogs);
                 }
             });
         }
     }
 
-    // metodo auxiliar pra saber quando todas as threads da atualização acabaram
-    private void finalizarAtualizacaoLote(Desktop desktop, AtomicInteger concluidos, int total, AtomicInteger sucesso, AtomicInteger erro) {
+    private void finalizarAtualizacaoLoteSegura(org.zkoss.zk.ui.Desktop desktop, java.util.concurrent.atomic.AtomicInteger concluidos, int total, java.util.concurrent.atomic.AtomicInteger sucesso, java.util.concurrent.atomic.AtomicInteger erro, java.util.concurrent.ConcurrentLinkedQueue<String> filaLogs) {
         int atual = concluidos.incrementAndGet();
-        if (atual == total || this.cancelarAtualizacao) {
-            atualizarLogAtualizacao(desktop, "\n🏁 Atualização finalizada! OK: " + sucesso.get() + " | Erros: " + erro.get());
-            finalizarProcesso(desktop, "Todos os currículos processados.", true);
 
-            try {
-                Executions.schedule(desktop, event -> atualizarDashboard(), new Event("onUpdate"));
-            } catch (Exception e) {
-                e.printStackTrace();
+        if (atual == total) {
+            if (this.cancelarAtualizacao) {
+                filaLogs.add("\n🛑 [Processo interrompido pelo usuário]\n");
+            }
+            filaLogs.add("\n🏁 Atualização finalizada! OK: " + sucesso.get() + " | Erros: " + erro.get() + "\n");
+
+            if (desktop != null && desktop.isAlive()) {
+                org.zkoss.zk.ui.Executions.schedule(desktop, event -> {
+                    finalizarProcesso(desktop, "Processo finalizado.", true);
+                    try { atualizarDashboard(); } catch (Exception e) {}
+                }, new org.zkoss.zk.ui.event.Event("onFinish"));
             }
         }
     }
@@ -518,7 +633,6 @@ public class ExtratorVM {
         } catch (Exception e) { e.printStackTrace(); }
     }
 
-    // --- CORREÇÃO DE SINCRONIA AQUI ---
     private void finalizarProcesso(Desktop desktop, String msg, boolean sucesso) {
         try {
             if (desktop != null && desktop.isAlive()) {
@@ -596,6 +710,7 @@ public class ExtratorVM {
         this.curriculo = null;
         this.resumoExpandido = false;
         final Desktop desktop = Executions.getCurrent().getDesktop();
+
         if (!desktop.isServerPushEnabled()) desktop.enableServerPush(true);
 
         this.processando = true;

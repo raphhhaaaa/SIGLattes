@@ -20,74 +20,87 @@ import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.Semaphore;
 
 public class SemanticScholarService {
 
     private static final String API_KEY = "rTIBDXH92K98RBMkcppjV5jetzlFfsadRR7xOfA9";
     private static final int RATE_LIMIT_DELAY_MS = 1500;
-    private static final int MAX_RETRIES = 3;
+    private static final int MAX_RETRIES = 5;
     private static final Gson gson = new Gson();
+    // semaphore
+    private static final Semaphore pedagioApi = new Semaphore(4);
 
     public void enriquecerDadosBibliometricos(Curriculo curriculo, List<Producao> producoes) {
         if (curriculo == null || producoes == null) return;
 
-        List<Producao> producoesComDoi = new ArrayList<>();
-        String doiAncora = null;
+        try {
+            pedagioApi.acquire();
 
-        // 1. FILTRO RIGOROSO E PREVENÇÃO DE NULLS
-        for (Producao p : producoes) {
-            if (p != null && p.getDoi() != null) {
-                String doiLimpo = limparDoiValido(p.getDoi());
-                if (doiLimpo != null && !doiLimpo.isEmpty()) {
-                    p.setDoi(doiLimpo);
-                    producoesComDoi.add(p);
-                    if (doiAncora == null) {
-                        doiAncora = doiLimpo;
+            List<Producao> producoesComDoi = new ArrayList<>();
+            String doiAncora = null;
+
+            // 1. FILTRO RIGOROSO E PREVENÇÃO DE NULLS
+            for (Producao p : producoes) {
+                if (p != null && p.getDoi() != null) {
+                    String doiLimpo = limparDoiValido(p.getDoi());
+                    if (doiLimpo != null && !doiLimpo.isEmpty()) {
+                        p.setDoi(doiLimpo);
+                        producoesComDoi.add(p);
+                        if (doiAncora == null) {
+                            doiAncora = doiLimpo;
+                        }
                     }
                 }
             }
-        }
 
-        Integer hIndex = null;
+            Integer hIndex = null;
 
-        try {
-            String orcid = obterOrcidSeExistir(curriculo);
-            hIndex = buscarHIndexPorNomeEOrcid(curriculo.getNomeCompleto(), orcid);
-        } catch (Exception e) {
-            System.err.println("Erro na Camada 1/2 (Nome/ORCID) para " + curriculo.getNomeCompleto() + ": " + e.toString());
-            e.printStackTrace();
-        } finally {
-            dormir(RATE_LIMIT_DELAY_MS);
-        }
-
-        if (hIndex == null && doiAncora != null) {
-            System.out.println("-> Homónimos detetados. Iniciando Camada 3 (DOI Âncora) para: " + curriculo.getNomeCompleto());
             try {
-                hIndex = buscarHIndexPorAncora(doiAncora, curriculo.getNomeCompleto());
+                String orcid = obterOrcidSeExistir(curriculo);
+                hIndex = buscarHIndexPorNomeEOrcid(curriculo.getNomeCompleto(), orcid);
             } catch (Exception e) {
-                System.err.println("Erro na Camada 3 (DOI) para " + curriculo.getNomeCompleto() + ": " + e.toString());
+                System.err.println("Erro na Camada 1/2 (Nome/ORCID) para " + curriculo.getNomeCompleto() + ": " + e.toString());
                 e.printStackTrace();
             } finally {
                 dormir(RATE_LIMIT_DELAY_MS);
             }
-        }
 
-        if (hIndex != null) {
-            curriculo.setIndiceH(hIndex);
-        }
-
-        // ==========================================
-        // BATCH: Atualizar Citações e Acesso Aberto
-        // ==========================================
-        if (!producoesComDoi.isEmpty()) {
-            try {
-                atualizarCitacoesEmLote(producoesComDoi);
-            } catch (Exception e) {
-                System.err.println("Erro Crítico no Lote de " + curriculo.getNomeCompleto() + ": " + e.toString());
-                e.printStackTrace();
+            if (hIndex == null && doiAncora != null) {
+                System.out.println("-> Homónimos detetados. Iniciando Camada 3 (DOI Âncora) para: " + curriculo.getNomeCompleto());
+                try {
+                    hIndex = buscarHIndexPorAncora(doiAncora, curriculo.getNomeCompleto());
+                } catch (Exception e) {
+                    System.err.println("Erro na Camada 3 (DOI) para " + curriculo.getNomeCompleto() + ": " + e.toString());
+                    e.printStackTrace();
+                } finally {
+                    dormir(RATE_LIMIT_DELAY_MS);
+                }
             }
+
+            if (hIndex != null) {
+                curriculo.setIndiceH(hIndex);
+            }
+
+            // ==========================================
+            // BATCH: Atualizar Citações e Acesso Aberto
+            // ==========================================
+            if (!producoesComDoi.isEmpty()) {
+                try {
+                    atualizarCitacoesEmLote(producoesComDoi);
+                } catch (Exception e) {
+                    System.err.println("Erro Crítico no Lote de " + curriculo.getNomeCompleto() + ": " + e.toString());
+                    e.printStackTrace();
+                }
+            }
+        } catch (InterruptedException interruptedException)  {
+            Thread.currentThread().interrupt();
+            System.err.println("Thread interrompida enquanto aguardava o pedágio: " + curriculo.getNomeCompleto());
+        } finally {
+            pedagioApi.release();
         }
     }
+
 
     private Integer buscarHIndexPorNomeEOrcid(String nomeProfessor, String orcid) throws Exception {
         if (nomeProfessor == null || nomeProfessor.trim().isEmpty()) return null;
