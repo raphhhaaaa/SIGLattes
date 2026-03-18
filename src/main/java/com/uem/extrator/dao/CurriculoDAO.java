@@ -3,6 +3,7 @@ package com.uem.extrator.dao;
 import com.uem.extrator.model.Curriculo;
 import com.uem.extrator.model.Curso;
 import com.uem.extrator.model.Formacao;
+import com.uem.extrator.model.Producao;
 import com.uem.extrator.service.AuditLogService;
 import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
@@ -16,106 +17,127 @@ import java.util.Map;
 public class CurriculoDAO {
 
     private AuditLogService auditLogService = new AuditLogService();
-    private CursoDAO cursoDAO = new CursoDAO(); // Instância do novo DAO
+    private CursoDAO cursoDAO = new CursoDAO();
 
     public void salvar(Curriculo curriculo) {
+        synchronized (CurriculoDAO.class) {
         Session session = HibernateUtil.getSessionFactory().openSession();
-        try {
-            session.beginTransaction();
+            try {
+                session.beginTransaction();
 
-            Curriculo curriculoExistente = session.createQuery("FROM Curriculo c WHERE c.idLattes = :idLattes ", Curriculo.class)
-                    .setParameter("idLattes", curriculo.getIdLattes())
-                    .uniqueResult();
+                Curriculo curriculoExistente = session.createQuery(
+                                "FROM Curriculo c LEFT JOIN FETCH c.producoes WHERE c.idLattes = :idLattes ", Curriculo.class)
+                        .setParameter("idLattes", curriculo.getIdLattes())
+                        .uniqueResult();
 
-            if (curriculoExistente != null) {
-                // transfere o ID do banco para o objeto novo. Isso garante que o Hibernate faça um UPDATE na
-                // "capa" do currículo (nome, data, etc) em vez de criar um novo.
-                curriculo.setIdLattes(curriculoExistente.getIdLattes());
-                String idInterno = curriculoExistente.getIdLattes();
+                if (curriculoExistente != null) {
+                    curriculo.setIdLattes(curriculoExistente.getIdLattes());
+                    String idInterno = curriculoExistente.getIdLattes();
 
-                // remove o objeto antigo da memoria do hibernate
-                session.evict(curriculoExistente);
+                    // ===============================================================
+                    // REDE DE SEGURANÇA (FALLBACK BIBLIOMÉTRICO)
+                    // Se a API externa falhar, garantimos que os dados do banco NÃO são zerados!
+                    // ===============================================================
 
-                // apaga as sub-tabelas velhas antes de inserir as novas
-                // ( feito na ordem para nao quebrar as chaves estrangeiras)
+                    // 1. Resgata o Índice H antigo se a API retornou Nulo/Zero
+                    if (curriculo.getIndiceH() == null || curriculo.getIndiceH() == 0) {
+                        curriculo.setIndiceH(curriculoExistente.getIndiceH());
+                    }
 
-                // 1. Limpa as subtabelas de Atuação
-                session.createQuery("DELETE FROM Vinculo v WHERE v.atuacao.id IN (SELECT a.id FROM Atuacao a WHERE a.curriculo.idLattes = :id)")
-                        .setParameter("id", idInterno).executeUpdate();
+                    // 2. Mapeia as Produções antigas para resgatar as Citações e Status de Acesso
+                    Map<String, Producao> mapProducoesAntigas = new HashMap<>();
+                    if (curriculoExistente.getProducoes() != null) {
+                        for (Producao pAntiga : curriculoExistente.getProducoes()) {
+                            if (pAntiga.getDoi() != null && !pAntiga.getDoi().trim().isEmpty()) {
+                                mapProducoesAntigas.put(pAntiga.getDoi().trim(), pAntiga);
+                            } else if (pAntiga.getTitulo() != null) {
+                                mapProducoesAntigas.put(pAntiga.getTitulo().trim().toLowerCase(), pAntiga);
+                            }
+                        }
+                    }
 
-                session.createQuery("DELETE FROM AtividadeItem ai WHERE ai.atividade.id IN (SELECT atv.id FROM Atividade atv WHERE atv.atuacao.id IN (SELECT a.id FROM Atuacao a WHERE a.curriculo.idLattes = :id))")
-                        .setParameter("id", idInterno).executeUpdate();
+                    // Transfere os dados das produções antigas para as novas se necessário
+                    if (curriculo.getProducoes() != null) {
+                        for (Producao pNova : curriculo.getProducoes()) {
+                            if (pNova.getCitacoes() == null || pNova.getCitacoes() == 0) {
+                                Producao pAntiga = null;
+                                if (pNova.getDoi() != null && !pNova.getDoi().trim().isEmpty()) {
+                                    pAntiga = mapProducoesAntigas.get(pNova.getDoi().trim());
+                                } else if (pNova.getTitulo() != null) {
+                                    pAntiga = mapProducoesAntigas.get(pNova.getTitulo().trim().toLowerCase());
+                                }
 
-                session.createQuery("DELETE FROM Atividade atv WHERE atv.atuacao.id IN (SELECT a.id FROM Atuacao a WHERE a.curriculo.idLattes = :id)")
-                        .setParameter("id", idInterno).executeUpdate();
+                                if (pAntiga != null && pAntiga.getCitacoes() != null && pAntiga.getCitacoes() > 0) {
+                                    pNova.setCitacoes(pAntiga.getCitacoes());
+                                    pNova.setStatusAcesso(pAntiga.getStatusAcesso());
+                                }
+                            }
+                        }
+                    }
+                    // ===============================================================
 
-                session.createQuery("DELETE FROM Atuacao a WHERE a.curriculo.idLattes = :id")
-                        .setParameter("id", idInterno).executeUpdate();
+                    session.evict(curriculoExistente);
 
-                // 2. Limpa Produções e Formações
-                session.createQuery("DELETE FROM Formacao f WHERE f.curriculo.idLattes = :id")
-                        .setParameter("id", idInterno).executeUpdate();
+                    // Continua com a deleção segura e normal
+                    session.createQuery("DELETE FROM Vinculo v WHERE v.atuacao.id IN (SELECT a.id FROM Atuacao a WHERE a.curriculo.idLattes = :id)")
+                            .setParameter("id", idInterno).executeUpdate();
 
-                session.createQuery("DELETE FROM Producao p WHERE p.curriculo.idLattes = :id")
-                        .setParameter("id", idInterno).executeUpdate();
-            }
+                    session.createQuery("DELETE FROM AtividadeItem ai WHERE ai.atividade.id IN (SELECT atv.id FROM Atividade atv WHERE atv.atuacao.id IN (SELECT a.id FROM Atuacao a WHERE a.curriculo.idLattes = :id))")
+                            .setParameter("id", idInterno).executeUpdate();
 
+                    session.createQuery("DELETE FROM Atividade atv WHERE atv.atuacao.id IN (SELECT a.id FROM Atuacao a WHERE a.curriculo.idLattes = :id)")
+                            .setParameter("id", idInterno).executeUpdate();
 
+                    session.createQuery("DELETE FROM Atuacao a WHERE a.curriculo.idLattes = :id")
+                            .setParameter("id", idInterno).executeUpdate();
 
-            // CACHE LOCAL: Evita duplicar cursos iguais dentro do MESMO currículo
-            // Ex: Se o cara tem Graduação em 'História' e Mestrado em 'História',
-            // garante que usamos a mesma instância de objeto Curso.
-            Map<String, Curso> cursosProcessadosNestaTransacao = new HashMap<>();
+                    session.createQuery("DELETE FROM Formacao f WHERE f.curriculo.idLattes = :id")
+                            .setParameter("id", idInterno).executeUpdate();
 
-            if (curriculo.getFormacoes() != null) {
-                for (Formacao formacao : curriculo.getFormacoes()) {
-                    Curso cursoCandidato = formacao.getNomeCurso();
+                    session.createQuery("DELETE FROM Producao p WHERE p.curriculo.idLattes = :id")
+                            .setParameter("id", idInterno).executeUpdate();
+                }
 
-                    if (cursoCandidato != null && cursoCandidato.getNomeCurso() != null) {
-                        String nomeNormalizado = cursoCandidato.getNomeCurso().trim().toUpperCase();
+                Map<String, Curso> cursosProcessadosNestaTransacao = new HashMap<>();
 
-                        // 1. Verifica se já processamos esse curso NESTE currículo (Cache Local)
-                        if (cursosProcessadosNestaTransacao.containsKey(nomeNormalizado)) {
-                            // Se sim, reaproveita a instância que já decidimos usar
-                            formacao.setNomeCurso(cursosProcessadosNestaTransacao.get(nomeNormalizado));
-                        } else {
-                            // 2. Se não, busca no Banco de Dados (Cache Persistente)
-                            Curso cursoNoBanco = cursoDAO.buscarPorNome(session, cursoCandidato.getNomeCurso());
+                if (curriculo.getFormacoes() != null) {
+                    for (Formacao formacao : curriculo.getFormacoes()) {
+                        Curso cursoCandidato = formacao.getNomeCurso();
 
-                            if (cursoNoBanco != null) {
-                                // Achou no banco: usa ele e guarda no cache local
-                                formacao.setNomeCurso(cursoNoBanco);
-                                cursosProcessadosNestaTransacao.put(nomeNormalizado, cursoNoBanco);
+                        if (cursoCandidato != null && cursoCandidato.getNomeCurso() != null) {
+                            String nomeNormalizado = cursoCandidato.getNomeCurso().trim().toUpperCase();
+
+                            if (cursosProcessadosNestaTransacao.containsKey(nomeNormalizado)) {
+                                formacao.setNomeCurso(cursosProcessadosNestaTransacao.get(nomeNormalizado));
                             } else {
-                                // Não achou nem no banco nem no cache local:
-                                // Vai ser um curso NOVO. Guardamos essa nova instância no cache
-                                // para que se aparecer de novo no loop, usemos ELA mesma.
-                                // Nota: O Hibernate vai salvar via CascadeType.ALL
-                                cursosProcessadosNestaTransacao.put(nomeNormalizado, cursoCandidato);
+                                Curso cursoNoBanco = cursoDAO.buscarPorNome(session, cursoCandidato.getNomeCurso());
+                                if (cursoNoBanco != null) {
+                                    formacao.setNomeCurso(cursoNoBanco);
+                                    cursosProcessadosNestaTransacao.put(nomeNormalizado, cursoNoBanco);
+                                } else {
+                                    cursosProcessadosNestaTransacao.put(nomeNormalizado, cursoCandidato);
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            session.saveOrUpdate(curriculo);
-            session.getTransaction().commit();
-            // auditLogService.registrarProcessamento(curriculo.getIdLattes());
+                session.saveOrUpdate(curriculo);
+                session.getTransaction().commit();
 
-        } catch (Exception e) {
-            if (session.getTransaction().isActive()) {
-                session.getTransaction().rollback();
-            }
-            e.printStackTrace();
-            throw e;
-        } finally {
+            } catch (Exception e) {
+                if (session.getTransaction().isActive()) {
+                    session.getTransaction().rollback();
+                }
+                e.printStackTrace();
+                throw e;
+            } finally {
             if (session != null) session.close();
+            }
         }
     }
 
-    public long getConsultasHoje() {
-        return auditLogService.contarProcessamentosHoje();
-    }
+    public long getConsultasHoje() { return auditLogService.contarProcessamentosHoje(); }
 
     public List<Curriculo> listarTodos() {
         Session session = HibernateUtil.getSessionFactory().openSession();
@@ -141,15 +163,9 @@ public class CurriculoDAO {
         }
     }
 
-    /**
-     * Busca apenas ID, DATA e NOME para verificação rápida.
-     * Retorna uma lista de Arrays: [0]=idLattes, [1]=dataAtualizacao, [2]=nome
-     * Extremamente leve para a memória.
-     */
     public List<Object[]> listarResumoParaVerificacao() {
         Session session = HibernateUtil.getSessionFactory().openSession();
         try {
-            // HQL: traz apenas as colunas necessárias, sem carregar o objeto inteiro
             String hql = "SELECT c.idLattes, c.dataAtualizacao, c.nomeCompleto FROM Curriculo c";
             Query<Object[]> query = session.createQuery(hql, Object[].class);
             return query.list();
@@ -163,17 +179,14 @@ public class CurriculoDAO {
 
     public Curriculo buscarComDetalhes(String idLattes) {
         Session session = HibernateUtil.getSessionFactory().openSession();
-
         try {
             String hql = "FROM Curriculo c " +
                     "LEFT JOIN FETCH c.formacoes " +
                     "WHERE c.idLattes = :id";
-
             Curriculo c = session.createQuery(hql, Curriculo.class)
                     .setParameter("id", idLattes)
                     .uniqueResult();
 
-            // truque para carregar as outras listaas (pois o Hibernate não gosta de múltilos JOIN FETCH de uma vez)
             if (c != null) {
                 org.hibernate.Hibernate.initialize(c.getProducoes());
                 org.hibernate.Hibernate.initialize(c.getAtuacoes());
@@ -183,7 +196,6 @@ public class CurriculoDAO {
                     org.hibernate.Hibernate.initialize(atuacao.getAtividades());
                 }
             }
-
             return c;
         } catch (Exception e) {
             e.printStackTrace();

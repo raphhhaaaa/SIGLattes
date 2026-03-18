@@ -179,35 +179,40 @@ public class ExtratorVM {
         final Desktop desktop = Executions.getCurrent().getDesktop();
         if (!desktop.isServerPushEnabled()) desktop.enableServerPush(true);
 
-        executor.submit(() -> {
-            List<Curriculo> locais = curriculoDAO.listarTodos();
-            int total = locais.size();
-            int atual = 0;
+        List<Curriculo> locais = curriculoDAO.listarTodos();
+        int total = locais.size();
 
-            for (Curriculo c : locais) {
+        AtomicInteger concluidos = new AtomicInteger(0);
+        AtomicInteger encontrados = new AtomicInteger(0);
 
+        for (Curriculo c : locais) {
+            executor.submit(() -> {
                 if (this.cancelarAtualizacao) {
-                    atualizarLogBatch(desktop, "\n⚠️ VERIFICAÇÃO INTERROMPIDA PELO UTILIZADOR!\n");
-                    break;
+                    finalizarVerificacao(desktop, concluidos, total, encontrados);
+                    return;
                 }
 
-                atual++;
-                final String nome = c.getNomeCompleto().length() > 30 ? c.getNomeCompleto().substring(0, 30) + "..." : c.getNomeCompleto();
-                final String progresso = "Checando " + atual + "/" + total + ": " + nome;
-
-                atualizarLogAtualizacao(desktop, progresso + "...");
-
-                if (isDesatualizado(c)) {
-                    adicionarNaLista(desktop, c);
-                    atualizarLogAtualizacao(desktop, " [DESATUALIZADO]\n");
-                } else {
-                    atualizarLogAtualizacao(desktop, " [OK]\n");
+                try {
+                    if (isDesatualizado(c)) {
+                        adicionarNaLista(desktop, c);
+                        encontrados.incrementAndGet();
+                        atualizarLogAtualizacao(desktop, "⚠️ Desatualizado: " + c.getNomeCompleto() + "\n");
+                    }
+                } catch (Exception e) {
+                    atualizarLogAtualizacao(desktop, "❌ Erro ao checar " + c.getNomeCompleto() + "\n");
+                } finally {
+                    finalizarVerificacao(desktop, concluidos, total, encontrados);
                 }
-            }
+            });
+        }
+    }
 
-            atualizarLogAtualizacao(desktop, "\n✅ Concluído. " + listaDesatualizados.size() + " desatualizados.");
-            finalizarProcesso(desktop, "Verificação concluída!", true);
-        });
+    private void finalizarVerificacao(Desktop desktop, AtomicInteger concluidos, int total, AtomicInteger encontrados) {
+        int atual = concluidos.incrementAndGet();
+        if (atual == total || this.cancelarAtualizacao) {
+            atualizarLogAtualizacao(desktop,"\n✅ Verificação concluída. " + encontrados.get() + " currículos necessitam de atualização.");
+            finalizarProcesso(desktop, "Verificação finalizada!", true);
+        }
     }
 
     @Command
@@ -227,46 +232,60 @@ public class ExtratorVM {
         this.processando = true;
         this.cancelarAtualizacao = false;
         this.logAtualizacao += "\n--------------------------\nIniciando atualização em massa...\n";
+
         final Desktop desktop = Executions.getCurrent().getDesktop();
         if (!desktop.isServerPushEnabled()) desktop.enableServerPush(true);
 
         // Copia a lista para evitar erro de concorrência ao remover itens
         List<Curriculo> paraAtualizar = new ArrayList<>(this.listaDesatualizados);
+        int total = paraAtualizar.size();
 
-        executor.submit(() -> {
-            int total = paraAtualizar.size();
-            int count = 0;
+        // Contadores seguros
+        AtomicInteger concluidos = new AtomicInteger(0);
+        AtomicInteger sucesso = new AtomicInteger(0);
+        AtomicInteger erro = new AtomicInteger(0);
 
-            for (Curriculo c : paraAtualizar) {
-
+        for (Curriculo c : paraAtualizar) {
+            executor.submit(() -> {
                 if (cancelarAtualizacao) {
-                    atualizarLogBatch(desktop, "\n⚠️ ATUALIZAÇÃO INTERROMPIDA PELO UTILIZADOR!\n");
-                    break;
+                    finalizarAtualizacaoLote(desktop, concluidos, total, sucesso, erro);
+                    return;
                 }
-
-                count++;
-                atualizarLogAtualizacao(desktop, "[" + count + "/" + total + "] Baixando " + c.getNomeCompleto() + "...");
 
                 try {
                     Curriculo novo = lattesService.getCurriculo(c.getIdLattes());
                     if (novo != null) {
-                        curriculoDAO.salvar(novo);
-                        removerDaLista(desktop, c); // Remove da tabela visualmente
-                        atualizarLogAtualizacao(desktop, " ✅ Sucesso.\n");
+                        curriculoDAO.salvar(novo); // O Semáforo que criamos no DAO vai gerenciar a fila do banco aqui!
+                        removerDaLista(desktop, c);
+                        sucesso.incrementAndGet();
+                        atualizarLogAtualizacao(desktop, " ✅ Sucesso: " + novo.getNomeCompleto() + "\n");
                     } else {
-                        atualizarLogAtualizacao(desktop, " ❌ Vazio/Erro.\n");
+                        erro.incrementAndGet();
+                        atualizarLogAtualizacao(desktop, " ❌ Vazio/Erro: " + c.getNomeCompleto() + "\n");
                     }
                 } catch (Exception e) {
-                    atualizarLogAtualizacao(desktop, " ❌ Erro: " + e.getMessage() + "\n");
+                    erro.incrementAndGet();
+                    atualizarLogAtualizacao(desktop, " ❌ Erro (" + c.getNomeCompleto() + "): " + e.getMessage() + "\n");
+                } finally {
+                    finalizarAtualizacaoLote(desktop, concluidos, total, sucesso, erro);
                 }
-            }
-            atualizarLogAtualizacao(desktop, "\n🏁 Atualização finalizada.");
+            });
+        }
+    }
+
+    // metodo auxiliar pra saber quando todas as threads da atualização acabaram
+    private void finalizarAtualizacaoLote(Desktop desktop, AtomicInteger concluidos, int total, AtomicInteger sucesso, AtomicInteger erro) {
+        int atual = concluidos.incrementAndGet();
+        if (atual == total || this.cancelarAtualizacao) {
+            atualizarLogAtualizacao(desktop, "\n🏁 Atualização finalizada! OK: " + sucesso.get() + " | Erros: " + erro.get());
             finalizarProcesso(desktop, "Todos os currículos processados.", true);
 
-            // Atualiza o dashboard geral (os cards)
-            Executions.schedule(desktop, event -> atualizarDashboard(), new Event("onUpdate"));
-
-        });
+            try {
+                Executions.schedule(desktop, event -> atualizarDashboard(), new Event("onUpdate"));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Command
