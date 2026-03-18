@@ -191,86 +191,97 @@ public class ExtratorVM {
         this.processando = true;
         this.cancelarAtualizacao = false;
         this.listaDesatualizados.clear();
-        this.logAtualizacao = "Iniciando verificação paralela...\n";
+        this.logAtualizacao = "Iniciando verificação...\n";
 
         final org.zkoss.zk.ui.Desktop desktop = org.zkoss.zk.ui.Executions.getCurrent().getDesktop();
         if (!desktop.isServerPushEnabled()) desktop.enableServerPush(true);
 
-        List<Object[]> resumos = curriculoDAO.listarResumoParaVerificacao();
-        final int total = resumos.size();
+        java.util.concurrent.Executors.newSingleThreadExecutor().submit(() -> {
+            try {
+                // 1. Busca no banco de dados agora acontece em background!
+                List<Object[]> resumos = curriculoDAO.listarResumoParaVerificacao();
+                final int total = resumos.size();
 
-        final java.util.concurrent.atomic.AtomicInteger concluidos = new java.util.concurrent.atomic.AtomicInteger(0);
-        final java.util.concurrent.atomic.AtomicInteger encontrados = new java.util.concurrent.atomic.AtomicInteger(0);
-        final java.util.concurrent.atomic.AtomicInteger progressoVisual = new java.util.concurrent.atomic.AtomicInteger(0);
+                final java.util.concurrent.atomic.AtomicInteger concluidos = new java.util.concurrent.atomic.AtomicInteger(0);
+                final java.util.concurrent.atomic.AtomicInteger encontrados = new java.util.concurrent.atomic.AtomicInteger(0);
+                final java.util.concurrent.atomic.AtomicInteger progressoVisual = new java.util.concurrent.atomic.AtomicInteger(0);
 
-        final java.util.concurrent.ConcurrentLinkedQueue<String> filaLogs = new java.util.concurrent.ConcurrentLinkedQueue<>();
-        final java.util.concurrent.ConcurrentLinkedQueue<Curriculo> filaCurriculos = new java.util.concurrent.ConcurrentLinkedQueue<>();
+                final java.util.concurrent.ConcurrentLinkedQueue<String> filaLogs = new java.util.concurrent.ConcurrentLinkedQueue<>();
+                final java.util.concurrent.ConcurrentLinkedQueue<Curriculo> filaCurriculos = new java.util.concurrent.ConcurrentLinkedQueue<>();
 
-        executor.submit(() -> {
-            while (concluidos.get() < total && !cancelarAtualizacao) {
-                try { Thread.sleep(1500); } catch (InterruptedException e) {}
+                this.logAtualizacao = ("Processando...\n");
 
-                StringBuilder sb = new StringBuilder();
-                String msg;
-                while ((msg = filaLogs.poll()) != null) { sb.append(msg); }
+                // 2. A THREAD MAESTRO (Controla a Interface a cada 1.5s)
+                executor.submit(() -> {
+                    while (concluidos.get() < total && !cancelarAtualizacao) {
+                        try { Thread.sleep(1500); } catch (InterruptedException e) {}
 
-                List<Curriculo> novosCurriculos = new ArrayList<>();
-                Curriculo c;
-                while ((c = filaCurriculos.poll()) != null) { novosCurriculos.add(c); }
+                        StringBuilder sb = new StringBuilder();
+                        String msg;
+                        while ((msg = filaLogs.poll()) != null) { sb.append(msg); }
 
-                if (sb.length() > 0 || !novosCurriculos.isEmpty()) {
-                    if (desktop != null && desktop.isAlive()) {
-                        org.zkoss.zk.ui.Executions.schedule(desktop, event -> {
-                            this.logAtualizacao += sb.toString();
+                        List<Curriculo> novosCurriculos = new ArrayList<>();
+                        Curriculo c;
+                        while ((c = filaCurriculos.poll()) != null) { novosCurriculos.add(c); }
 
-                            // LIMITE DE MEMÓRIA: Mantém apenas os últimos 30.000 caracteres no navegador!
-                            if (this.logAtualizacao.length() > 30000) {
-                                this.logAtualizacao = "...\n[Log truncado para economizar memória]\n" +
-                                        this.logAtualizacao.substring(this.logAtualizacao.length() - 30000);
+                        if (sb.length() > 0 || !novosCurriculos.isEmpty()) {
+                            if (desktop != null && desktop.isAlive()) {
+                                org.zkoss.zk.ui.Executions.schedule(desktop, event -> {
+                                    this.logAtualizacao += sb.toString();
+
+                                    if (this.logAtualizacao.length() > 30000) {
+                                        this.logAtualizacao = "...\n[Log truncado para economizar memória]\n" +
+                                                this.logAtualizacao.substring(this.logAtualizacao.length() - 30000);
+                                    }
+
+                                    this.listaDesatualizados.addAll(novosCurriculos);
+                                    org.zkoss.bind.BindUtils.postNotifyChange(null, null, this, "logAtualizacao");
+                                    org.zkoss.bind.BindUtils.postNotifyChange(null, null, this, "listaDesatualizados");
+                                }, new org.zkoss.zk.ui.event.Event("onUIUpdate"));
                             }
-
-                            this.listaDesatualizados.addAll(novosCurriculos);
-                            org.zkoss.bind.BindUtils.postNotifyChange(null, null, this, "logAtualizacao");
-                            org.zkoss.bind.BindUtils.postNotifyChange(null, null, this, "listaDesatualizados");
-                        }, new org.zkoss.zk.ui.event.Event("onUIUpdate"));
+                        }
                     }
+                });
+
+                // 3. AS 30 THREADS TRABALHADORAS
+                for (Object[] resumo : resumos) {
+                    final String idLattes = (String) resumo[0];
+                    final java.util.Date dataAtualizacaoLocal = (java.util.Date) resumo[1];
+                    final String nomeCompleto = (String) resumo[2];
+
+                    executor.submit(() -> {
+                        if (this.cancelarAtualizacao) {
+                            finalizarVerificacaoSegura(desktop, concluidos, total, encontrados, filaLogs);
+                            return;
+                        }
+
+                        int atual = progressoVisual.incrementAndGet();
+
+                        try {
+                            Curriculo curriculoLeve = new Curriculo();
+                            curriculoLeve.setIdLattes(idLattes);
+                            curriculoLeve.setDataAtualizacao(dataAtualizacaoLocal);
+                            curriculoLeve.setNomeCompleto(nomeCompleto);
+
+                            if (isDesatualizado(curriculoLeve)) {
+                                filaCurriculos.add(curriculoLeve);
+                                encontrados.incrementAndGet();
+                                filaLogs.add(String.format("[%d/%d] ⚠️ Desatualizado: %s\n", atual, total, nomeCompleto));
+                            } else {
+                                filaLogs.add(String.format("[%d/%d] ✅ Atualizado: %s\n", atual, total, nomeCompleto));
+
+                            }
+                        } catch (Exception e) {
+                            filaLogs.add(String.format("[%d/%d] ❌ Erro ao checar %s\n", atual, total, nomeCompleto));
+                        } finally {
+                            finalizarVerificacaoSegura(desktop, concluidos, total, encontrados, filaLogs);
+                        }
+                    });
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         });
-
-        // 2. AS 30 THREADS TRABALHADORAS (Consultam na API e jogam na Caixa de Correio)
-        for (Object[] resumo : resumos) {
-            final String idLattes = (String) resumo[0];
-            final java.util.Date dataAtualizacaoLocal = (java.util.Date) resumo[1];
-            final String nomeCompleto = (String) resumo[2];
-
-            executor.submit(() -> {
-                if (this.cancelarAtualizacao) {
-                    finalizarVerificacaoSegura(desktop, concluidos, total, encontrados, filaLogs);
-                    return;
-                }
-
-                int atual = progressoVisual.incrementAndGet();
-
-                try {
-                    // O Curriculo Fantasma para o isDesatualizado ler a data sem explodir a memória
-                    Curriculo curriculoLeve = new Curriculo();
-                    curriculoLeve.setIdLattes(idLattes);
-                    curriculoLeve.setDataAtualizacao(dataAtualizacaoLocal);
-                    curriculoLeve.setNomeCompleto(nomeCompleto);
-
-                    if (isDesatualizado(curriculoLeve)) {
-                        filaCurriculos.add(curriculoLeve);
-                        encontrados.incrementAndGet();
-                        filaLogs.add(String.format("[%d/%d] ⚠️ Desatualizado: %s\n", atual, total, nomeCompleto));
-                    }
-                } catch (Exception e) {
-                    filaLogs.add(String.format("[%d/%d] ❌ Erro ao checar %s\n", atual, total, nomeCompleto));
-                } finally {
-                    finalizarVerificacaoSegura(desktop, concluidos, total, encontrados, filaLogs);
-                }
-            });
-        }
     }
 
     private void finalizarVerificacaoSegura(org.zkoss.zk.ui.Desktop desktop, java.util.concurrent.atomic.AtomicInteger concluidos, int total, java.util.concurrent.atomic.AtomicInteger encontrados, java.util.concurrent.ConcurrentLinkedQueue<String> filaLogs) {
@@ -314,10 +325,10 @@ public class ExtratorVM {
         List<Curriculo> paraAtualizar = new ArrayList<>(this.listaDesatualizados);
         final int total = paraAtualizar.size();
 
-        final java.util.concurrent.atomic.AtomicInteger concluidos = new java.util.concurrent.atomic.AtomicInteger(0);
-        final java.util.concurrent.atomic.AtomicInteger sucesso = new java.util.concurrent.atomic.AtomicInteger(0);
-        final java.util.concurrent.atomic.AtomicInteger erro = new java.util.concurrent.atomic.AtomicInteger(0);
-        final java.util.concurrent.atomic.AtomicInteger progressoVisual = new java.util.concurrent.atomic.AtomicInteger(0);
+        final AtomicInteger concluidos = new AtomicInteger(0);
+        final AtomicInteger sucesso = new AtomicInteger(0);
+        final AtomicInteger erro = new AtomicInteger(0);
+        final AtomicInteger progressoVisual = new AtomicInteger(0);
 
         final java.util.concurrent.ConcurrentLinkedQueue<String> filaLogs = new java.util.concurrent.ConcurrentLinkedQueue<>();
         final java.util.concurrent.ConcurrentLinkedQueue<Curriculo> curriculosRemover = new java.util.concurrent.ConcurrentLinkedQueue<>();
@@ -447,7 +458,9 @@ public class ExtratorVM {
             if (dataRemota != null && dataLocal != null) {
                 return zerarHora(dataRemota).after(zerarHora(dataLocal));
             } else return dataRemota != null && dataLocal != null;
-        } catch (Exception e) { return false; }
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private void adicionarNaLista(Desktop desktop, Curriculo c) {

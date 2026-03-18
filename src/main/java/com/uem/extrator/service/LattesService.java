@@ -63,7 +63,10 @@ public class LattesService {
             // fallback para implementações em sun/oracle, talvez fique redundante mas melhor do que quebrar caso
             // aconteça (comuns em jdk 8/11)
             requestContext.put("com.sun.xml.internal.ws.connect.timeout", timeoutMs);
-            requestContext.put("com.sun.xml.internal.ws.request.timout", timeoutMs);
+            requestContext.put("com.sun.xml.internal.ws.request.timeout", timeoutMs);
+            // fallback extra (Garante que funciona em servidores com Apache CXF)
+            requestContext.put("javax.xml.ws.client.receiveTimeout", timeoutMs);
+            requestContext.put("javax.xml.ws.client.connectionTimeout", timeoutMs);
 
             return port;
         } catch (Exception e) {
@@ -96,12 +99,32 @@ public class LattesService {
                 String xmlConteudo = descompactarZip(zipBytes);
                 LattesParser parser = new LattesParser();
                 Curriculo curriculo = parser.parse(xmlConteudo, idLimpo);
+
+                Date dataRealCNPq = obterDataAtualizacaoRemota(idLimpo);
+                if (dataRealCNPq != null) {
+                    curriculo.setDataAtualizacao(dataRealCNPq);
+                }
+
                 List<Producao> producoes = curriculo.getProducoes();
 
-                // Sucesso! Sai do loop e enriquece
-               // enriquecerCurriculoComMetricas(curriculo);
-                SemanticScholarService semanticScholarService = new SemanticScholarService();
-                semanticScholarService.enriquecerDadosBibliometricos(curriculo, producoes);
+                // enriquece apenas se houver produções do tipo artigo
+
+                boolean possuiArtigos = false;
+                if (producoes != null && !producoes.isEmpty()) {
+                    possuiArtigos = producoes.stream().anyMatch(p ->
+                            p.getTipo() != null && p.getTipo().toUpperCase().contains("ARTIGO")
+                    );
+
+                    if (possuiArtigos) {
+                    // enriquece
+                    // enriquecerCurriculoComMetricas(curriculo);
+                    SemanticScholarService semanticScholarService = new SemanticScholarService();
+                    semanticScholarService.enriquecerDadosBibliometricos(curriculo, producoes);
+                    } else {
+                        // retorna sem enriquecer
+                        System.out.println("-> API IGNORADA, SEM ARTIGOS: " + curriculo.getNomeCompleto());
+                    }
+                }
                 return curriculo;
 
             } catch (Exception e) {
@@ -210,19 +233,23 @@ public class LattesService {
 
     // consulta o CNPq para saber a data da última atualização do currículo na plataforma
     public Date obterDataAtualizacaoRemota(String idLattes) {
-        try {
-            ILattesSOAP port = criarCliente();
-            String dataString = port.getDataAtualizacaoCV(idLattes);
-
-            if (dataString != null && !dataString.isEmpty()) {
-                try { // tenta formato completo
+        // Tenta até 3 vezes antes de desistir e atirar a exceção
+        for (int tentativa = 1; tentativa <= 3; tentativa++) {
+            try {
+                ILattesSOAP port = criarCliente();
+                String dataString = port.getDataAtualizacaoCV(idLattes);
+                if (dataString != null && !dataString.isEmpty()) {
                     return new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").parse(dataString);
-                } catch (Exception e1) { // tenta formato curto
-                    return new SimpleDateFormat("dd/MM/yyyy").parse(dataString);
                 }
+                return null;
+            } catch (Exception e) {
+                if (tentativa == 3) {
+                    // Na última tentativa, se falhar, aí sim ele desiste e deixa o catch do ExtratorVM apanhar
+                    throw new RuntimeException("Falha ao buscar data após 3 tentativas: " + e.getMessage());
+                }
+                // Se falhou mas tem tentativas, dorme meio segundo e tenta de novo
+                try { Thread.sleep(500); } catch (InterruptedException ie) {}
             }
-        } catch (Exception e) {
-            System.out.println("Erro ao buscar data remota para ID " + idLattes + ": " + e.getMessage());
         }
         return null;
     }
