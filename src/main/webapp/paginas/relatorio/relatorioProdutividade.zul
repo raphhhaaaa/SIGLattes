@@ -7,6 +7,16 @@
 
 <zk xmlns:n="native" xmlns:x="xhtml">
 
+    <style>
+        .z-combobox-button {
+        right: 0px !important;
+        background: transparent !important;
+        }
+        /* Ajuste para as abas ficarem bonitas no bootstrap */
+        .nav-tabs { border-bottom: 1px solid #dee2e6; }
+        .z-tab-selected { font-weight: bold; background: #fff; border-top: 2px solid #007bff; }
+    </style>
+
     <window apply="org.zkoss.bind.BindComposer"
             viewModel="@id('vm') @init('com.uem.extrator.viewmodel.RelatorioProdutividadeVM')"
             width="100%">
@@ -37,7 +47,7 @@
                             </combobox>
                         </div>
                         <div class="col-md-4 text-right">
-                            <button label="Pesquisar" iconSclass="fas fa-search" zclass="btn btn-success me-2" onClick="@command('pesquisar')" />
+                            <button label="Pesquisar" iconSclass="fas fa-search" zclass="btn btn-outline-success me-2" onClick="@command('pesquisar')" />
                             <button label="Limpar" iconSclass="fas fa-eraser" zclass="btn btn-outline-secondary" onClick="@command('limparFiltros')" />
                         </div>
                     </div>
@@ -50,9 +60,9 @@
 
                 <div class="row align-items-end justify-content-center mb-5 px-3">
 
-                    <div class="col-md-3 mb-3" visible="@load(not empty vm.segundoLugar)">
+                    <div class="col-md-3 mb-3" visible="@load(not empty vm.segundoLugar)" style="margin-right: 30px">
                         <div class="card shadow-sm text-center border-secondary h-100" style="border-width: 2px !important; background-color: #f8f9fa;">
-                            <div class="card-body p-3">
+                            <div class="card-body p-3" style="box-shadow: -32px 21px 10px rgba(0,0,0,0.5);">
                                 <n:h4 class="text-secondary fw-bold mb-1">#2</n:h4>
                                 <n:i class="fas fa-medal fa-2x text-secondary mb-2"></n:i>
                                 <n:h6 class="card-title fw-bold text-dark mt-2"><label value="@load(vm.segundoLugar.nomePesquisador)" /></n:h6>
@@ -70,7 +80,7 @@
 
                     <div class="col-md-4" style="z-index: 10;" visible="@load(not empty vm.primeiroLugar)">
                         <div class="card shadow-lg text-center border-warning" style="border-width: 3px !important; transform: scale(1.08); background-color: #fffaf0;">
-                            <div class="card-body p-4">
+                            <div class="card-body p-4" style="15px 31px 10px rgba(0,0,0,0.5);">
                                 <n:h3 class="text-warning fw-bold mb-1"><n:i class="fas fa-crown"></n:i> #1</n:h3>
                                 <n:i class="fas fa-trophy fa-4x text-warning mb-3"></n:i>
                                 <n:h5 class="card-title fw-bold text-dark"><label value="@load(vm.primeiroLugar.nomePesquisador)" /></n:h5>
@@ -86,9 +96,9 @@
                         </div>
                     </div>
 
-                    <div class="col-md-3 mb-3" visible="@load(not empty vm.terceiroLugar)">
+                    <div class="col-md-3 mb-3" visible="@load(not empty vm.terceiroLugar)" style="margin-left: 30px;">
                         <div class="card shadow-sm text-center h-100" style="border-color: #cd7f32; border-width: 2px !important; background-color: #fdfaf7;">
-                            <div class="card-body p-3">
+                            <div class="card-body p-3" style="box-shadow: 32px 21px 10px rgba(0,0,0,0.5);">
                                 <n:h4 class="fw-bold mb-1" style="color: #cd7f32;">#3</n:h4>
                                 <n:i class="fas fa-medal fa-2x mb-2" style="color: #cd7f32;"></n:i>
                                 <n:h6 class="card-title fw-bold text-dark mt-2"><label value="@load(vm.terceiroLugar.nomePesquisador)" /></n:h6>
