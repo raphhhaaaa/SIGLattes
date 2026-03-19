@@ -43,7 +43,7 @@ public class RelatorioProdutividadeVM {
 
     @Init
     public void init() {
-        usuarioLogado = (Usuario) Sessions.getCurrent().getAttribute("usuarioLogado");
+        usuarioLogado = (Usuario) Sessions.getCurrent().getAttribute("usuario_logado");
         listaProdutividade = new ArrayList<>();
 
         InstituicaoDAO instituicaoDAO = new InstituicaoDAO();

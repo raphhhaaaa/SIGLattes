@@ -1,11 +1,13 @@
 package com.uem.extrator.viewmodel;
 
 import com.uem.extrator.dto.RelatorioRevistaDTO;
+import com.uem.extrator.model.Usuario;
 import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.query.NativeQuery;
 import org.zkoss.bind.annotation.Init;
 import org.zkoss.bind.annotation.Command;
+import org.zkoss.zk.ui.Sessions;
 import org.zkoss.zul.Filedownload;
 import org.zkoss.bind.annotation.NotifyChange;
 
@@ -16,6 +18,8 @@ import java.util.stream.Collectors;
 
 public class RelatorioRevistasVM {
 
+    private Usuario usuarioLogado;
+
     private List<RelatorioRevistaDTO> listaRelatorio; // guarda apenas o que vai ser mostrado na tela
     private List<RelatorioRevistaDTO> listaCompleta; // guarda tudo o que veio do banco
 
@@ -25,6 +29,8 @@ public class RelatorioRevistasVM {
 
     @Init
     public void init() {
+        usuarioLogado = (Usuario) Sessions.getCurrent().getAttribute("usuario_logado");
+
         carregarDados();
     }
 
@@ -128,5 +134,8 @@ public class RelatorioRevistasVM {
     public void setFiltroBusca(String filtroBusca) { this.filtroBusca = filtroBusca; }
     public String getFiltroQualis() { return filtroQualis; }
     public void setFiltroQualis(String filtroQualis) { this.filtroQualis = filtroQualis; }
+    public Usuario getUsuarioLogado() {
+        return usuarioLogado;
+    }
 }
 

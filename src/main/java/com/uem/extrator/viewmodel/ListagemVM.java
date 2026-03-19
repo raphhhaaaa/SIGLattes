@@ -7,10 +7,11 @@ import org.zkoss.bind.BindUtils;
 import org.zkoss.bind.annotation.*;
 import org.zkoss.zk.ui.Desktop;
 import org.zkoss.zk.ui.Executions;
+import org.zkoss.zk.ui.Sessions;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zul.Window;
-
+import com.uem.extrator.model.Usuario;
 import java.util.Date;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,6 +20,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class ListagemVM {
+
+    private Usuario usuarioLogado;
 
     // DAOs
     private CurriculoDAO curriculoDAO = new CurriculoDAO();
@@ -49,6 +52,8 @@ public class ListagemVM {
 
     @Init
     public void init() {
+        // Usuario
+        this.usuarioLogado = (Usuario) Sessions.getCurrent().getAttribute("usuario_logado");
         carregarListas();
     }
 
@@ -309,5 +314,7 @@ public class ListagemVM {
     public void setTermoPesquisaInstituicao(String termoPesquisaInstituicao) { this.termoPesquisaInstituicao = termoPesquisaInstituicao; }
     public String getTermoPesquisaCurso() { return termoPesquisaCurso; }
     public void setTermoPesquisaCurso(String termoPesquisaCurso) { this.termoPesquisaCurso = termoPesquisaCurso; }
-
+    public Usuario getUsuarioLogado() {
+        return usuarioLogado;
+    }
 }

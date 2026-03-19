@@ -23,6 +23,10 @@ import java.util.regex.Pattern;
 
 public class RelatorioDinamicoVM {
 
+    // Usuário
+    private Usuario usuarioLogado;
+
+    // DAOs
     private RelatorioDAO dao = new RelatorioDAO();
     private InstituicaoDAO instituicaoDAO = new InstituicaoDAO();
 
@@ -57,6 +61,8 @@ public class RelatorioDinamicoVM {
 
     @Init
     public void init() {
+        usuarioLogado = (Usuario) Sessions.getCurrent().getAttribute("usuario_logado");
+
         mapaDeChaves.put("Artigos em Periódicos", "ARTIGO");
         mapaDeChaves.put("Livros e Capítulos", "LIVRO");
         mapaDeChaves.put("Trabalhos em Eventos/Congressos", "EVENTO");
@@ -307,7 +313,9 @@ public class RelatorioDinamicoVM {
     public long getTotalEventos() { return totalEventos; }
     public long getTotalMestrados() { return totalMestrados; }
     public long getTotalDoutorados() { return totalDoutorados; }
-
+    public Usuario getUsuarioLogado() {
+        return usuarioLogado;
+    }
 
     public static class ItemGrafico {
         private Integer ano;

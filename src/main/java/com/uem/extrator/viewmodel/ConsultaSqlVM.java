@@ -29,6 +29,8 @@ import java.util.List;
 
 public class ConsultaSqlVM {
 
+    private Usuario usuarioLogado;
+
     private static final Logger log = LoggerFactory.getLogger(ConsultaSqlVM.class);
     private String sqlQuery;
     private List<String> colunas = new ArrayList<>();
@@ -38,7 +40,7 @@ public class ConsultaSqlVM {
 
     @Init
     public void init() {
-        Usuario usuarioLogado = (Usuario) Sessions.getCurrent().getAttribute("usuario_logado");
+        usuarioLogado = (Usuario) Sessions.getCurrent().getAttribute("usuario_logado");
 
         // se não houver utilizador ou não for administrador, chuta para fora da página
         if (usuarioLogado == null || !usuarioLogado.isAdmin()) {
@@ -182,4 +184,7 @@ public class ConsultaSqlVM {
         return linhas;
     }
     public boolean isExecutando() { return executando; }
+    public Usuario getUsuarioLogado() {
+        return usuarioLogado;
+    }
 }

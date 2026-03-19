@@ -12,7 +12,9 @@
 <zk xmlns="http://www.zkoss.org/2005/zul"
     xmlns:n="http://www.zkoss.org/2005/zk/native">
 
-    <div sclass="d-flex flex-column min-vh-100">
+    <div sclass="d-flex flex-column min-vh-100"
+         apply="org.zkoss.bind.BindComposer"
+         viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ExtratorVM')">
 
         <include src="/header.zul"/>
         <include src="/navbar.zul"/>
@@ -30,9 +32,7 @@
                             <n:h5 class="mb-0"><n:i class="fa fa-refresh"></n:i> Central de Atualizações Lattes</n:h5>
                         </div>
 
-                        <div sclass="card-body"
-                             apply="org.zkoss.bind.BindComposer"
-                             viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ExtratorVM')">
+                        <div sclass="card-body">
 
                             <div sclass="row">
                                 <div sclass="col-md-12 mb-4">

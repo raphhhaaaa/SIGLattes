@@ -11,8 +11,6 @@
     xmlns:n="native"
     xmlns:ca="client/attribute">
 
-    <include src="/header.zul"/>
-    <include src="/navbar.zul"/>
 
     <style>
         .z-combobox-button {
@@ -25,13 +23,17 @@
 
     </style>
 
+    <div sclass="row" apply="org.zkoss.bind.BindComposer"
+         viewModel="@id('vm') @init('com.uem.extrator.viewmodel.RelatorioDinamicoVM')">
+
+    <include src="/header.zul"/>
+    <include src="/navbar.zul"/>
+
     <div sclass="container-fluid" style="padding: 20px; min-height: 600px;">
         <div sclass="row">
             <div sclass="col-md-12">
 
-                <div sclass="card shadow-sm"
-                     apply="org.zkoss.bind.BindComposer"
-                     viewModel="@id('vm') @init('com.uem.extrator.viewmodel.RelatorioDinamicoVM')">
+                <div sclass="card shadow-sm">
 
                     <div sclass="card-header bg-light d-flex justify-content-between align-items-center"
                          style="padding: 15px;">
@@ -318,6 +320,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
     <include src="/footer.zul"/>
 </zk>

@@ -1,10 +1,12 @@
 package com.uem.extrator.viewmodel;
 
 import com.mysql.cj.xdevapi.Client;
+import com.uem.extrator.model.Usuario;
 import com.uem.extrator.service.AutomacaoService;
 import com.uem.extrator.service.EmailService;
 import com.uem.extrator.util.ConfigManager;
 import com.uem.extrator.util.HibernateUtil;
+import org.zkoss.zk.ui.Sessions;
 import org.zkoss.zk.ui.event.Event;
 import org.hibernate.Session;
 import org.zkoss.bind.annotation.Command;
@@ -24,6 +26,9 @@ import static java.awt.SystemColor.desktop;
 
 public class ConfigVM {
 
+
+    // Usuário
+    private Usuario usuarioLogado;
 
     // CNPq
     private String wsdlUrl;
@@ -61,6 +66,9 @@ public class ConfigVM {
 
     @Init
     public void init() {
+        // pega Usuario
+        usuarioLogado = (Usuario) Sessions.getCurrent().getAttribute("usuario_logado");
+
         ConfigManager config = ConfigManager.getInstance();
 
         // carrega CNPq e gerais
@@ -289,6 +297,9 @@ public class ConfigVM {
     public void setBackupTime(String backupTime) { this.backupTime = backupTime; }
     public String getCaminhoArquivo() { return caminhoArquivo; }
     public String getPoolStatus() { return poolStatus; }
+    public Usuario getUsuarioLogado() {
+        return usuarioLogado;
+    }
 
     // notificações
     public String getSmtpHost() { return smtpHost; }

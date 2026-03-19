@@ -9,13 +9,14 @@
 
 <zk xmlns="http://www.zkoss.org/2005/zul" xmlns:n="native">
 
-    <div sclass="d-flex flex-column min-vh-100">
+    <div sclass="d-flex flex-column min-vh-100"
+         apply="org.zkoss.bind.BindComposer"
+         viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ConfigVM')">
+
         <include src="/header.zul"/>
         <include src="/navbar.zul"/>
 
-        <div sclass="container-fluid flex-grow-1" style="padding: 20px;"
-             apply="org.zkoss.bind.BindComposer"
-             viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ConfigVM')">
+        <div sclass="container-fluid flex-grow-1" style="padding: 20px;">
 
             <div sclass="row mb-3">
                 <div sclass="col-md-12">
@@ -283,7 +284,9 @@
                     <button label="Salvar Todas as Configurações" onClick="@command('salvar')" sclass="btn btn-outline-success font-weight-bold px-4" height="45px" iconSclass="z-icon-save"/>
                 </div>
             </div>
-        <include src="/footer.zul"/>
+        </div>
     </div>
-    </div>
+
+    <include src="/footer.zul"/>
+
 </zk>

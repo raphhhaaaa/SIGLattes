@@ -8,15 +8,15 @@
 
 <zk xmlns="http://www.zkoss.org/2005/zul" xmlns:n="native">
 
-    <div sclass="d-flex flex-column" style="height: 100vh; overflow: hidden;">
+    <div sclass="d-flex flex-column" style="height: 100vh; overflow: hidden;"
+         viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ListagemVM')"
+         apply="org.zkoss.bind.BindComposer">
 
         <include src="/header.zul"/>
         <include src="/navbar.zul"/>
 
         <div sclass="container-fluid flex-grow-1"
-             style="padding: 20px; overflow: hidden;"
-             viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ListagemVM')"
-             apply="org.zkoss.bind.BindComposer">
+             style="padding: 20px; overflow: hidden;">
             <div sclass="row h-100">
                 <div sclass="col-md-12 h-100">
 

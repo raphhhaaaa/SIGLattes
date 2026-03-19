@@ -19,12 +19,18 @@ import java.util.List;
 
 public class LogVM {
 
+    // Usuário
+    private Usuario usuarioLogado;
+
+    // Log
     private String conteudoLog;
     private String caminhoArquivo;
     private AuditLogService auditService = new AuditLogService();
 
     @Init
     public void init() {
+        usuarioLogado = (Usuario) Sessions.getCurrent().getAttribute("usuario_logado");
+
         carregarLogs();
         this.caminhoArquivo = auditService.getCaminhoArquivo();
     }
@@ -87,4 +93,7 @@ public class LogVM {
     // Getters //
     public String getCaminhoArquivo() { return caminhoArquivo; }
     public String getConteudoLog() { return conteudoLog; }
+    public Usuario getUsuarioLogado() {
+        return usuarioLogado;
+    }
 }
