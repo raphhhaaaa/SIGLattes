@@ -112,7 +112,10 @@ public class LattesService {
                 boolean possuiArtigos = false;
                 if (producoes != null && !producoes.isEmpty()) {
                     possuiArtigos = producoes.stream().anyMatch(p ->
-                            p.getTipo() != null && p.getTipo().toUpperCase().contains("ARTIGO")
+                            p.getTipo() != null &&
+                                    p.getTipo().toUpperCase().contains("ARTIGO") &&
+                                    p.getDoi() != null &&
+                                    !p.getDoi().trim().isEmpty()
                     );
 
                     if (possuiArtigos) {
