@@ -7,7 +7,8 @@ import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
 
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class QualisDAO {
 
@@ -21,20 +22,20 @@ public class QualisDAO {
         }
     }
 
-    public Qualis buscarPorIssn(String issn) {
-        if (issn == null || issn.trim().isEmpty()) return null;
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            // remove traços
-            String hql = "FROM Qualis q WHERE REPLACE(q.issn, '-', '') = REPLACE(:issn, '-', '')";
-            Query<Qualis> query = session.createQuery(hql, Qualis.class);
-            query.setParameter("issn", issn);
-            query.setMaxResults(1);
-            return query.uniqueResult();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
+//    public Qualis buscarPorIssn(String issn) {
+//        if (issn == null || issn.trim().isEmpty()) return null;
+//        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+//            // remove traços
+//            String hql = "FROM Qualis q WHERE REPLACE(q.issn, '-', '') = REPLACE(:issn, '-', '')";
+//            Query<Qualis> query = session.createQuery(hql, Qualis.class);
+//            query.setParameter("issn", issn);
+//            query.setMaxResults(1);
+//            return query.uniqueResult();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return null;
+//        }
+//    }
 
     public void salvarEmLote(List<Qualis> listaQualis)  {
         Transaction transaction = null;
@@ -56,6 +57,35 @@ public class QualisDAO {
                 transaction.rollback();
             }
             e.printStackTrace();
+        }
+    }
+
+    public Map<String, Qualis> buscarPorIssns(Collection<String> issn) {
+        if (issn == null || issn.isEmpty()) return Collections.emptyMap();
+
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            // remove traços para normalizar
+            List<String> issnNormalizado = issn.stream()
+                    .filter(Objects::nonNull)
+                    .map(i -> i.replace("-", ""))
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            String hql = "FROM Qualis q WHERE REPLACE(q.issn, '-', '') IN :issn";
+            List<Qualis> lista = session.createQuery(hql, Qualis.class)
+                    .setParameter("issn", issnNormalizado)
+                    .list();
+
+            // monta mapa chaveado pelo ISSN normalizado
+            return lista.stream()
+                    .collect(Collectors.toMap(
+                            q -> q.getIssn().replace("-", ""),
+                            q -> q,
+                            (a, b) -> a // em caso de duplicata, mantém o primeiro
+                    ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Collections.emptyMap();
         }
     }
 }

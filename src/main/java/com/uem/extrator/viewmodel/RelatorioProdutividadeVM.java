@@ -137,25 +137,6 @@ public class RelatorioProdutividadeVM {
     @Command
     public void fecharResultado() {}
 
-    public String obterNotaQualis(Producao producao) {
-        if (producao.getIsbnIssn() == null || !"ARTIGO".equalsIgnoreCase(producao.getTipo())) return "-";
-        QualisDAO qualisDAO = new QualisDAO();
-        Qualis q = qualisDAO.buscarPorIssn(producao.getIsbnIssn());
-        return (q != null && q.getEstrato() != null) ? q.getEstrato() : "S/N";
-    }
-
-    public String ObterClasseCorQualis(Producao producao) {
-        String nota = obterNotaQualis(producao);
-        if (nota == null) return "badge bg-secondary";
-        switch (nota.toUpperCase().trim()) {
-            case "A1": case "A2": return "badge bg-success";
-            case "B1": case "B2": return "badge bg-primary";
-            case "B3": case "B4": return "badge bg-info text-dark";
-            case "C": return "badge bg-warning text-dark";
-            default: return "badge bg-secondary";
-        }
-    }
-
     // ================= GETTERS E SETTERS =================
     public Usuario getUsuarioLogado() { return usuarioLogado; }
     public List<String> getInstituicoes() { return instituicoes; }

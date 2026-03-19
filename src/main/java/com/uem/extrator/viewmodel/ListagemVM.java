@@ -162,39 +162,6 @@ public class ListagemVM {
         }
     }
 
-    public String obterNotaQualis(Producao producao) {
-        // se não for artigo ou não tiver ISSN, não tem qualis
-        if (producao.getIsbnIssn() == null || !"ARTIGO".equalsIgnoreCase(producao.getTipo())) {
-            return "-";
-        }
-
-        QualisDAO qualisDAO = new QualisDAO();
-        Qualis q = qualisDAO.buscarPorIssn(producao.getIsbnIssn());
-
-        return (q != null && q.getEstrato() != null) ? q.getEstrato() : "S/N";
-    }
-
-    public String ObterClasseCorQualis(Producao producao) {
-        String nota = obterNotaQualis(producao);
-        if (nota == null) return "badge bg-secondary";
-
-        switch (nota.toUpperCase().trim()) {
-            case "A1":
-            case "A2":
-                return "badge bg-success"; // Verde para o topo
-            case "B1":
-            case "B2":
-                return "badge bg-primary"; // Azul para muito bom
-            case "B3":
-            case "B4":
-                return "badge bg-info text-dark"; // Azul claro
-            case "C":
-                return "badge bg-warning text-dark"; // Amarelo
-            default:
-                return "badge bg-secondary"; // Cinzento para Sem Nota ou "-"
-        }
-    }
-
     private void iniciarCarregamentoAutomatico() {
         if (this.curriculo == null || this.curriculo.getProducoes() == null) return;
 

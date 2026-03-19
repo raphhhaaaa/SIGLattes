@@ -1,18 +1,13 @@
 package com.uem.extrator.dao;
 
-import com.uem.extrator.model.Curriculo;
-import com.uem.extrator.model.Curso;
-import com.uem.extrator.model.Formacao;
-import com.uem.extrator.model.Producao;
+import com.uem.extrator.model.*;
 import com.uem.extrator.service.AuditLogService;
 import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class CurriculoDAO {
 
@@ -193,6 +188,7 @@ public class CurriculoDAO {
                     org.hibernate.Hibernate.initialize(atuacao.getVinculos());
                     org.hibernate.Hibernate.initialize(atuacao.getAtividades());
                 }
+                enriquecerProducoesComQualis(c.getProducoes());
             }
             return c;
         } catch (Exception e) {
@@ -200,6 +196,35 @@ public class CurriculoDAO {
             return null;
         } finally {
             session.close();
+        }
+    }
+
+    private void enriquecerProducoesComQualis(List<Producao> producoes) {
+        if (producoes == null || producoes.isEmpty()) return;
+
+        // Coleta apenas ISSNs de artigos
+        Set<String> issns = producoes.stream()
+                .filter(p -> "ARTIGO".equalsIgnoreCase(p.getTipo()))
+                .map(Producao::getIsbnIssn)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (issns.isEmpty()) return;
+
+        // Uma única query para todos os ISSNs
+        QualisDAO qualisDAO = new QualisDAO();
+        Map<String, Qualis> mapaQualis = qualisDAO.buscarPorIssns(issns);
+
+        // Popula o cache em memória de cada produção
+        for (Producao p : producoes) {
+            if (!"ARTIGO".equalsIgnoreCase(p.getTipo()) || p.getIsbnIssn() == null) continue;
+
+            String issnNorm = p.getIsbnIssn().replace("-", "");
+            Qualis q = mapaQualis.get(issnNorm);
+            String estrato = (q != null && q.getEstrato() != null) ? q.getEstrato() : "S/N";
+
+            p.setQualisDescricaoCache(estrato);
+            p.setQualisCorCache(resolverCor(estrato));
         }
     }
 
@@ -215,6 +240,17 @@ public class CurriculoDAO {
             return false;
         } finally {
             session.close();
+        }
+    }
+
+    private String resolverCor(String nota) {
+        if (nota == null) return "badge bg-secondary";
+        switch (nota.toUpperCase().trim()) {
+            case "A1": case "A2": return "badge bg-success";
+            case "B1": case "B2": return "badge bg-primary";
+            case "B3": case "B4": return "badge bg-info text-dark";
+            case "C":              return "badge bg-warning text-dark";
+            default:               return "badge bg-secondary";
         }
     }
 }
