@@ -149,7 +149,7 @@ public class Producao {
     }
 
     public String getQualisCor() {
-        return qualisCorCache != null ? qualisCorCache : "badge bg-seconday";
+        return qualisCorCache != null ? qualisCorCache : "badge bg-secondary";
     }
 }
 
