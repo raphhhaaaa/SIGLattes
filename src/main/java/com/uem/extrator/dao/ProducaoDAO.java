@@ -23,7 +23,7 @@ public class ProducaoDAO {
             if (tx != null) tx.rollback();
             e.printStackTrace();
         } finally {
-            if (session != null) session.close();
+            if (session != null && session.isOpen()) session.close();
         }
     }
 
@@ -37,7 +37,7 @@ public class ProducaoDAO {
             e.printStackTrace();
             return 0L;
         } finally {
-            if (session != null) session.close();
+            if (session != null && session.isOpen()) session.close();
         }
     }
     /**
@@ -80,7 +80,7 @@ public class ProducaoDAO {
             e.printStackTrace();
             return new ArrayList<>();
         } finally {
-            session.close();
+            if (session != null && session.isOpen()) session.close();
         }
     }
 }

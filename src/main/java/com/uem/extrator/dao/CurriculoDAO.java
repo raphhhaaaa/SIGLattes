@@ -125,7 +125,7 @@ public class CurriculoDAO {
                 e.printStackTrace();
                 throw e;
             } finally {
-            if (session != null) session.close();
+            if (session != null && session.isOpen()) session.close();
             }
         }
     }
@@ -140,7 +140,7 @@ public class CurriculoDAO {
             e.printStackTrace();
             return new ArrayList<>();
         } finally {
-            if (session != null) session.close();
+            if (session != null && session.isOpen()) session.close();
         }
     }
 
@@ -152,7 +152,7 @@ public class CurriculoDAO {
             e.printStackTrace();
             return 0L;
         } finally {
-            if (session != null) session.close();
+            if (session != null && session.isOpen()) session.close();
         }
     }
 
@@ -166,7 +166,7 @@ public class CurriculoDAO {
             e.printStackTrace();
             return new ArrayList<>();
         } finally {
-            session.close();
+            if (session != null && session.isOpen()) session.close();
         }
     }
 
@@ -195,7 +195,7 @@ public class CurriculoDAO {
             e.printStackTrace();
             return null;
         } finally {
-            session.close();
+            if (session != null && session.isOpen()) session.close();
         }
     }
 
@@ -239,7 +239,7 @@ public class CurriculoDAO {
             e.printStackTrace();
             return false;
         } finally {
-            session.close();
+            if (session != null && session.isOpen()) session.close();
         }
     }
 

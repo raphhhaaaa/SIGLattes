@@ -7,6 +7,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import com.uem.extrator.model.Curriculo;
 import com.uem.extrator.model.Producao;
+import com.uem.extrator.util.ConfigManager;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -25,11 +26,11 @@ import java.util.concurrent.Semaphore;
 public class SemanticScholarService {
 
     private static final String API_KEY = "rTIBDXH92K98RBMkcppjV5jetzlFfsadRR7xOfA9";
-    private static final int RATE_LIMIT_DELAY_MS = 1500;
+    private static final int RATE_LIMIT_DELAY_MS = ConfigManager.TEMPO_ESPERA_API_RATE_LIMIT_MS;
     private static final int MAX_RETRIES = 5;
     private static final Gson gson = new Gson();
     // semaphore
-    private static final Semaphore pedagioApi = new Semaphore(4);
+    private static final Semaphore pedagioApi = new Semaphore(ConfigManager.SEMAFORO_SEMANTIC_SCHOLAR);
 
     public void enriquecerDadosBibliometricos(Curriculo curriculo, List<Producao> producoes) {
         if (curriculo == null || producoes == null) return;

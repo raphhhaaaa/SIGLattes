@@ -267,9 +267,9 @@ public class LattesService {
         int total = listaResumida.size();
         System.out.println(">>> AUTOMAÇÃO: " + total + " currículos para verificar.");
 
-        // cria pool com 20 Threads (20 currículos por vez)
+        // cria pool com 30 Threads (30 currículos por vez)
         // atenção: não aumente muito o numero de threads para não ser bloqueado pelo CNPq (Ip ban)
-        ExecutorService executor = Executors.newFixedThreadPool(20);
+        ExecutorService executor = Executors.newFixedThreadPool(ConfigManager.MAX_THREADS_EXTRACAO);
 
         // contadores Thread-Safe (atomicos)
         AtomicInteger processados = new AtomicInteger(0);

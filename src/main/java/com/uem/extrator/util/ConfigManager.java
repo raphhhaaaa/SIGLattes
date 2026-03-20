@@ -12,6 +12,23 @@ public class ConfigManager {
     private Properties properties;
     private final String configPath;
 
+
+    // !! ESSAS VARIÁVEIS NÃO SÃO ALTERAS PELA TELA DE CONFIGURAÇÕES !! //
+    // APIs Externas
+    public static final String URL_CNPQ_WSDL = "http://servicosweb.cnpq.br/srvcurriculo/WSCurriculo?wsdl";
+    public static final String URL_SEMANTIC_SCHOLAR_SEARCH = "https://api.semanticscholar.org/graph/v1/paper/search";
+    public static final String URL_SEMANTIC_SCHOLAR_PAPER = "https://api.semanticscholar.org/graph/v1/paper/";
+
+    // Motor de Concorrência e Rate Limiting
+    public static final int MAX_THREADS_EXTRACAO = 30;       // Quantidade de threads simultâneas (Lattes)
+    public static final int SEMAFORO_SEMANTIC_SCHOLAR = 4;   // Conexões simultâneas permitidas (Rate Limit)
+    public static final int TEMPO_ESPERA_API_RATE_LIMIT_MS = 2000; // Espera em caso de HTTP 429
+
+    // Throttling de Interface (Maestro UI)
+    public static final int TEMPO_ATUALIZACAO_UI_MS = 1500;  // Ritmo de atualização da barra (1.5s)
+    public static final int MAX_CARACTERES_LOG_TELA = 30000; // Prevenção de OutOfMemory no navegador
+
+
     // valores padrão
     private static final String DEFAULT_WSDL = "http://localhost:8888/srvcurriculo/WSCurriculo?wsdl";
     private static final String DEFAULT_TIMEOUT = "20"; // 20 segundos

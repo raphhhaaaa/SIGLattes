@@ -21,7 +21,7 @@ public class UsuarioDAO {
             e.printStackTrace();
             return null;
         } finally {
-            session.close();
+            if (session != null && session.isOpen()) session.close();
         }
     }
 
@@ -39,7 +39,7 @@ public class UsuarioDAO {
             e.printStackTrace();
             return false;
         } finally {
-            session.close();
+            if (session != null && session.isOpen()) session.close();
         }
     }
 
@@ -51,7 +51,7 @@ public class UsuarioDAO {
             e.printStackTrace();
             return new ArrayList<>();
         } finally {
-            session.close();
+            if (session != null && session.isOpen()) session.close();
         }
     }
 
@@ -68,7 +68,7 @@ public class UsuarioDAO {
             e.printStackTrace();
             return false;
         } finally {
-            session.close();
+            if (session != null && session.isOpen()) session.close();
         }
     }
 }

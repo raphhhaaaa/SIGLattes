@@ -63,6 +63,12 @@ public class ConsultaSqlVM {
             return;
         }
 
+        // trava de segurança: não permite que comandos potencialente destrutivos estejam presentes na query
+        if (sqlQuery.trim().toUpperCase().matches(".*\\b(DROP|DELETE|UPDATE|INSERT|ALTER|TRUNCATE|EXEC|GRANT|REVOKE)\\b.*")) {
+            Clients.showNotification("ERRO DE SEGURNÇA: A sua consulta contém comandos destrutivos não permitidos.", "error", null, null, 5000);
+            return;
+        }
+
         this.executando = true;
         this.colunas.clear();
         this.linhas.clear();

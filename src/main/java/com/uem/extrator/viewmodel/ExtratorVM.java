@@ -8,6 +8,7 @@ import com.uem.extrator.model.Usuario;
 import com.uem.extrator.service.BibliometriaService;
 import com.uem.extrator.service.LattesService;
 import com.uem.extrator.service.AuditLogService;
+import com.uem.extrator.util.ConfigManager;
 import org.zkoss.bind.BindUtils;
 import org.zkoss.bind.annotation.BindingParam;
 import org.zkoss.bind.annotation.Command;
@@ -70,7 +71,7 @@ public class ExtratorVM {
     private String statusIcone;
 
     // Gerenciamento de Threads - limite inicial de 10 simultâneas
-    private static final ExecutorService executor = Executors.newFixedThreadPool(30);
+    private static final ExecutorService executor = Executors.newFixedThreadPool(ConfigManager.MAX_THREADS_EXTRACAO);
 
     // Controle de verificação de atualizações
     private boolean verificandoAtualizacoes = false;
@@ -214,7 +215,7 @@ public class ExtratorVM {
                 // 2. A THREAD MAESTRO (Controla a Interface a cada 1.5s)
                 executor.submit(() -> {
                     while (concluidos.get() < total && !cancelarAtualizacao) {
-                        try { Thread.sleep(1500); } catch (InterruptedException e) {}
+                        try { Thread.sleep(ConfigManager.TEMPO_ATUALIZACAO_UI_MS); } catch (InterruptedException e) {}
 
                         StringBuilder sb = new StringBuilder();
                         String msg;
@@ -229,9 +230,9 @@ public class ExtratorVM {
                                 org.zkoss.zk.ui.Executions.schedule(desktop, event -> {
                                     this.logAtualizacao += sb.toString();
 
-                                    if (this.logAtualizacao.length() > 30000) {
+                                    if (this.logAtualizacao.length() > ConfigManager.MAX_CARACTERES_LOG_TELA) {
                                         this.logAtualizacao = "...\n[Log truncado para economizar memória]\n" +
-                                                this.logAtualizacao.substring(this.logAtualizacao.length() - 30000);
+                                                this.logAtualizacao.substring(this.logAtualizacao.length() - ConfigManager.MAX_CARACTERES_LOG_TELA);
                                     }
 
                                     this.listaDesatualizados.addAll(novosCurriculos);
@@ -336,7 +337,7 @@ public class ExtratorVM {
         // 1. A THREAD MAESTRO (Controla a UI)
         executor.submit(() -> {
             while (concluidos.get() < total && !cancelarAtualizacao) {
-                try { Thread.sleep(1500); } catch (InterruptedException e) {}
+                try { Thread.sleep(ConfigManager.TEMPO_ATUALIZACAO_UI_MS); } catch (InterruptedException e) {}
 
                 StringBuilder sb = new StringBuilder();
                 String msg;
@@ -352,8 +353,8 @@ public class ExtratorVM {
                             this.logAtualizacao += sb.toString();
 
                             // LIMITE DE MEMÓRIA (30k caracteres)
-                            if (this.logAtualizacao.length() > 30000) {
-                                this.logAtualizacao = "...\n[Log truncado]\n" + this.logAtualizacao.substring(this.logAtualizacao.length() - 30000);
+                            if (this.logAtualizacao.length() > ConfigManager.MAX_CARACTERES_LOG_TELA) {
+                                this.logAtualizacao = "...\n[Log truncado]\n" + this.logAtualizacao.substring(this.logAtualizacao.length() - ConfigManager.MAX_CARACTERES_LOG_TELA);
                             }
 
                             this.listaDesatualizados.removeAll(removerLista);

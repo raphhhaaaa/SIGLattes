@@ -68,7 +68,7 @@ public class RelatorioDAO {
             e.printStackTrace();
             return new ArrayList<>();
         } finally {
-            if (session != null) session.close();
+            if (session != null && session.isOpen()) session.close();
         }
     }
 
@@ -125,7 +125,7 @@ public class RelatorioDAO {
             e.printStackTrace();
             return new ArrayList<>();
         } finally {
-            if (session != null) session.close();
+            if (session != null && session.isOpen()) session.close();
         }
     }
 
@@ -153,7 +153,7 @@ public class RelatorioDAO {
             e.printStackTrace();
             return 0L;
         } finally {
-            if (session != null) session.close();
+            if (session != null && session.isOpen()) session.close();
         }
     }
 
@@ -211,7 +211,7 @@ public class RelatorioDAO {
             e.printStackTrace();
             return 0L;
         } finally {
-            if (session != null) session.close();
+            if (session != null && session.isOpen()) session.close();
         }
     }
 
@@ -258,7 +258,7 @@ public class RelatorioDAO {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            if (session != null) session.close();
+            if (session != null && session.isOpen()) session.close();
         }
         return kpis;
     }
@@ -305,7 +305,7 @@ public class RelatorioDAO {
             e.printStackTrace();
             return new ArrayList<>();
         } finally {
-            if (session != null) session.close();
+            if (session != null && session.isOpen()) session.close();
         }
     }
 }

@@ -43,7 +43,7 @@ public class InstituicaoDAO {
             e.printStackTrace();
             return new ArrayList<>();
         } finally {
-            if (session != null) session.close();
+            if (session != null && session.isOpen()) session.close();
         }
     }
 
@@ -63,7 +63,7 @@ public class InstituicaoDAO {
             e.printStackTrace();
             return new ArrayList<>();
         } finally {
-            if (session != null) session.close();
+            if (session != null && session.isOpen()) session.close();
         }
     }
 }
