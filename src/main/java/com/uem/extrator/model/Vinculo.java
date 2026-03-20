@@ -24,7 +24,7 @@ public class Vinculo {
     @Column(name = "ds_enquadramento", length = 2000)
     private String descEnquadramento;
 
-    @Column(name = "ds_carga_horaria")
+    @Column(name = "ds_carga_horaria", length = 1000)
     private String descCargaHoraria;
 
     @Column(name = "fl_vinculo_empregaticio", length = 1)

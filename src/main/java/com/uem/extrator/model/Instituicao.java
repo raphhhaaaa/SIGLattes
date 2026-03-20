@@ -14,7 +14,7 @@ public class Instituicao {
     @Column(name = "cd_instituicao")
     private Long id;
 
-    @Column(name = "nm_instituicao", length = 300)
+    @Column(name = "nm_instituicao", length = 500)
     private String nomeInstituicao;
 
     @Column(name = "sg_instituicao", length = 20)

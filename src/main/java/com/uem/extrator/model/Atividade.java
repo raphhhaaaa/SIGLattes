@@ -35,10 +35,10 @@ public class Atividade {
     @Column(name = "nr_ano_fim")
     private Integer anoFim;
 
-    @Column(name = "nm_grande_area", length = 100)
+    @Column(name = "nm_grande_area", length = 500)
     private String nomeGrandeArea;
 
-    @Column(name = "nm_area", length = 100)
+    @Column(name = "nm_area", length = 500)
     private String nomeArea;
 
     @OneToMany(mappedBy = "atividade", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)

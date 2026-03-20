@@ -22,7 +22,7 @@ public class AtividadeItem {
     private String descricaoItem;
 
     @Lob
-    @Column(name = "ds_detalhe")
+    @Column(name = "ds_detalhe", length = 32000)
     private String detalhe;
 
     // Construtor //

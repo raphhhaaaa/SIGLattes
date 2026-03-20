@@ -35,7 +35,7 @@ public class Curriculo {
     private String orcid;
 
     @Lob
-    @Column(name = "ds_resumo")
+    @Column(name = "ds_resumo", length = 32000)
     private String resumo;
 
     // Relacionamento com Formação

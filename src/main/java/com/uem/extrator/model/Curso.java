@@ -12,7 +12,7 @@ public class Curso {
     @Column(name = "cd_curso")
     private Long id;
 
-    @Column(name = "nm_curso", length = 200)
+    @Column(name = "nm_curso", length = 500)
     private String nomeCurso;
 
     @Column(name = "nm_grande_area", length = 100)

@@ -26,7 +26,7 @@ public class Producao {
     @Column(name = "tp_producao", length = 50)
     private String tipo; // "ARTIGO", "LIVRO", "EVENTO"
 
-    @Column(name = "ds_titulo", length = 1000)
+    @Column(name = "ds_titulo", length = 4000)
     private String titulo;
 
     @Column(name = "hash_titulo", length = 64)
@@ -41,7 +41,7 @@ public class Producao {
     @Column(name = "ds_idioma", length = 50)
     private String idioma;
 
-    @Column(name = "ds_doi", length = 200)
+    @Column(name = "ds_doi", length = 500)
     private String doi;
 
     @Column(name = "nr_citacoes")
@@ -56,7 +56,7 @@ public class Producao {
 
     // campos específicos (revista, editora, evento, etc)
 
-    @Column(name = "nm_veiculo", length = 500)
+    @Column(name = "nm_veiculo", length = 1000)
     private String nomeVeiculo;         // Nome da revista ou editora
 
     @Column(name = "nm_evento", length = 500)

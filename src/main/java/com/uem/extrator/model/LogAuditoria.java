@@ -1,7 +1,5 @@
 package com.uem.extrator.model;
 
-import org.zkoss.zul.A;
-
 import javax.persistence.*;
 import java.util.Date;
 
@@ -26,7 +24,8 @@ public class LogAuditoria {
     @Column(length = 100)
     private String identificador;
 
-    @Column(columnDefinition = "TEXT")
+    @Lob
+    @Column(length = 32000)
     private String mensagem;
 
     public LogAuditoria() {}
