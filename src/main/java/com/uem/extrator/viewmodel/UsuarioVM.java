@@ -66,7 +66,7 @@ public class UsuarioVM {
 
         // se digitou senha nova, aplica hash e salva
         if (senhaTemporaria != null && !senhaTemporaria.isEmpty()) {
-            usuarioEdicao.setSenha(Usuario.criptografar(senhaTemporaria));
+            usuarioEdicao.setSenha(senhaTemporaria);
         }
 
         if (dao.salvar(usuarioEdicao)) {
