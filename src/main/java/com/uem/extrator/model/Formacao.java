@@ -19,7 +19,7 @@ public class Formacao {
     @JoinColumn(name = "cd_cnpq", nullable = false)
     private Curriculo curriculo;
 
-    @Column(name = "tp_formacao", length =  50)
+    @Column(name = "tp_formacao", length = 100)
     private String tipoFormacao;
 
     @ManyToOne(cascade = CascadeType.ALL)

@@ -52,10 +52,13 @@ public class IniciadorBanco implements ServletContextListener {
 
     public void contextDestroyed(ServletContextEvent sce) {
         try {
+            // encerra e limpa as threads
+            com.uem.extrator.viewmodel.ExtratorVM.encerrarThreads();
 
             // para automações
             AutomacaoService.getInstance().pararTudo();
 
+            // encerra Hibernate
             HibernateUtil.shutdown();
         } catch (Exception e) {
             System.err.println("Erro ao fechar banco: " + e.getMessage());

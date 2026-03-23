@@ -71,9 +71,9 @@ public class AuditLogService {
     public List<String> lerLogCompleto() {
         List<String> linhas = new ArrayList<>();
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            // Traz apenas os 5000 mais recentes para proteger a memória RAM
+            // Traz apenas os 10000 mais recentes para proteger a memória RAM
             List<LogAuditoria> logs = session.createQuery("FROM LogAuditoria ORDER BY dataHora DESC", LogAuditoria.class)
-                    .setMaxResults(5000)
+                    .setMaxResults(10000)
                     .list();
 
             for (LogAuditoria log : logs) {
@@ -92,26 +92,26 @@ public class AuditLogService {
 
     // Retorna um texto simbólico para a tela não dar erro
     public String getCaminhoArquivo() {
-        return "Armazenado com segurança no Banco de Dados (MySQL)";
+        return "Armazenado com segurança no Banco de Dados";
     }
 
     public void apagarLog() {
-        Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            tx = session.beginTransaction();
-            session.createQuery("DELETE FROM LogAuditoria").executeUpdate();
+            Transaction tx = session.beginTransaction();
+            try {
+                session.createQuery("DELETE FROM LogAuditoria").executeUpdate();
 
-            // Cria um registro para auditar quem apagou a tabela
-            LogAuditoria logReset = new LogAuditoria(new Date(), "SEGURANCA", "SISTEMA", "N/A", "Todos os logs foram apagados do banco.");
-            session.save(logReset);
+                // Cria um registro para auditar quem apagou a tabela
+                LogAuditoria logReset = new LogAuditoria(new Date(), "SEGURANCA", "SISTEMA", "N/A", "Todos os logs foram apagados do banco.");
+                session.save(logReset);
 
-            tx.commit();
-        } catch (Exception e) {
-            if (tx != null) tx.rollback();
-            e.printStackTrace();
+                tx.commit();
+            } catch (Exception e) {
+                if (tx != null && tx.isActive()) tx.rollback();
+                e.printStackTrace();
+            }
         }
     }
-
     // --- encapsula o Hibernate de forma assincrona e rapida ---
     private static void salvarNoBanco(String tipo, String usuario, String identificador, String mensagem) {
         Transaction tx = null;

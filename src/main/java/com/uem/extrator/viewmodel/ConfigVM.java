@@ -109,7 +109,7 @@ public class ConfigVM {
 
         try {
             Session session = HibernateUtil.getSessionFactory().openSession();
-            session.createNativeQuery("SELECT 1").getSingleResult();
+            session.createNativeQuery("SELECT 1 FROM SYSIBM.SYSDUMMY1").getSingleResult();
             session.close();
 
             this.dbStatus = "Conectado / Online";

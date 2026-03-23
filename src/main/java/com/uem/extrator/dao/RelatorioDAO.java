@@ -11,8 +11,7 @@ import java.util.Map;
 public class RelatorioDAO {
 
     public List<Object[]> gerarRelatorio(String tipoRelatorio, String nomeInstituicao) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        try {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             StringBuilder hql = new StringBuilder();
             String termoBusca = "";
             boolean filtrarInstituicao = nomeInstituicao != null && !nomeInstituicao.equals("TODAS");
@@ -67,14 +66,11 @@ public class RelatorioDAO {
         } catch (Exception e) {
             e.printStackTrace();
             return new ArrayList<>();
-        } finally {
-            if (session != null && session.isOpen()) session.close();
         }
     }
 
     public List<?> listarDadosDetalhados(String tipoRelatorio, String nomeInstituicao) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        try {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             StringBuilder hql = new StringBuilder();
             String termoBusca = "";
             boolean filtrarInstituicao = nomeInstituicao != null && !nomeInstituicao.equals("TODAS");
@@ -124,8 +120,6 @@ public class RelatorioDAO {
         } catch (Exception e) {
             e.printStackTrace();
             return new ArrayList<>();
-        } finally {
-            if (session != null && session.isOpen()) session.close();
         }
     }
 
@@ -134,8 +128,7 @@ public class RelatorioDAO {
     }
 
     public long contarTotalPesquisadores(String nomeInstituicao) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        try {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             if (nomeInstituicao == null || nomeInstituicao.equals("TODAS")) {
                 return ((Number) session.createNativeQuery("SELECT COUNT(*) FROM CURRICULO").getSingleResult()).longValue();
             }
@@ -152,14 +145,11 @@ public class RelatorioDAO {
         } catch (Exception e) {
             e.printStackTrace();
             return 0L;
-        } finally {
-            if (session != null && session.isOpen()) session.close();
         }
     }
 
     public long contarTotalProducao(String tipoRelatorio, String nomeInstituicao) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        try {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             boolean filtrarInstituicao = nomeInstituicao != null && !nomeInstituicao.equals("TODAS");
             String termoBusca = "";
             boolean isFormacao = false;
@@ -210,15 +200,12 @@ public class RelatorioDAO {
         } catch (Exception e) {
             e.printStackTrace();
             return 0L;
-        } finally {
-            if (session != null && session.isOpen()) session.close();
         }
     }
 
     public Map<String, Long> obterTodosKPIs(String nomeInstituicao) {
         Map<String, Long> kpis = new HashMap<>();
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        try {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             boolean filtrar = nomeInstituicao != null && !nomeInstituicao.equals("TODAS");
 
             // 1. Pesquisadores
@@ -257,15 +244,12 @@ public class RelatorioDAO {
 
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            if (session != null && session.isOpen()) session.close();
         }
         return kpis;
     }
 
     public List<Object[]> obterTop5Pesquisadores(String tipoRelatorio, String nomeInstituicao) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        try {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             boolean filtrar = nomeInstituicao != null && !nomeInstituicao.equals("TODAS");
             boolean isFormacao = tipoRelatorio.equals("DOUTORADO") || tipoRelatorio.equals("MESTRADO");
             String termoBusca = tipoRelatorio; // ARTIGO, LIVRO, etc.
@@ -304,8 +288,6 @@ public class RelatorioDAO {
         } catch (Exception e) {
             e.printStackTrace();
             return new ArrayList<>();
-        } finally {
-            if (session != null && session.isOpen()) session.close();
         }
     }
 }

@@ -18,161 +18,150 @@ public class CurriculoDAO {
 
         synchronized (CurriculoDAO.class) {
 
-            Session session = HibernateUtil.getSessionFactory().openSession();
-            try {
-                session.beginTransaction();
 
-                Curriculo curriculoExistente = session.createQuery(
-                                "FROM Curriculo c LEFT JOIN FETCH c.producoes WHERE c.idLattes = :idLattes ", Curriculo.class)
-                        .setParameter("idLattes", curriculo.getIdLattes())
-                        .uniqueResult();
+            try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+                try {
+                    session.beginTransaction();
 
-                if (curriculoExistente != null) {
-                    curriculo.setIdLattes(curriculoExistente.getIdLattes());
-                    String idInterno = curriculoExistente.getIdLattes();
+                    Curriculo curriculoExistente = session.createQuery(
+                                    "FROM Curriculo c LEFT JOIN FETCH c.producoes WHERE c.idLattes = :idLattes ", Curriculo.class)
+                            .setParameter("idLattes", curriculo.getIdLattes())
+                            .uniqueResult();
 
-                    // ===============================================================
-                    // REDE DE SEGURANÇA (FALLBACK BIBLIOMÉTRICO)
-                    // Se a API externa falhar, garante que os dados do banco NÃO são zerados!
-                    // ===============================================================
+                    if (curriculoExistente != null) {
+                        curriculo.setIdLattes(curriculoExistente.getIdLattes());
+                        String idInterno = curriculoExistente.getIdLattes();
 
-                    if (curriculo.getIndiceH() == null || curriculo.getIndiceH() == 0) {
-                        curriculo.setIndiceH(curriculoExistente.getIndiceH());
-                    }
+                        // ===============================================================
+                        // REDE DE SEGURANÇA (FALLBACK BIBLIOMÉTRICO)
+                        // Se a API externa falhar, garante que os dados do banco NÃO são zerados!
+                        // ===============================================================
 
-                    Map<String, Producao> mapProducoesAntigas = new HashMap<>();
-                    if (curriculoExistente.getProducoes() != null) {
-                        for (Producao pAntiga : curriculoExistente.getProducoes()) {
-                            if (pAntiga.getDoi() != null && !pAntiga.getDoi().trim().isEmpty()) {
-                                mapProducoesAntigas.put(pAntiga.getDoi().trim(), pAntiga);
-                            } else if (pAntiga.getTitulo() != null) {
-                                mapProducoesAntigas.put(pAntiga.getTitulo().trim().toLowerCase(), pAntiga);
-                            }
+                        if (curriculo.getIndiceH() == null || curriculo.getIndiceH() == 0) {
+                            curriculo.setIndiceH(curriculoExistente.getIndiceH());
                         }
-                    }
 
-                    // Transfere os dados das produções antigas para as novas se necessário
-                    if (curriculo.getProducoes() != null) {
-                        for (Producao pNova : curriculo.getProducoes()) {
-                            if (pNova.getCitacoes() == null || pNova.getCitacoes() == 0) {
-                                Producao pAntiga = null;
-                                if (pNova.getDoi() != null && !pNova.getDoi().trim().isEmpty()) {
-                                    pAntiga = mapProducoesAntigas.get(pNova.getDoi().trim());
-                                } else if (pNova.getTitulo() != null) {
-                                    pAntiga = mapProducoesAntigas.get(pNova.getTitulo().trim().toLowerCase());
-                                }
-
-                                if (pAntiga != null && pAntiga.getCitacoes() != null && pAntiga.getCitacoes() > 0) {
-                                    pNova.setCitacoes(pAntiga.getCitacoes());
-                                    pNova.setStatusAcesso(pAntiga.getStatusAcesso());
+                        Map<String, Producao> mapProducoesAntigas = new HashMap<>();
+                        if (curriculoExistente.getProducoes() != null) {
+                            for (Producao pAntiga : curriculoExistente.getProducoes()) {
+                                if (pAntiga.getDoi() != null && !pAntiga.getDoi().trim().isEmpty()) {
+                                    mapProducoesAntigas.put(pAntiga.getDoi().trim(), pAntiga);
+                                } else if (pAntiga.getTitulo() != null) {
+                                    mapProducoesAntigas.put(pAntiga.getTitulo().trim().toLowerCase(), pAntiga);
                                 }
                             }
                         }
+
+                        // Transfere os dados das produções antigas para as novas se necessário
+                        if (curriculo.getProducoes() != null) {
+                            for (Producao pNova : curriculo.getProducoes()) {
+                                if (pNova.getCitacoes() == null || pNova.getCitacoes() == 0) {
+                                    Producao pAntiga = null;
+                                    if (pNova.getDoi() != null && !pNova.getDoi().trim().isEmpty()) {
+                                        pAntiga = mapProducoesAntigas.get(pNova.getDoi().trim());
+                                    } else if (pNova.getTitulo() != null) {
+                                        pAntiga = mapProducoesAntigas.get(pNova.getTitulo().trim().toLowerCase());
+                                    }
+
+                                    if (pAntiga != null && pAntiga.getCitacoes() != null && pAntiga.getCitacoes() > 0) {
+                                        pNova.setCitacoes(pAntiga.getCitacoes());
+                                        pNova.setStatusAcesso(pAntiga.getStatusAcesso());
+                                    }
+                                }
+                            }
+                        }
+
+                        session.evict(curriculoExistente);
+
+                        session.createQuery("DELETE FROM Vinculo v WHERE v.atuacao.id IN (SELECT a.id FROM Atuacao a WHERE a.curriculo.idLattes = :id)")
+                                .setParameter("id", idInterno).executeUpdate();
+
+                        session.createQuery("DELETE FROM AtividadeItem ai WHERE ai.atividade.id IN (SELECT atv.id FROM Atividade atv WHERE atv.atuacao.id IN (SELECT a.id FROM Atuacao a WHERE a.curriculo.idLattes = :id))")
+                                .setParameter("id", idInterno).executeUpdate();
+
+                        session.createQuery("DELETE FROM Atividade atv WHERE atv.atuacao.id IN (SELECT a.id FROM Atuacao a WHERE a.curriculo.idLattes = :id)")
+                                .setParameter("id", idInterno).executeUpdate();
+
+                        session.createQuery("DELETE FROM Atuacao a WHERE a.curriculo.idLattes = :id")
+                                .setParameter("id", idInterno).executeUpdate();
+
+                        session.createQuery("DELETE FROM Formacao f WHERE f.curriculo.idLattes = :id")
+                                .setParameter("id", idInterno).executeUpdate();
+
+                        session.createQuery("DELETE FROM Producao p WHERE p.curriculo.idLattes = :id")
+                                .setParameter("id", idInterno).executeUpdate();
                     }
 
-                    session.evict(curriculoExistente);
+                    Map<String, Curso> cursosProcessadosNestaTransacao = new HashMap<>();
 
-                    session.createQuery("DELETE FROM Vinculo v WHERE v.atuacao.id IN (SELECT a.id FROM Atuacao a WHERE a.curriculo.idLattes = :id)")
-                            .setParameter("id", idInterno).executeUpdate();
+                    if (curriculo.getFormacoes() != null) {
+                        for (Formacao formacao : curriculo.getFormacoes()) {
+                            Curso cursoCandidato = formacao.getNomeCurso();
 
-                    session.createQuery("DELETE FROM AtividadeItem ai WHERE ai.atividade.id IN (SELECT atv.id FROM Atividade atv WHERE atv.atuacao.id IN (SELECT a.id FROM Atuacao a WHERE a.curriculo.idLattes = :id))")
-                            .setParameter("id", idInterno).executeUpdate();
+                            if (cursoCandidato != null && cursoCandidato.getNomeCurso() != null) {
+                                String nomeNormalizado = cursoCandidato.getNomeCurso().trim().toUpperCase();
 
-                    session.createQuery("DELETE FROM Atividade atv WHERE atv.atuacao.id IN (SELECT a.id FROM Atuacao a WHERE a.curriculo.idLattes = :id)")
-                            .setParameter("id", idInterno).executeUpdate();
-
-                    session.createQuery("DELETE FROM Atuacao a WHERE a.curriculo.idLattes = :id")
-                            .setParameter("id", idInterno).executeUpdate();
-
-                    session.createQuery("DELETE FROM Formacao f WHERE f.curriculo.idLattes = :id")
-                            .setParameter("id", idInterno).executeUpdate();
-
-                    session.createQuery("DELETE FROM Producao p WHERE p.curriculo.idLattes = :id")
-                            .setParameter("id", idInterno).executeUpdate();
-                }
-
-                Map<String, Curso> cursosProcessadosNestaTransacao = new HashMap<>();
-
-                if (curriculo.getFormacoes() != null) {
-                    for (Formacao formacao : curriculo.getFormacoes()) {
-                        Curso cursoCandidato = formacao.getNomeCurso();
-
-                        if (cursoCandidato != null && cursoCandidato.getNomeCurso() != null) {
-                            String nomeNormalizado = cursoCandidato.getNomeCurso().trim().toUpperCase();
-
-                            if (cursosProcessadosNestaTransacao.containsKey(nomeNormalizado)) {
-                                formacao.setNomeCurso(cursosProcessadosNestaTransacao.get(nomeNormalizado));
-                            } else {
-                                Curso cursoNoBanco = cursoDAO.buscarPorNome(session, cursoCandidato.getNomeCurso());
-                                if (cursoNoBanco != null) {
-                                    formacao.setNomeCurso(cursoNoBanco);
-                                    cursosProcessadosNestaTransacao.put(nomeNormalizado, cursoNoBanco);
+                                if (cursosProcessadosNestaTransacao.containsKey(nomeNormalizado)) {
+                                    formacao.setNomeCurso(cursosProcessadosNestaTransacao.get(nomeNormalizado));
                                 } else {
-                                    cursosProcessadosNestaTransacao.put(nomeNormalizado, cursoCandidato);
+                                    Curso cursoNoBanco = cursoDAO.buscarPorNome(session, cursoCandidato.getNomeCurso());
+                                    if (cursoNoBanco != null) {
+                                        formacao.setNomeCurso(cursoNoBanco);
+                                        cursosProcessadosNestaTransacao.put(nomeNormalizado, cursoNoBanco);
+                                    } else {
+                                        cursosProcessadosNestaTransacao.put(nomeNormalizado, cursoCandidato);
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                session.saveOrUpdate(curriculo);
-                session.getTransaction().commit();
+                    session.saveOrUpdate(curriculo);
+                    session.getTransaction().commit();
 
-            } catch (Exception e) {
-                if (session.getTransaction().isActive()) {
-                    session.getTransaction().rollback();
+                } catch (Exception e) {
+                    if (session.getTransaction().isActive()) {
+                        session.getTransaction().rollback();
+                    }
+                    e.printStackTrace();
+                    throw e;
                 }
-                e.printStackTrace();
-                throw e;
-            } finally {
-            if (session != null && session.isOpen()) session.close();
             }
         }
     }
-
     public long getConsultasHoje() { return auditLogService.contarProcessamentosHoje(); }
 
     public List<Curriculo> listarTodos() {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        try {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.createQuery("from Curriculo order by nomeCompleto", Curriculo.class).list();
         } catch (Exception e) {
             e.printStackTrace();
             return new ArrayList<>();
-        } finally {
-            if (session != null && session.isOpen()) session.close();
         }
     }
 
     public Long contarTotalCurriculos() {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        try {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.createQuery("SELECT COUNT(c) FROM Curriculo c", Long.class).uniqueResult();
         } catch (Exception e) {
             e.printStackTrace();
             return 0L;
-        } finally {
-            if (session != null && session.isOpen()) session.close();
         }
     }
 
     public List<Object[]> listarResumoParaVerificacao() {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        try {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             String hql = "SELECT c.idLattes, c.dataAtualizacao, c.nomeCompleto FROM Curriculo c";
             Query<Object[]> query = session.createQuery(hql, Object[].class);
             return query.list();
         } catch (Exception e) {
             e.printStackTrace();
             return new ArrayList<>();
-        } finally {
-            if (session != null && session.isOpen()) session.close();
         }
     }
 
     public Curriculo buscarComDetalhes(String idLattes) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        try {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             String hql = "FROM Curriculo c " +
                     "LEFT JOIN FETCH c.formacoes " +
                     "WHERE c.idLattes = :id";
@@ -194,8 +183,6 @@ public class CurriculoDAO {
         } catch (Exception e) {
             e.printStackTrace();
             return null;
-        } finally {
-            if (session != null && session.isOpen()) session.close();
         }
     }
 
@@ -229,8 +216,7 @@ public class CurriculoDAO {
     }
 
     public boolean existe(String idLattes) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        try {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             Long count = session.createQuery("SELECT COUNT(c) FROM Curriculo c WHERE c.idLattes = :id", Long.class)
                     .setParameter("id", idLattes)
                     .uniqueResult();
@@ -238,8 +224,6 @@ public class CurriculoDAO {
         } catch (Exception e) {
             e.printStackTrace();
             return false;
-        } finally {
-            if (session != null && session.isOpen()) session.close();
         }
     }
 

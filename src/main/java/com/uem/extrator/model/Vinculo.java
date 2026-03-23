@@ -18,16 +18,16 @@ public class Vinculo {
     @JoinColumn(name = "cd_atuacao", nullable = false)
     private Atuacao atuacao;
 
-    @Column(name = "tp_vinculo", length = 100)
+    @Column(name = "tp_vinculo", length = 1000)
     private String tipoVinculo;
 
-    @Column(name = "ds_enquadramento", length = 2000)
+    @Column(name = "ds_enquadramento", length = 4000)
     private String descEnquadramento;
 
-    @Column(name = "ds_carga_horaria", length = 1000)
+    @Column(name = "ds_carga_horaria", length = 4000)
     private String descCargaHoraria;
 
-    @Column(name = "fl_vinculo_empregaticio", length = 1)
+    @Column(name = "fl_vinculo_empregaticio", length = 20)
     private String  flagVinculoEmpregaticio;
 
     @Column(name = "ano_inicio")

@@ -20,7 +20,7 @@ public class Atividade {
     @JoinColumn(name = "cd_atuacao", nullable = false)
     private Atuacao atuacao;
 
-    @Column(name = "tp_atividade", length = 100)
+    @Column(name = "tp_atividade", length = 200)
     private String tipoAtividades;
 
     @Column(name = "nr_mes_inicio")

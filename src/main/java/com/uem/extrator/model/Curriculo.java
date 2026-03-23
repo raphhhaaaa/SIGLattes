@@ -22,16 +22,16 @@ public class Curriculo {
     @Column(name = "dt_atualizacao")
     private Date dataAtualizacao;
 
-    @Column(name = "nm_completo", length = 200)
+    @Column(name = "nm_completo", length = 500)
     private String nomeCompleto;
 
-    @Column(name = "nm_citacao", length = 1000)
+    @Column(name = "nm_citacao", length = 2000)
     private String nomeCitacao;
 
     @Column(name = "indice_h")
     private Integer indiceH;
 
-    @Column(name = "ds_orcid", length = 50)
+    @Column(name = "ds_orcid", length = 100)
     private String orcid;
 
     @Lob

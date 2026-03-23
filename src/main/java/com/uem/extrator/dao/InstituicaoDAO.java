@@ -18,10 +18,7 @@ public class InstituicaoDAO {
         if (cacheInstituicoes != null && (System.currentTimeMillis() - ultimaAtualizacao) < TEMPO_CACHE) {
             return cacheInstituicoes;
         }
-
-        Session session = null;
-        try {
-            session = HibernateUtil.getSessionFactory().openSession();
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
 
             String sql = "SELECT nm_instituicao, COUNT(*) AS qtd " +
                     "FROM INSTITUICAO " +
@@ -42,8 +39,6 @@ public class InstituicaoDAO {
         } catch (Exception e) {
             e.printStackTrace();
             return new ArrayList<>();
-        } finally {
-            if (session != null && session.isOpen()) session.close();
         }
     }
 
@@ -53,17 +48,13 @@ public class InstituicaoDAO {
     }
 
     public List<Instituicao> listarTodas() {
-        Session session = null;
-        try {
-            session = HibernateUtil.getSessionFactory().openSession();
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.createQuery("FROM Instituicao i ORDER BY i.nomeInstituicao", Instituicao.class)
                     .setMaxResults(500) // Reduzi para 500 para ser mais leve
                     .list();
         } catch (Exception e) {
             e.printStackTrace();
             return new ArrayList<>();
-        } finally {
-            if (session != null && session.isOpen()) session.close();
         }
     }
 }

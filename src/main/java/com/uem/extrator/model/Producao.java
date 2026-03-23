@@ -56,16 +56,16 @@ public class Producao {
 
     // campos específicos (revista, editora, evento, etc)
 
-    @Column(name = "nm_veiculo", length = 1000)
+    @Column(name = "nm_veiculo", length = 2000)
     private String nomeVeiculo;         // Nome da revista ou editora
 
-    @Column(name = "nm_evento", length = 500)
+    @Column(name = "nm_evento", length = 1000)
     private String nomeEvento;      // Nome do congresso (se for evento)
 
-    @Column(name = "cd_isbn_issn", length = 50)
+    @Column(name = "cd_isbn_issn", length = 70)
     private String isbnIssn;        // Código de identificação internacional de livros (isbn) e artigos (issn).
 
-    @Column(name = "ds_vol_paginas", length = 100)
+    @Column(name = "ds_vol_paginas", length = 1000)
     private String volumePaginas;
 
     @Column(name = "ds_natureza", length = 50)

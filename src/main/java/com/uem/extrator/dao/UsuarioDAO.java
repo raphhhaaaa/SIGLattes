@@ -11,8 +11,7 @@ import java.util.List;
 public class UsuarioDAO {
 
     public Usuario buscarPorLogin(String login) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        try {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             String hql = "FROM Usuario u WHERE u.login = :login";
             Query<Usuario> query = session.createQuery(hql, Usuario.class);
             query.setParameter("login", login);
@@ -20,55 +19,46 @@ public class UsuarioDAO {
         } catch (Exception e) {
             e.printStackTrace();
             return null;
-        } finally {
-            if (session != null && session.isOpen()) session.close();
         }
     }
 
     public boolean salvar(Usuario u) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        Transaction tx = null;
 
-        try {
-            tx = session.beginTransaction();
-            session.saveOrUpdate(u);
-            tx.commit();
-            return true;
-        } catch (Exception e) {
-            if (tx != null) tx.rollback();
-            e.printStackTrace();
-            return false;
-        } finally {
-            if (session != null && session.isOpen()) session.close();
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction tx = session.beginTransaction();
+            try {
+                session.saveOrUpdate(u);
+                tx.commit();
+                return true;
+            } catch (Exception e) {
+                if (tx != null && tx.isActive()) tx.rollback();
+                e.printStackTrace();
+                return false;
+            }
         }
     }
 
     public List<Usuario> listarTodos() {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        try {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.createQuery("FROM Usuario ORDER BY nome", Usuario.class).list();
         } catch (Exception e) {
             e.printStackTrace();
             return new ArrayList<>();
-        } finally {
-            if (session != null && session.isOpen()) session.close();
         }
     }
 
     public boolean excluir(Usuario u) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        Transaction tx = null;
-        try {
-            tx = session.beginTransaction();
-            session.delete(u);
-            tx.commit();
-            return true;
-        } catch (Exception e) {
-            if (tx != null) tx.rollback();
-            e.printStackTrace();
-            return false;
-        } finally {
-            if (session != null && session.isOpen()) session.close();
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction tx = session.beginTransaction();
+            try {
+                session.delete(u);
+                tx.commit();
+                return true;
+            } catch (Exception e) {
+                if (tx != null && tx.isActive()) tx.rollback();
+                e.printStackTrace();
+                return false;
+            }
         }
     }
 }

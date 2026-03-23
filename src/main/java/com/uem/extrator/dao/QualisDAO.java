@@ -37,29 +37,29 @@ public class QualisDAO {
 //        }
 //    }
 
-    public void salvarEmLote(List<Qualis> listaQualis)  {
-        Transaction transaction = null;
+    public void salvarEmLote(List<Qualis> listaQualis) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            transaction = session.beginTransaction();
+            Transaction tx = session.beginTransaction();
 
-            for (int i = 0; i < listaQualis.size(); i++) {
-                session.saveOrUpdate(listaQualis.get(i));
+            try {
+                for (int i = 0; i < listaQualis.size(); i++) {
+                    session.saveOrUpdate(listaQualis.get(i));
 
-                // a cada 50 registros, descarrega para a base de dados e limpa a RAM
-                if (i > 0 && i % 50 == 0) {
-                    session.flush();
-                    session.clear();
+                    // a cada 50 registros, descarrega para a base de dados e limpa a RAM
+                    if (i > 0 && i % 50 == 0) {
+                        session.flush();
+                        session.clear();
+                    }
                 }
+                tx.commit();
+            } catch (Exception e) {
+                if (tx != null && tx.isActive()) {
+                    tx.rollback();
+                }
+                e.printStackTrace();
             }
-            transaction.commit();
-        } catch (Exception e) {
-            if (transaction != null) {
-                transaction.rollback();
-            }
-            e.printStackTrace();
         }
     }
-
     public Map<String, Qualis> buscarPorIssns(Collection<String> issn) {
         if (issn == null || issn.isEmpty()) return Collections.emptyMap();
 

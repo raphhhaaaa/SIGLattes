@@ -12,32 +12,25 @@ import java.util.List;
 public class ProducaoDAO {
 
     public void atualizarMetricas(Producao producao) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        Transaction tx = null;
-        try {
-            tx = session.beginTransaction();
-            // atualiza apenas os dados da produção específica
-            session.update(producao);
-            tx.commit();
-        } catch (Exception e) {
-            if (tx != null) tx.rollback();
-            e.printStackTrace();
-        } finally {
-            if (session != null && session.isOpen()) session.close();
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction tx = session.beginTransaction();
+            try {
+                // atualiza apenas os dados da produção específica
+                session.update(producao);
+                tx.commit();
+            } catch (Exception e) {
+                if (tx != null) tx.rollback();
+                e.printStackTrace();
+            }
         }
     }
-
     public Long contarTotalProducoes() {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-
-        try {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             // hql simples para contar as linhas na tabela Producao
             return session.createQuery("SELECT COUNT(p) FROM Producao p", Long.class).uniqueResult();
         } catch (Exception e) {
             e.printStackTrace();
             return 0L;
-        } finally {
-            if (session != null && session.isOpen()) session.close();
         }
     }
     /**
@@ -45,8 +38,7 @@ public class ProducaoDAO {
      * já trazendo junto o nome do pesquisador (FETCH) para não dar query N+1.
      */
     public List<Producao> listarPorTipo(String tipoProducao, String nomeInstituicao) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        try {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             StringBuilder hql = new StringBuilder();
 
             // SELECT DISTINCT é essencial porque um pesquisador pode ter
@@ -79,8 +71,6 @@ public class ProducaoDAO {
         } catch (Exception e) {
             e.printStackTrace();
             return new ArrayList<>();
-        } finally {
-            if (session != null && session.isOpen()) session.close();
         }
     }
 }

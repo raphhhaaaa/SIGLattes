@@ -889,13 +889,13 @@ public class ExtratorVM {
                         return;
                     }
 
-//                    if (curriculoDAO.existe(idBusca)) {
-//                        sucesso.incrementAndGet();
-//                        atualizarLogBatch(desktop, "⏩  ["+(index+1)+"/"+total+"] ID " + idBusca + " já cadastrado. Pulando...\n");
-//                        AuditLogService.registrarExtracao("LOTE_PULADO", login, true, idBusca, "Currículo já existente no banco (Ignorado)");
-//                        finalizarTarefa(desktop, concluidos, total, sucesso, erro);
-//                        return;
-//                    }
+                    if (curriculoDAO.existe(idBusca)) {
+                        sucesso.incrementAndGet();
+                        atualizarLogBatch(desktop, "⏩  ["+(index+1)+"/"+total+"] ID " + idBusca + " já cadastrado. Pulando...\n");
+                        AuditLogService.registrarExtracao("LOTE_PULADO", login, true, idBusca, "Currículo já existente no banco (Ignorado)");
+                        finalizarTarefa(desktop, concluidos, total, sucesso, erro);
+                        return;
+                    }
 
                     atualizarLogBatch(desktop, "["+(index+1)+"/"+total+"] ID "+idBusca+"...");
                     Curriculo c = lattesService.getCurriculo(idBusca);
@@ -1040,6 +1040,14 @@ public class ExtratorVM {
                 e.printStackTrace();
             }
         });
+    }
+
+    public static void encerrarThreads() {
+        // Envia um sinal de interrupção imediata (shutdownNow) para as 30 threads
+        if (executor != null && !executor.isShutdown()) {
+            System.out.println("Parando o extrator Lattes e limpando threads em background...");
+            executor.shutdownNow();
+        }
     }
 
     // Getters

@@ -121,8 +121,13 @@ public class RelatorioRevistasVM {
                     .append(item.getQuantidadeArtigos()).append("\n");
         }
 
-        byte[] bytes = csv.toString().getBytes(StandardCharsets.ISO_8859_1);
-        Filedownload.save(bytes, "text/csv", "Relatorio_Revistas_Qualis.csv");
+        byte[] bom = new byte[]{(byte)0xEF, (byte)0xBB, (byte)0xBF};
+        byte[] dados = csv.toString().getBytes(StandardCharsets.UTF_8);
+        byte[] finalBytes = new byte[bom.length + dados.length];
+        System.arraycopy(bom, 0, finalBytes, 0, bom.length);
+        System.arraycopy(dados, 0, finalBytes, bom.length, dados.length);
+
+        Filedownload.save(finalBytes, "text/csv", "Relatorio_Revistas_Qualis.csv");
     }
 
     // Getters e Setters
