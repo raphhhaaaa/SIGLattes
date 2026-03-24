@@ -73,15 +73,31 @@ public class CurriculoDAO {
 
                         session.evict(curriculoExistente);
 
-                        session.createQuery("DELETE FROM Vinculo v WHERE v.atuacao.id IN (SELECT a.id FROM Atuacao a WHERE a.curriculo.idLattes = :id)")
-                                .setParameter("id", idInterno).executeUpdate();
+                        // 1. Pega os IDs das Atuações deste currículo
+                        List idsAtuacoes = session.createQuery("SELECT a.id FROM Atuacao a WHERE a.curriculo.idLattes = :id")
+                                .setParameter("id", idInterno).getResultList();
 
-                        session.createQuery("DELETE FROM AtividadeItem ai WHERE ai.atividade.id IN (SELECT atv.id FROM Atividade atv WHERE atv.atuacao.id IN (SELECT a.id FROM Atuacao a WHERE a.curriculo.idLattes = :id))")
-                                .setParameter("id", idInterno).executeUpdate();
+                        if (idsAtuacoes != null && !idsAtuacoes.isEmpty()) {
 
-                        session.createQuery("DELETE FROM Atividade atv WHERE atv.atuacao.id IN (SELECT a.id FROM Atuacao a WHERE a.curriculo.idLattes = :id)")
-                                .setParameter("id", idInterno).executeUpdate();
+                            // 2. Pega os IDs das Atividades ligadas a essas Atuações
+                            List idsAtividades = session.createQuery("SELECT atv.id FROM Atividade atv WHERE atv.atuacao.id IN (:ids)")
+                                    .setParameterList("ids", idsAtuacoes).getResultList();
 
+                            // 3. Apaga os Itens de Atividade direto pelos IDs
+                            if (idsAtividades != null && !idsAtividades.isEmpty()) {
+                                session.createQuery("DELETE FROM AtividadeItem ai WHERE ai.atividade.id IN (:ids)")
+                                        .setParameterList("ids", idsAtividades).executeUpdate();
+                            }
+
+                            // 4. Apaga Atividades e Vínculos
+                            session.createQuery("DELETE FROM Atividade atv WHERE atv.atuacao.id IN (:ids)")
+                                    .setParameterList("ids", idsAtuacoes).executeUpdate();
+
+                            session.createQuery("DELETE FROM Vinculo v WHERE v.atuacao.id IN (:ids)")
+                                    .setParameterList("ids", idsAtuacoes).executeUpdate();
+                        }
+
+                        // 5. Apaga o resto das entidades simples
                         session.createQuery("DELETE FROM Atuacao a WHERE a.curriculo.idLattes = :id")
                                 .setParameter("id", idInterno).executeUpdate();
 
@@ -90,6 +106,7 @@ public class CurriculoDAO {
 
                         session.createQuery("DELETE FROM Producao p WHERE p.curriculo.idLattes = :id")
                                 .setParameter("id", idInterno).executeUpdate();
+
                     }
 
                     Map<String, Curso> cursosProcessadosNestaTransacao = new HashMap<>();
