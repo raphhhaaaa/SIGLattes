@@ -1,9 +1,11 @@
 package com.uem.extrator.viewmodel;
 
+import com.ibm.db2.cmx.tools.ClientTool;
 import com.uem.extrator.dao.CurriculoDAO;
 import com.uem.extrator.dao.InstituicaoDAO;
 import com.uem.extrator.dao.QualisDAO;
 import com.uem.extrator.dto.RelatorioProdutividadeDTO;
+import com.uem.extrator.dto.RelatorioRevistaDTO;
 import com.uem.extrator.model.Curriculo;
 import com.uem.extrator.model.Producao;
 import com.uem.extrator.model.Qualis;
@@ -17,12 +19,14 @@ import org.zkoss.bind.annotation.Init;
 import org.zkoss.bind.annotation.NotifyChange;
 import org.zkoss.zk.ui.Executions;
 import org.zkoss.zk.ui.Sessions;
+import org.zkoss.zk.ui.util.Clients;
+import org.zkoss.zul.Filedownload;
 import org.zkoss.zul.Window;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 public class RelatorioProdutividadeVM {
 
@@ -78,7 +82,7 @@ public class RelatorioProdutividadeVM {
                     "(SUM(CASE WHEN p.statusAcesso = 'ABERTO' THEN 1.0 ELSE 0.0 END) * 100.0) / NULLIF(COUNT(p.id), 0) " +
                     "FROM Curriculo c " +
                     "LEFT JOIN c.producoes p " +
-                    "WHERE EXISTS (SELECT 1 FROM Atuacao a WHERE a.curriculo.idLattes = c.idLattes AND a.instituicao.nomeInstituicao = :instituicaoNome) " +
+                    "WHERE EXISTS (SELECT 1 FROM Atuacao a WHERE a.curriculo.idLattes = c.idLattes AND UPPER(a.instituicao.nomeInstituicao) = UPPER(:instituicaoNome)) " +
                     "GROUP BY c.idLattes, c.nomeCompleto, c.indiceH " +
                     "ORDER BY COALESCE(c.indiceH, 0) DESC, COALESCE(SUM(p.citacoes), 0) DESC";
 
@@ -128,6 +132,39 @@ public class RelatorioProdutividadeVM {
         } else {
             org.zkoss.zk.ui.util.Clients.showNotification("Erro ao carregar detalhes", "error", null, null, 2000);
         }
+    }
+
+    @Command
+    public void exportarCSV() {
+        if (listaProdutividade == null || listaProdutividade.isEmpty()) {
+            Clients.showNotification("Sem dados para exportar!", "info", null, null, 4000);
+            return;
+        }
+
+        StringBuilder csv = new StringBuilder();
+        csv.append("ID Lattes;Nome do Pesquisador;Índice H;Total de Artigos;Total de Citações;Taxa Acesso Aberto (%)\n");
+
+        for (RelatorioProdutividadeDTO item : listaProdutividade) {
+            String noemSeguro = item.getNomePesquisador() == null ? "" : item.getNomePesquisador();
+            if (noemSeguro.contains(";") || noemSeguro.contains("\"")) {
+                noemSeguro = "\"" + noemSeguro.replace("\"", "\"\"") + "\"";
+            }
+
+            csv.append("=\"").append(item.getCurriculoId()).append("\";")
+                    .append(noemSeguro).append(";")
+                    .append(item.getIndiceH()).append(";")
+                    .append(item.getTotalArtigos()).append(";")
+                    .append(item.getTotalCitacoes()).append(";")
+                    .append(item.getTaxaAcessoAbertoFormatada()).append("\n");
+        }
+
+        byte[] bom = new byte[]{(byte)0xEF, (byte)0xBB, (byte)0xBF};
+        byte[] dados = csv.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] finalBytes = new byte[bom.length + dados.length];
+        System.arraycopy(bom, 0, finalBytes, 0, bom.length);
+        System.arraycopy(dados, 0, finalBytes, bom.length, dados.length);
+
+        Filedownload.save(finalBytes, "text/csv", "Relatorio_Produtividade_" + new SimpleDateFormat("yyyyMMdd_HHmm").format(new Date()));
     }
 
     @Command

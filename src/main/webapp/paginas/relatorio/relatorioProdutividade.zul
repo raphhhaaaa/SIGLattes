@@ -49,8 +49,12 @@
                                 </combobox>
                             </div>
                             <div class="col-md-4 text-right">
-                                <button label="Pesquisar" iconSclass="fas fa-search" zclass="btn btn-outline-success me-2" onClick="@command('pesquisar')" />
+                                <button label="Pesquisar" iconSclass="fas fa-search" zclass="btn btn-outline-primary me-2" onClick="@command('pesquisar')" />
                                 <button label="Limpar" iconSclass="fas fa-eraser" zclass="btn btn-outline-secondary" onClick="@command('limparFiltros')" />
+
+                                <label value=" | " style="padding: 12px; color: #ccc;"/>
+
+                                <button label="Exportar CSV" iconSclass="fas fa-file-csv" zclass="btn btn-outline-success" onClick="@command('exportarCSV')" />
                             </div>
                         </div>
                     </div>

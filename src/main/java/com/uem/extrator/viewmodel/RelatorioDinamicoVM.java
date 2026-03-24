@@ -283,8 +283,13 @@ public class RelatorioDinamicoVM {
     }
 
     private String limparCsv(String texto) {
-        return texto == null ? "" : texto.replace(";", ",").replace("\n", " ").trim();
-    }
+        if (texto == null) return "";
+        texto = texto.replace("\n", " ").replace("\r", " ").trim();
+
+        if (texto.contains(";") || texto.contains("\"")) {
+            texto = "\"" + texto.replace("\"", "\"\"") + "\"";
+        }
+        return texto;    }
 
     private String removerAcentos(String str) {
         if (str == null) return "";

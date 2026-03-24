@@ -68,7 +68,7 @@
 
                                 <div style="border-left: 1px solid #ccc; height: 30px; margin: 0 5px;"></div>
 
-                                <button label="Exportar CSV" iconSclass="fas fa-file-excel" sclass="btn btn-outline-success shadow-sm" onClick="@command('exportarCSV')" />
+                                <button label="Exportar CSV" iconSclass="fas fa-file-csv" sclass="btn btn-outline-success shadow-sm" onClick="@command('exportarCSV')" />
                             </hlayout>
                         </div>
                     </hlayout>

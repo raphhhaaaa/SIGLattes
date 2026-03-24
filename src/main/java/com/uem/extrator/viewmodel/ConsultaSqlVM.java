@@ -161,7 +161,11 @@ public class ConsultaSqlVM {
                 String valor = linha.get(i) != null ? linha.get(i).toString() : "";
 
                 // Limpeza básica para não "quebrar" o CSV (troca ; por , e remove quebras de linha)
-                valor = valor.replace("\n", " ").replace("\r", " ").replace(";", ",");
+                valor = valor.replace("\n", " ").replace("\r", " ");
+
+                if (valor.contains(";") || valor.contains("\"")) {
+                    valor = "\"" + valor.replace("\"", "\"\"") + "\"";
+                }
 
                 sb.append(valor);
                 if (i < linha.size() - 1) sb.append(";");

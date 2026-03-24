@@ -12,7 +12,9 @@ import org.zkoss.zul.Filedownload;
 import org.zkoss.bind.annotation.NotifyChange;
 
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,26 +36,6 @@ public class RelatorioRevistasVM {
         listaRelatorio = new ArrayList<>();
         listaCompleta = new ArrayList<>();
 
-        /*
-         * OTIMIZAÇÃO DB2: A versão anterior usava REPLACE() em JOIN,
-         * que impede uso de índice em ambas as tabelas.
-         *
-         * Solução: normaliza os ISSNs usando REGEXP_REPLACE (disponível no DB2 11.1+)
-         * apenas no SELECT (não no JOIN/WHERE), e faz o JOIN pela coluna original
-         * com duas tentativas (com e sem hífen) via COALESCE + LEFT JOIN duplo.
-         *
-         * Estratégia de dois LEFT JOINs:
-         *   - qc = busca por ISSN sem hífen (ex: p.cd_isbn_issn = '12345678')
-         *   - qh = busca por ISSN com hífen  (ex: p.cd_isbn_issn = '1234-5678')
-         * O COALESCE pega o primeiro resultado não nulo.
-         * Ambos os JOINs usam o índice do campo issn da tabela QUALIS.
-         *
-         * COALESCE também substitui a lógica de "S/N" antes do GROUP BY,
-         * permitindo ao DB2 agregar sem função de string na chave de agrupamento.
-         *
-         * FETCH FIRST 2000 ROWS ONLY: limita o resultado antes do tráfego de rede
-         * (o filtro posterior em Java reduz ainda mais).
-         */
         String sql =
             "SELECT " +
             "  COALESCE(MAX(qc.nm_revista), MAX(qh.nm_revista), MAX(p.nm_veiculo)) AS revista, " +
@@ -79,6 +61,14 @@ public class RelatorioRevistasVM {
 
             for (Object[] row : resultados) {
                 String revista   = row[0] != null ? row[0].toString() : "Revista Desconhecida";
+
+                // oculta links de DOIs no lugar do nome da revista
+                String revLower = revista.toLowerCase();
+                if (revLower.contains("http") || revLower.contains("doi.org") ||
+                        revLower.contains("www.") || revLower.startsWith("doi:")) {
+                    revista = "[Nome não informado - Apenas Link/DOI cadastrado no Lattes]";
+                }
+
                 String issn      = row[1] != null ? row[1].toString() : "-";
                 String qualis    = row[2] != null ? row[2].toString() : null;
                 Long   qtd       = ((Number) row[3]).longValue();
@@ -136,7 +126,8 @@ public class RelatorioRevistasVM {
         byte[] finalBytes = new byte[bom.length + dados.length];
         System.arraycopy(bom, 0, finalBytes, 0, bom.length);
         System.arraycopy(dados, 0, finalBytes, bom.length, dados.length);
-        Filedownload.save(finalBytes, "text/csv", "Relatorio_Revistas_Qualis.csv");
+
+        Filedownload.save(finalBytes, "text/csv", "Relatorio_Revistas_Qualis_" + new SimpleDateFormat("yyyyMMdd_HHmm").format(new Date()));
     }
 
     // Getters e Setters
