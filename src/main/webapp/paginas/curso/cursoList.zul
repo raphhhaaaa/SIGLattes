@@ -54,7 +54,7 @@
                             </div>
 
                             <listbox model="@load(vm.listaCursos)" visible="@load(not empty vm.listaCursos)"
-                                     mold="paging" pageSize="14" emptyMessage="Nenhum registro.">
+                                     mold="paging" pageSize="12" emptyMessage="Nenhum registro.">
 
                                 <listhead>
                                     <listheader label="Nome do Curso" sort="auto(nomeCurso)"/>

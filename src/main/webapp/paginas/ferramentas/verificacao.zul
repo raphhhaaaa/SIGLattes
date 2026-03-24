@@ -46,7 +46,7 @@
                                                 onClick="@command('verificarListaCompleta')"
                                                 iconSclass="z-icon-search"
                                                 disabled="@load(vm.processando)"
-                                                sclass="btn btn-primary font-weight-bold"
+                                                sclass="btn btn-outline-primary font-weight-bold"
                                                 height="45px"/>
 
                                         <button label="Atualizar Todos da Lista"
@@ -54,14 +54,14 @@
                                                 iconSclass="z-icon-cloud-download"
                                                 visible="@load(not empty vm.listaDesatualizados)"
                                                 disabled="@load(vm.processando)"
-                                                sclass="btn btn-success ml-2"
+                                                sclass="btn btn-outline-success ml-2"
                                                 height="45px"/>
 
                                         <button label="Parar Operação"
                                                 onClick="@command('cancelarProcessamentoAtualizacao')"
                                                 visible="@load(vm.processando)"
                                                 iconSclass="z-icon-stop"
-                                                sclass="btn btn-danger font-weight-bold ml-2"
+                                                sclass="btn btn-outline-danger font-weight-bold ml-2"
                                                 height="45px"/>
                                     </hlayout>
                                 </div>

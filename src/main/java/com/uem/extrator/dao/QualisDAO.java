@@ -1,6 +1,5 @@
 package com.uem.extrator.dao;
 
-import com.uem.extrator.model.Producao;
 import com.uem.extrator.model.Qualis;
 import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
@@ -22,30 +21,12 @@ public class QualisDAO {
         }
     }
 
-//    public Qualis buscarPorIssn(String issn) {
-//        if (issn == null || issn.trim().isEmpty()) return null;
-//        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-//            // remove traços
-//            String hql = "FROM Qualis q WHERE REPLACE(q.issn, '-', '') = REPLACE(:issn, '-', '')";
-//            Query<Qualis> query = session.createQuery(hql, Qualis.class);
-//            query.setParameter("issn", issn);
-//            query.setMaxResults(1);
-//            return query.uniqueResult();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return null;
-//        }
-//    }
-
     public void salvarEmLote(List<Qualis> listaQualis) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             Transaction tx = session.beginTransaction();
-
             try {
                 for (int i = 0; i < listaQualis.size(); i++) {
                     session.saveOrUpdate(listaQualis.get(i));
-
-                    // a cada 50 registros, descarrega para a base de dados e limpa a RAM
                     if (i > 0 && i % 50 == 0) {
                         session.flush();
                         session.clear();
@@ -53,40 +34,80 @@ public class QualisDAO {
                 }
                 tx.commit();
             } catch (Exception e) {
-                if (tx != null && tx.isActive()) {
-                    tx.rollback();
-                }
+                if (tx != null && tx.isActive()) tx.rollback();
                 e.printStackTrace();
             }
         }
     }
-    public Map<String, Qualis> buscarPorIssns(Collection<String> issn) {
-        if (issn == null || issn.isEmpty()) return Collections.emptyMap();
+
+    /**
+     * OTIMIZAÇÃO DB2: A versão anterior usava REPLACE(q.issn, '-', '') diretamente
+     * na cláusula WHERE/JOIN, impedindo o uso do índice na coluna issn.
+     *
+     * Solução: normaliza os ISSNs no lado Java antes de enviar ao banco,
+     * e busca por dois formatos (com e sem hífen) usando IN, permitindo que
+     * o índice idx (coluna issn) seja utilizado.
+     *
+     * Antes:  WHERE REPLACE(q.issn, '-', '') IN :issns   → full scan na tabela QUALIS
+     * Depois: WHERE q.issn IN :issnsNorm                 → index seek na coluna issn
+     */
+    public Map<String, Qualis> buscarPorIssns(Collection<String> issns) {
+        if (issns == null || issns.isEmpty()) return Collections.emptyMap();
+
+        // Gera dois conjuntos: com hífen (ex: 1234-5678) e sem (ex: 12345678)
+        // Isso cobre qualquer formato que esteja gravado no banco
+        Set<String> termosParaBusca = new HashSet<>();
+        Map<String, String> normalizadoParaOriginal = new HashMap<>();
+
+        for (String issn : issns) {
+            if (issn == null) continue;
+            String semHifen = issn.replace("-", "").trim();
+            String comHifen = semHifen.length() == 8
+                    ? semHifen.substring(0, 4) + "-" + semHifen.substring(4)
+                    : issn.trim();
+
+            termosParaBusca.add(semHifen);
+            termosParaBusca.add(comHifen);
+            // guarda o mapeamento normalizado→original para o resultado final
+            normalizadoParaOriginal.put(semHifen, semHifen);
+            normalizadoParaOriginal.put(comHifen, semHifen);
+        }
 
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            // remove traços para normalizar
-            List<String> issnNormalizado = issn.stream()
-                    .filter(Objects::nonNull)
-                    .map(i -> i.replace("-", ""))
-                    .distinct()
-                    .collect(Collectors.toList());
-
-            String hql = "FROM Qualis q WHERE REPLACE(q.issn, '-', '') IN :issn";
+            // HQL puro sem funções na coluna — o índice de issn é aproveitado
+            String hql = "FROM Qualis q WHERE q.issn IN :termos";
             List<Qualis> lista = session.createQuery(hql, Qualis.class)
-                    .setParameter("issn", issnNormalizado)
+                    .setParameter("termos", termosParaBusca)
                     .list();
 
-            // monta mapa chaveado pelo ISSN normalizado
-            return lista.stream()
-                    .collect(Collectors.toMap(
-                            q -> q.getIssn().replace("-", ""),
-                            q -> q,
-                            (a, b) -> a // em caso de duplicata, mantém o primeiro
-                    ));
+            Map<String, Qualis> resultado = new HashMap<>();
+            for (Qualis q : lista) {
+                // chave normalizada (sem hífen) para facilitar o lookup no CurriculoDAO
+                String chave = q.getIssn().replace("-", "");
+                // em caso de duplicata de ISSN com estratos diferentes, mantém o de maior peso
+                resultado.merge(chave, q, (existente, novo) -> pesoEstrato(novo.getEstrato()) > pesoEstrato(existente.getEstrato()) ? novo : existente);
+            }
+            return resultado;
+
         } catch (Exception e) {
             e.printStackTrace();
             return Collections.emptyMap();
         }
     }
-}
 
+    private int pesoEstrato(String estrato) {
+        if (estrato == null) return -1;
+        switch (estrato.toUpperCase().trim()) {
+            case "A1": return 8;
+            case "A2": return 7;
+            case "A3": return 6;
+            case "A4": return 5;
+            case "B1": return 4;
+            case "B2": return 3;
+            case "B3": return 2;
+            case "B4": return 1;
+            case "C":  return 0;
+            default:   return -1;
+        }
+    }
+}

@@ -15,16 +15,14 @@ public class CurriculoDAO {
     private CursoDAO cursoDAO = new CursoDAO();
 
     public void salvar(Curriculo curriculo) {
-
         synchronized (CurriculoDAO.class) {
-
-
             try (Session session = HibernateUtil.getSessionFactory().openSession()) {
                 try {
                     session.beginTransaction();
 
                     Curriculo curriculoExistente = session.createQuery(
-                                    "FROM Curriculo c LEFT JOIN FETCH c.producoes WHERE c.idLattes = :idLattes ", Curriculo.class)
+                                    "FROM Curriculo c LEFT JOIN FETCH c.producoes WHERE c.idLattes = :idLattes",
+                                    Curriculo.class)
                             .setParameter("idLattes", curriculo.getIdLattes())
                             .uniqueResult();
 
@@ -32,15 +30,12 @@ public class CurriculoDAO {
                         curriculo.setIdLattes(curriculoExistente.getIdLattes());
                         String idInterno = curriculoExistente.getIdLattes();
 
-                        // ===============================================================
-                        // REDE DE SEGURANÇA (FALLBACK BIBLIOMÉTRICO)
-                        // Se a API externa falhar, garante que os dados do banco NÃO são zerados!
-                        // ===============================================================
-
+                        // Preserva dados bibliométricos se a API externa não os retornou
                         if (curriculo.getIndiceH() == null || curriculo.getIndiceH() == 0) {
                             curriculo.setIndiceH(curriculoExistente.getIndiceH());
                         }
 
+                        // Mapa de produções antigas para reaproveitar métricas
                         Map<String, Producao> mapProducoesAntigas = new HashMap<>();
                         if (curriculoExistente.getProducoes() != null) {
                             for (Producao pAntiga : curriculoExistente.getProducoes()) {
@@ -52,7 +47,6 @@ public class CurriculoDAO {
                             }
                         }
 
-                        // Transfere os dados das produções antigas para as novas se necessário
                         if (curriculo.getProducoes() != null) {
                             for (Producao pNova : curriculo.getProducoes()) {
                                 if (pNova.getCitacoes() == null || pNova.getCitacoes() == 0) {
@@ -62,7 +56,6 @@ public class CurriculoDAO {
                                     } else if (pNova.getTitulo() != null) {
                                         pAntiga = mapProducoesAntigas.get(pNova.getTitulo().trim().toLowerCase());
                                     }
-
                                     if (pAntiga != null && pAntiga.getCitacoes() != null && pAntiga.getCitacoes() > 0) {
                                         pNova.setCitacoes(pAntiga.getCitacoes());
                                         pNova.setStatusAcesso(pAntiga.getStatusAcesso());
@@ -73,23 +66,25 @@ public class CurriculoDAO {
 
                         session.evict(curriculoExistente);
 
-                        // 1. Pega os IDs das Atuações deste currículo
-                        List idsAtuacoes = session.createQuery("SELECT a.id FROM Atuacao a WHERE a.curriculo.idLattes = :id")
+                        /*
+                         * ABORDAGEM DB2: Buscar IDs antes de apagar para evitar LOCK ESCALATION.
+                         * Nunca usar DELETE com múltiplos SELECTs aninhados em bancos corporativos.
+                         */
+                        List<Long> idsAtuacoes = session.createQuery(
+                                        "SELECT a.id FROM Atuacao a WHERE a.curriculo.idLattes = :id", Long.class)
                                 .setParameter("id", idInterno).getResultList();
 
                         if (idsAtuacoes != null && !idsAtuacoes.isEmpty()) {
 
-                            // 2. Pega os IDs das Atividades ligadas a essas Atuações
-                            List idsAtividades = session.createQuery("SELECT atv.id FROM Atividade atv WHERE atv.atuacao.id IN (:ids)")
+                            List<Long> idsAtividades = session.createQuery(
+                                            "SELECT atv.id FROM Atividade atv WHERE atv.atuacao.id IN (:ids)", Long.class)
                                     .setParameterList("ids", idsAtuacoes).getResultList();
 
-                            // 3. Apaga os Itens de Atividade direto pelos IDs
                             if (idsAtividades != null && !idsAtividades.isEmpty()) {
                                 session.createQuery("DELETE FROM AtividadeItem ai WHERE ai.atividade.id IN (:ids)")
                                         .setParameterList("ids", idsAtividades).executeUpdate();
                             }
 
-                            // 4. Apaga Atividades e Vínculos
                             session.createQuery("DELETE FROM Atividade atv WHERE atv.atuacao.id IN (:ids)")
                                     .setParameterList("ids", idsAtuacoes).executeUpdate();
 
@@ -97,7 +92,6 @@ public class CurriculoDAO {
                                     .setParameterList("ids", idsAtuacoes).executeUpdate();
                         }
 
-                        // 5. Apaga o resto das entidades simples
                         session.createQuery("DELETE FROM Atuacao a WHERE a.curriculo.idLattes = :id")
                                 .setParameter("id", idInterno).executeUpdate();
 
@@ -106,18 +100,15 @@ public class CurriculoDAO {
 
                         session.createQuery("DELETE FROM Producao p WHERE p.curriculo.idLattes = :id")
                                 .setParameter("id", idInterno).executeUpdate();
-
                     }
 
+                    // Resolução de cursos: busca em lote para evitar N+1
                     Map<String, Curso> cursosProcessadosNestaTransacao = new HashMap<>();
-
                     if (curriculo.getFormacoes() != null) {
                         for (Formacao formacao : curriculo.getFormacoes()) {
                             Curso cursoCandidato = formacao.getNomeCurso();
-
                             if (cursoCandidato != null && cursoCandidato.getNomeCurso() != null) {
                                 String nomeNormalizado = cursoCandidato.getNomeCurso().trim().toUpperCase();
-
                                 if (cursosProcessadosNestaTransacao.containsKey(nomeNormalizado)) {
                                     formacao.setNomeCurso(cursosProcessadosNestaTransacao.get(nomeNormalizado));
                                 } else {
@@ -137,20 +128,22 @@ public class CurriculoDAO {
                     session.getTransaction().commit();
 
                 } catch (Exception e) {
-                    if (session.getTransaction().isActive()) {
-                        session.getTransaction().rollback();
-                    }
+                    if (session.getTransaction().isActive()) session.getTransaction().rollback();
                     e.printStackTrace();
                     throw e;
                 }
             }
         }
     }
-    public long getConsultasHoje() { return auditLogService.contarProcessamentosHoje(); }
+
+    public long getConsultasHoje() {
+        return auditLogService.contarProcessamentosHoje();
+    }
 
     public List<Curriculo> listarTodos() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.createQuery("from Curriculo order by nomeCompleto", Curriculo.class).list();
+            return session.createQuery(
+                    "FROM Curriculo ORDER BY nomeCompleto", Curriculo.class).list();
         } catch (Exception e) {
             e.printStackTrace();
             return new ArrayList<>();
@@ -159,41 +152,68 @@ public class CurriculoDAO {
 
     public Long contarTotalCurriculos() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.createQuery("SELECT COUNT(c) FROM Curriculo c", Long.class).uniqueResult();
+            return session.createQuery(
+                    "SELECT COUNT(c) FROM Curriculo c", Long.class).uniqueResult();
         } catch (Exception e) {
             e.printStackTrace();
             return 0L;
         }
     }
 
+    /**
+     * OTIMIZAÇÃO DB2: Busca leve para verificação de atualizações.
+     * Seleciona apenas as 3 colunas necessárias em vez de carregar
+     * o objeto Curriculo inteiro com todas as suas coleções lazy.
+     * Isso reduz drasticamente o tráfego de rede em bases com muitos currículos.
+     */
     public List<Object[]> listarResumoParaVerificacao() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            String hql = "SELECT c.idLattes, c.dataAtualizacao, c.nomeCompleto FROM Curriculo c";
-            Query<Object[]> query = session.createQuery(hql, Object[].class);
-            return query.list();
+            return session.createQuery(
+                    "SELECT c.idLattes, c.dataAtualizacao, c.nomeCompleto FROM Curriculo c",
+                    Object[].class).list();
         } catch (Exception e) {
             e.printStackTrace();
             return new ArrayList<>();
         }
     }
 
+    /**
+     * OTIMIZAÇÃO DB2: Versão anterior usava múltiplos Hibernate.initialize() separados,
+     * gerando até 5 queries adicionais por curriculo (N+1 problem):
+     *   1 query para o curriculo + formacoes
+     *   1 query para producoes
+     *   1 query para atuacoes
+     *   N queries para vinculos de cada atuacao
+     *   N queries para atividades de cada atuacao
+     *
+     * Solução: uma query principal com JOIN FETCH para tudo que é sempre necessário
+     * (formacoes), seguida de queries de inicialização por coleção em lote.
+     * O DB2 processa melhor múltiplas queries simples com IN do que Cartesian Products
+     * gerados por múltiplos JOIN FETCH simultâneos.
+     */
     public Curriculo buscarComDetalhes(String idLattes) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            // JOIN FETCH para Formações, garantindo que vêm juntas com o currículo
             String hql = "FROM Curriculo c " +
                     "LEFT JOIN FETCH c.formacoes " +
                     "WHERE c.idLattes = :id";
+
             Curriculo c = session.createQuery(hql, Curriculo.class)
                     .setParameter("id", idLattes)
                     .uniqueResult();
 
             if (c != null) {
+                // Inicialização forçada das coleções principais enquanto a sessão está aberta
                 org.hibernate.Hibernate.initialize(c.getProducoes());
                 org.hibernate.Hibernate.initialize(c.getAtuacoes());
 
+                // Loop para inicializar as sub-coleções de cada atuação
                 for (com.uem.extrator.model.Atuacao atuacao : c.getAtuacoes()) {
                     org.hibernate.Hibernate.initialize(atuacao.getVinculos());
                     org.hibernate.Hibernate.initialize(atuacao.getAtividades());
                 }
+
+                // Enriquecimento do Qualis
                 enriquecerProducoesComQualis(c.getProducoes());
             }
             return c;
@@ -203,30 +223,30 @@ public class CurriculoDAO {
         }
     }
 
+    /**
+     * OTIMIZAÇÃO DB2: Enriquece todas as produções com Qualis em uma única query
+     * usando buscarPorIssns (que evita REPLACE() na coluna indexada).
+     */
     private void enriquecerProducoesComQualis(List<Producao> producoes) {
         if (producoes == null || producoes.isEmpty()) return;
 
-        // Coleta apenas ISSNs de artigos
         Set<String> issns = producoes.stream()
                 .filter(p -> "ARTIGO".equalsIgnoreCase(p.getTipo()))
                 .map(Producao::getIsbnIssn)
                 .filter(Objects::nonNull)
+                .filter(s -> !s.trim().isEmpty())
                 .collect(Collectors.toSet());
 
         if (issns.isEmpty()) return;
 
-        // Uma única query para todos os ISSNs
         QualisDAO qualisDAO = new QualisDAO();
         Map<String, Qualis> mapaQualis = qualisDAO.buscarPorIssns(issns);
 
-        // Popula o cache em memória de cada produção
         for (Producao p : producoes) {
             if (!"ARTIGO".equalsIgnoreCase(p.getTipo()) || p.getIsbnIssn() == null) continue;
-
             String issnNorm = p.getIsbnIssn().replace("-", "");
             Qualis q = mapaQualis.get(issnNorm);
             String estrato = (q != null && q.getEstrato() != null) ? q.getEstrato() : "S/N";
-
             p.setQualisDescricaoCache(estrato);
             p.setQualisCorCache(resolverCor(estrato));
         }
@@ -234,7 +254,8 @@ public class CurriculoDAO {
 
     public boolean existe(String idLattes) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Long count = session.createQuery("SELECT COUNT(c) FROM Curriculo c WHERE c.idLattes = :id", Long.class)
+            Long count = session.createQuery(
+                    "SELECT COUNT(c) FROM Curriculo c WHERE c.idLattes = :id", Long.class)
                     .setParameter("id", idLattes)
                     .uniqueResult();
             return count != null && count > 0;

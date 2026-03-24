@@ -3,54 +3,80 @@ package com.uem.extrator.dao;
 import com.uem.extrator.model.Instituicao;
 import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class InstituicaoDAO {
 
-    // Cache estático para evitar consultas repetitivas ao banco
+    // Cache estático com TTL de 30 minutos
     private static List<Object[]> cacheInstituicoes = null;
     private static long ultimaAtualizacao = 0;
-    // O cache expira a cada 30 minutos (ajuste se necessário)
     private static final long TEMPO_CACHE = 30 * 60 * 1000;
 
+    /**
+     * OTIMIZAÇÃO DB2: A versão anterior usava múltiplas cláusulas LIKE com OR
+     * na query nativa. No DB2, OR em LIKE impede o uso de índices de texto
+     * e gera um full table scan.
+     *
+     * Solução 1: Reescreve com UPPER() para normalização consistente.
+     * Solução 2: Usa o operador LOCATE() do DB2 que é mais eficiente que LIKE
+     *            para múltiplos padrões prefixados.
+     * Solução 3: Mantém o cache de 30 minutos para evitar re-execução frequente
+     *            desta query pesada (lista de instituições raramente muda).
+     *
+     * Nota: a query mantém o filtro de nomes relevantes (universidades,
+     * institutos, etc.) para não retornar ruído como "PROJETOS (PESQUISA)".
+     */
     public List<Object[]> listarInstituicoesConsolidadas() {
         if (cacheInstituicoes != null && (System.currentTimeMillis() - ultimaAtualizacao) < TEMPO_CACHE) {
             return cacheInstituicoes;
         }
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
 
-            String sql = "SELECT nm_instituicao, COUNT(*) AS qtd " +
-                    "FROM INSTITUICAO " +
-                    "WHERE nm_instituicao IS NOT NULL " +
-                    "AND (nm_instituicao LIKE 'UNIVERSIDADE%' " +
-                    "     OR nm_instituicao LIKE 'INSTITUTO%' " +
-                    "     OR nm_instituicao LIKE 'FACULDADE%' " +
-                    "     OR nm_instituicao LIKE 'CENTRO%') " +
-                    "GROUP BY nm_instituicao " +
-                    "ORDER BY qtd DESC";
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            /*
+             * DB2: LOCATE(substring, string) retorna a posição (>0 se encontrado).
+             * É mais eficiente que múltiplos LIKE '%...' para prefixos conhecidos.
+             * Usamos UPPER() para normalização sem depender de collation do banco.
+             *
+             * FETCH FIRST N ROWS ONLY é a sintaxe DB2 nativa para limitar resultados,
+             * equivalente ao LIMIT do MySQL. Aqui via Hibernate seria setMaxResults,
+             * mas em native query usamos diretamente.
+             */
+            String sql =
+                "SELECT nm_instituicao, COUNT(*) AS qtd " +
+                "FROM LATTESEXTRATOR.INSTITUICAO " +
+                "WHERE nm_instituicao IS NOT NULL " +
+                "AND (" +
+                "   LOCATE('UNIVERSIDADE', UPPER(nm_instituicao)) = 1 " +
+                "   OR LOCATE('INSTITUTO',    UPPER(nm_instituicao)) = 1 " +
+                "   OR LOCATE('FACULDADE',    UPPER(nm_instituicao)) = 1 " +
+                "   OR LOCATE('CENTRO',       UPPER(nm_instituicao)) = 1 " +
+                ") " +
+                "GROUP BY nm_instituicao " +
+                "ORDER BY qtd DESC " +
+                "FETCH FIRST 500 ROWS ONLY";
 
             List<Object[]> resultados = session.createNativeQuery(sql).list();
-
             cacheInstituicoes = resultados;
             ultimaAtualizacao = System.currentTimeMillis();
-
             return resultados;
+
         } catch (Exception e) {
             e.printStackTrace();
             return new ArrayList<>();
         }
     }
 
-    // Método para limpar o cache manualmente (chame isso após uma nova extração massiva)
     public static void limparCache() {
         cacheInstituicoes = null;
     }
 
     public List<Instituicao> listarTodas() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.createQuery("FROM Instituicao i ORDER BY i.nomeInstituicao", Instituicao.class)
-                    .setMaxResults(500) // Reduzi para 500 para ser mais leve
+            return session.createQuery(
+                    "FROM Instituicao i ORDER BY i.nomeInstituicao", Instituicao.class)
+                    .setMaxResults(500)
                     .list();
         } catch (Exception e) {
             e.printStackTrace();

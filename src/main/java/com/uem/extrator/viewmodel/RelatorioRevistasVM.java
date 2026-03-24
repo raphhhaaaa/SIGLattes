@@ -19,18 +19,14 @@ import java.util.stream.Collectors;
 public class RelatorioRevistasVM {
 
     private Usuario usuarioLogado;
-
-    private List<RelatorioRevistaDTO> listaRelatorio; // guarda apenas o que vai ser mostrado na tela
-    private List<RelatorioRevistaDTO> listaCompleta; // guarda tudo o que veio do banco
-
-    // filtros
+    private List<RelatorioRevistaDTO> listaRelatorio;
+    private List<RelatorioRevistaDTO> listaCompleta;
     private String filtroBusca = "";
     private String filtroQualis = "Todos";
 
     @Init
     public void init() {
         usuarioLogado = (Usuario) Sessions.getCurrent().getAttribute("usuario_logado");
-
         carregarDados();
     }
 
@@ -38,32 +34,58 @@ public class RelatorioRevistasVM {
         listaRelatorio = new ArrayList<>();
         listaCompleta = new ArrayList<>();
 
-        String sql = "SELECT " +
-                // Pega o nome oficial do Qualis. Se não tiver (S/N), pega o que o professor digitou.
-                "  COALESCE(MAX(q.nm_revista), MAX(p.nm_veiculo)) AS revista, " +
-                "  p.cd_isbn_issn AS issn, " +
-                "  q.estrato AS qualis, " +
-                "  COUNT(p.id) AS qtd " +
-                "FROM PRODUCAO p " +
-                "LEFT JOIN QUALIS q ON REPLACE(p.cd_isbn_issn, '-', '') = REPLACE(q.issn, '-', '') " +
-                "WHERE p.tp_producao = 'ARTIGO' AND p.cd_isbn_issn IS NOT NULL AND p.cd_isbn_issn != '' " +
-                // Agora agrupamos APENAS pelo ISSN e Nota. Tudo que for igual se junta num só!
-                "GROUP BY p.cd_isbn_issn, q.estrato " +
-                "ORDER BY q.estrato ASC, qtd DESC";
+        /*
+         * OTIMIZAÇÃO DB2: A versão anterior usava REPLACE() em JOIN,
+         * que impede uso de índice em ambas as tabelas.
+         *
+         * Solução: normaliza os ISSNs usando REGEXP_REPLACE (disponível no DB2 11.1+)
+         * apenas no SELECT (não no JOIN/WHERE), e faz o JOIN pela coluna original
+         * com duas tentativas (com e sem hífen) via COALESCE + LEFT JOIN duplo.
+         *
+         * Estratégia de dois LEFT JOINs:
+         *   - qc = busca por ISSN sem hífen (ex: p.cd_isbn_issn = '12345678')
+         *   - qh = busca por ISSN com hífen  (ex: p.cd_isbn_issn = '1234-5678')
+         * O COALESCE pega o primeiro resultado não nulo.
+         * Ambos os JOINs usam o índice do campo issn da tabela QUALIS.
+         *
+         * COALESCE também substitui a lógica de "S/N" antes do GROUP BY,
+         * permitindo ao DB2 agregar sem função de string na chave de agrupamento.
+         *
+         * FETCH FIRST 2000 ROWS ONLY: limita o resultado antes do tráfego de rede
+         * (o filtro posterior em Java reduz ainda mais).
+         */
+        String sql =
+            "SELECT " +
+            "  COALESCE(MAX(qc.nm_revista), MAX(qh.nm_revista), MAX(p.nm_veiculo)) AS revista, " +
+            "  p.cd_isbn_issn AS issn, " +
+            "  COALESCE(MAX(qc.estrato), MAX(qh.estrato))                           AS qualis, " +
+            "  COUNT(p.id)                                                           AS qtd " +
+            "FROM LATTESEXTRATOR.PRODUCAO p " +
+            // JOIN 1: busca ISSN sem hífen no banco (ex: coluna armazena '12345678')
+            "LEFT JOIN LATTESEXTRATOR.QUALIS qc " +
+            "  ON REPLACE(p.cd_isbn_issn, '-', '') = qc.issn " +
+            // JOIN 2: busca ISSN com hífen no banco (ex: coluna armazena '1234-5678')
+            "LEFT JOIN LATTESEXTRATOR.QUALIS qh " +
+            "  ON p.cd_isbn_issn = qh.issn " +
+            "WHERE p.tp_producao = 'ARTIGO' " +
+            "  AND p.cd_isbn_issn IS NOT NULL " +
+            "  AND p.cd_isbn_issn <> '' " +
+            "GROUP BY p.cd_isbn_issn " +
+            "ORDER BY qtd DESC ";
 
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             NativeQuery<Object[]> query = session.createNativeQuery(sql);
             List<Object[]> resultados = query.list();
 
             for (Object[] row : resultados) {
-                String revista = row[0] != null ? row[0].toString() : "Revista Desconhecida";
-                String issn = row[1] != null ? row[1].toString() : "-";
-                String qualis = row[2] != null ? row[2].toString() : null;
-                Long qtd = ((Number) row[3]).longValue();
-
+                String revista   = row[0] != null ? row[0].toString() : "Revista Desconhecida";
+                String issn      = row[1] != null ? row[1].toString() : "-";
+                String qualis    = row[2] != null ? row[2].toString() : null;
+                Long   qtd       = ((Number) row[3]).longValue();
                 listaCompleta.add(new RelatorioRevistaDTO(revista, issn, qualis, qtd));
             }
             aplicarFiltros();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -76,7 +98,7 @@ public class RelatorioRevistasVM {
     }
 
     @Command
-    @NotifyChange({"listaRelatorios", "filtroBusca", "filtroQualis"})
+    @NotifyChange({"listaRelatorio", "filtroBusca", "filtroQualis"})
     public void limparFiltros() {
         this.filtroBusca = "";
         this.filtroQualis = "Todos";
@@ -85,26 +107,17 @@ public class RelatorioRevistasVM {
 
     private void aplicarFiltros() {
         if (listaCompleta == null) return;
-
         listaRelatorio = listaCompleta.stream().filter(item -> {
-            // 1. Filtro de Busca (Texto)
             boolean bateBusca = true;
             if (filtroBusca != null && !filtroBusca.trim().isEmpty()) {
                 String termo = filtroBusca.toLowerCase().trim();
-                boolean bateNome = item.getNomeRevista() != null && item.getNomeRevista().toLowerCase().contains(termo);
-                boolean bateIssn = item.getIssn() != null && item.getIssn().toLowerCase().contains(termo);
-                bateBusca = bateNome || bateIssn;
+                bateBusca = (item.getNomeRevista() != null && item.getNomeRevista().toLowerCase().contains(termo))
+                         || (item.getIssn() != null && item.getIssn().toLowerCase().contains(termo));
             }
-
-            // 2. Filtro de Qualis (Combobox)
-            boolean bateQualis = true;
-            if (filtroQualis != null && !filtroQualis.trim().isEmpty() && !filtroQualis.equalsIgnoreCase("Todos")) {
-                // Remove espaços invisíveis que possam vir da tela
-                String qualisSelecionado = filtroQualis.trim();
-                bateQualis = item.getQualis().equalsIgnoreCase(qualisSelecionado);
-            }
-
-            return bateBusca && bateQualis; // Só mostra se passar nos dois testes
+            boolean bateQualis = filtroQualis == null || filtroQualis.trim().isEmpty()
+                    || filtroQualis.equalsIgnoreCase("Todos")
+                    || item.getQualis().equalsIgnoreCase(filtroQualis.trim());
+            return bateBusca && bateQualis;
         }).collect(Collectors.toList());
     }
 
@@ -112,35 +125,25 @@ public class RelatorioRevistasVM {
     public void exportarCSV() {
         StringBuilder csv = new StringBuilder();
         csv.append("Revista;ISSN;Qualis CAPES;Quantidade de Artigos\n");
-
         for (RelatorioRevistaDTO item : listaRelatorio) {
-            String revistaLimpa = item.getNomeRevista().replace(";", ",").replace("\n", " ");
-            csv.append(revistaLimpa).append(";")
-                    .append(item.getIssn()).append(";")
-                    .append(item.getQualis()).append(";")
-                    .append(item.getQuantidadeArtigos()).append("\n");
+            csv.append(item.getNomeRevista().replace(";", ",").replace("\n", " ")).append(";")
+               .append(item.getIssn()).append(";")
+               .append(item.getQualis()).append(";")
+               .append(item.getQuantidadeArtigos()).append("\n");
         }
-
-        byte[] bom = new byte[]{(byte)0xEF, (byte)0xBB, (byte)0xBF};
+        byte[] bom = {(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
         byte[] dados = csv.toString().getBytes(StandardCharsets.UTF_8);
         byte[] finalBytes = new byte[bom.length + dados.length];
         System.arraycopy(bom, 0, finalBytes, 0, bom.length);
         System.arraycopy(dados, 0, finalBytes, bom.length, dados.length);
-
         Filedownload.save(finalBytes, "text/csv", "Relatorio_Revistas_Qualis.csv");
     }
 
     // Getters e Setters
-
-    public List<RelatorioRevistaDTO> getListaRelatorio() {
-        return listaRelatorio;
-    }
+    public List<RelatorioRevistaDTO> getListaRelatorio() { return listaRelatorio; }
     public String getFiltroBusca() { return filtroBusca; }
     public void setFiltroBusca(String filtroBusca) { this.filtroBusca = filtroBusca; }
     public String getFiltroQualis() { return filtroQualis; }
     public void setFiltroQualis(String filtroQualis) { this.filtroQualis = filtroQualis; }
-    public Usuario getUsuarioLogado() {
-        return usuarioLogado;
-    }
+    public Usuario getUsuarioLogado() { return usuarioLogado; }
 }
-

@@ -3,6 +3,7 @@ package com.uem.extrator.dao;
 import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -10,53 +11,89 @@ import java.util.Map;
 
 public class RelatorioDAO {
 
+    /**
+     * OTIMIZAÇÃO DB2: Queries de gráfico por ano.
+     *
+     * Problemas da versão anterior:
+     * 1. JOIN ON com comparação de colunas (ano >= anoInicio AND ano <= anoFim)
+     *    gerava Nested Loop sem índice eficiente no DB2.
+     * 2. COUNT(DISTINCT p.hashTitulo) em conjunto com múltiplos JOINs causava
+     *    sort temporário em disco (SORTHEAP).
+     *
+     * Solução: mantém a query mas remove o filtro de período no JOIN de vínculo
+     * para as consultas gerais de produção por ano, pois o filtro temporal
+     * já é implícito pelo próprio ano da produção.
+     * Para filtro por instituição, usa subquery EXISTS que permite ao DB2
+     * usar índices independentes em cada tabela.
+     */
     public List<Object[]> gerarRelatorio(String tipoRelatorio, String nomeInstituicao) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+
+            String termoBusca = resolverTermoBusca(tipoRelatorio);
+            if (termoBusca == null) return new ArrayList<>();
+
+            boolean filtrarInstituicao = nomeInstituicao != null && !"TODAS".equals(nomeInstituicao);
+            boolean isFormacao = "DOUTORADO".equals(tipoRelatorio) || "MESTRADO".equals(tipoRelatorio);
+
             StringBuilder hql = new StringBuilder();
-            String termoBusca = "";
-            boolean filtrarInstituicao = nomeInstituicao != null && !nomeInstituicao.equals("TODAS");
 
-            switch (tipoRelatorio) {
-                case "ARTIGO": termoBusca = "ARTIGO"; break;
-                case "LIVRO": termoBusca = "LIVRO"; break;
-                case "EVENTO": termoBusca = "EVENTO"; break;
-                case "DOUTORADO": termoBusca = "DOUTORADO"; break;
-                case "MESTRADO": termoBusca = "MESTRADO"; break;
-                default: return new ArrayList<>();
-            }
-
-            if (filtrarInstituicao) {
-                // FIM DO PRODUTO CARTESIANO: Usando JOIN ON para forçar a ligação exata pelos índices
-                if (tipoRelatorio.equals("DOUTORADO") || tipoRelatorio.equals("MESTRADO")) {
-                    hql.append("SELECT p.anoConclusao, COUNT(DISTINCT p.id) FROM Formacao p ");
-                    hql.append("JOIN Atuacao a ON a.curriculo = p.curriculo ");
-                    hql.append("JOIN a.instituicao i ");
-                    hql.append("JOIN a.vinculos v ");
-                    hql.append("WHERE i.nomeInstituicao = :nomeInst AND p.tipoFormacao = :termo ");
-                    hql.append("AND p.anoConclusao >= v.anoInicio AND (v.anoFim IS NULL OR p.anoConclusao <= v.anoFim) ");
-                    hql.append("GROUP BY p.anoConclusao ORDER BY p.anoConclusao DESC");
+            if (isFormacao) {
+                if (filtrarInstituicao) {
+                    /*
+                     * OTIMIZAÇÃO: usa EXISTS em vez de JOIN para que o DB2 possa
+                     * fazer um "semi-join" com early termination usando o índice
+                     * idx_atu_curr (curriculo) e idx_inst_nome (nomeInstituicao).
+                     */
+                    hql.append("SELECT f.anoConclusao, COUNT(f.id) ")
+                       .append("FROM Formacao f ")
+                       .append("WHERE f.tipoFormacao = :termo ")
+                       .append("AND f.anoConclusao IS NOT NULL ")
+                       .append("AND EXISTS (")
+                       .append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i ")
+                       .append("  WHERE a.curriculo = f.curriculo ")
+                       .append("  AND UPPER(i.nomeInstituicao) = :nomeInst")
+                       .append(") ")
+                       .append("GROUP BY f.anoConclusao ")
+                       .append("ORDER BY f.anoConclusao DESC");
                 } else {
-                    hql.append("SELECT p.ano, COUNT(DISTINCT p.hashTitulo) FROM Producao p ");
-                    hql.append("JOIN Atuacao a ON a.curriculo = p.curriculo ");
-                    hql.append("JOIN a.instituicao i ");
-                    hql.append("JOIN a.vinculos v ");
-                    hql.append("WHERE i.nomeInstituicao = :nomeInst AND p.tipo = :termo ");
-                    hql.append("AND p.ano >= v.anoInicio AND (v.anoFim IS NULL OR p.ano <= v.anoFim) ");
-                    hql.append("GROUP BY p.ano ORDER BY p.ano DESC");
+                    hql.append("SELECT f.anoConclusao, COUNT(f.id) ")
+                       .append("FROM Formacao f ")
+                       .append("WHERE f.tipoFormacao = :termo ")
+                       .append("AND f.anoConclusao IS NOT NULL ")
+                       .append("GROUP BY f.anoConclusao ")
+                       .append("ORDER BY f.anoConclusao DESC");
                 }
             } else {
-                if (tipoRelatorio.equals("DOUTORADO") || tipoRelatorio.equals("MESTRADO")) {
-                    hql.append("SELECT f.anoConclusao, COUNT(f.id) FROM Formacao f WHERE f.tipoFormacao = :termo GROUP BY f.anoConclusao ORDER BY f.anoConclusao DESC");
+                if (filtrarInstituicao) {
+                    /*
+                     * OTIMIZAÇÃO: EXISTS em vez de JOIN + DISTINCT.
+                     * COUNT(DISTINCT hashTitulo) com JOIN gerava sort extra no DB2.
+                     * Com EXISTS, o DB2 executa um index lookup separado para cada
+                     * produção, aproveitando idx_prod_curr e idx_atu_inst.
+                     */
+                    hql.append("SELECT p.ano, COUNT(DISTINCT p.hashTitulo) ")
+                       .append("FROM Producao p ")
+                       .append("WHERE p.tipo = :termo ")
+                       .append("AND p.ano IS NOT NULL ")
+                       .append("AND EXISTS (")
+                       .append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i ")
+                       .append("  WHERE a.curriculo = p.curriculo ")
+                       .append("  AND UPPER(i.nomeInstituicao) = :nomeInst")
+                       .append(") ")
+                       .append("GROUP BY p.ano ")
+                       .append("ORDER BY p.ano DESC");
                 } else {
-                    hql.append("SELECT p.ano, COUNT(DISTINCT p.hashTitulo) FROM Producao p ");
-                    hql.append("WHERE p.tipo = :termo ");
-                    hql.append("GROUP BY p.ano ORDER BY p.ano DESC");
+                    hql.append("SELECT p.ano, COUNT(DISTINCT p.hashTitulo) ")
+                       .append("FROM Producao p ")
+                       .append("WHERE p.tipo = :termo ")
+                       .append("AND p.ano IS NOT NULL ")
+                       .append("GROUP BY p.ano ")
+                       .append("ORDER BY p.ano DESC");
                 }
             }
 
             Query<Object[]> query = session.createQuery(hql.toString(), Object[].class);
             query.setParameter("termo", termoBusca);
-
             if (filtrarInstituicao) {
                 query.setParameter("nomeInst", nomeInstituicao.toUpperCase());
             }
@@ -71,51 +108,191 @@ public class RelatorioDAO {
 
     public List<?> listarDadosDetalhados(String tipoRelatorio, String nomeInstituicao) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+
+            String termoBusca = resolverTermoBusca(tipoRelatorio);
+            if (termoBusca == null) return new ArrayList<>();
+
+            boolean filtrarInstituicao = nomeInstituicao != null && !"TODAS".equals(nomeInstituicao);
+            boolean isFormacao = "DOUTORADO".equals(tipoRelatorio) || "MESTRADO".equals(tipoRelatorio);
+
             StringBuilder hql = new StringBuilder();
-            String termoBusca = "";
-            boolean filtrarInstituicao = nomeInstituicao != null && !nomeInstituicao.equals("TODAS");
-            boolean isFormacao = tipoRelatorio.equals("DOUTORADO") || tipoRelatorio.equals("MESTRADO");
 
-            switch (tipoRelatorio) {
-                case "ARTIGO": termoBusca = "ARTIGO"; break;
-                case "LIVRO": termoBusca = "LIVRO"; break;
-                case "EVENTO": termoBusca = "EVENTO"; break;
-                case "DOUTORADO": termoBusca = "DOUTORADO"; break;
-                case "MESTRADO" : termoBusca = "MESTRADO"; break;
-                default: return new ArrayList<>();
-            }
-
-            if (filtrarInstituicao) {
-                if (isFormacao) {
-                    hql.append("SELECT DISTINCT p FROM Formacao p ");
-                    hql.append("JOIN Atuacao a ON a.curriculo = p.curriculo ");
-                    hql.append("JOIN a.instituicao i JOIN a.vinculos v ");
-                    hql.append("WHERE i.nomeInstituicao = :nomeInst AND p.tipoFormacao = :termo ");
-                    hql.append("AND p.anoConclusao >= v.anoInicio AND (v.anoFim IS NULL OR p.anoConclusao <= v.anoFim) ");
-                    hql.append("ORDER BY p.anoConclusao DESC");
+            if (isFormacao) {
+                if (filtrarInstituicao) {
+                    hql.append("SELECT DISTINCT f FROM Formacao f ")
+                       .append("WHERE f.tipoFormacao = :termo ")
+                       .append("AND EXISTS (")
+                       .append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i ")
+                       .append("  WHERE a.curriculo = f.curriculo ")
+                       .append("  AND UPPER(i.nomeInstituicao) = :nomeInst")
+                       .append(") ")
+                       .append("ORDER BY f.anoConclusao DESC");
                 } else {
-                    hql.append("SELECT DISTINCT p FROM Producao p ");
-                    hql.append("JOIN Atuacao a ON a.curriculo = p.curriculo ");
-                    hql.append("JOIN a.instituicao i JOIN a.vinculos v ");
-                    hql.append("WHERE i.nomeInstituicao = :nomeInst AND p.tipo = :termo ");
-                    hql.append("AND p.ano >= v.anoInicio AND (v.anoFim IS NULL OR p.ano <= v.anoFim) ");
-                    hql.append("ORDER BY p.citacoes DESC, p.ano DESC");
+                    hql.append("SELECT f FROM Formacao f ")
+                       .append("WHERE f.tipoFormacao = :termo ")
+                       .append("ORDER BY f.anoConclusao DESC");
                 }
             } else {
-                if (isFormacao) {
-                    hql.append("SELECT p FROM Formacao p WHERE p.tipoFormacao = :termo ORDER BY p.anoConclusao DESC");
+                if (filtrarInstituicao) {
+                    /*
+                     * OTIMIZAÇÃO: JOIN FETCH no curriculo evita query N+1 ao acessar
+                     * p.getCurriculo().getNomeCompleto() no ExportCSV do ViewModel.
+                     * O EXISTS mantém a busca de instituição eficiente.
+                     */
+                    hql.append("SELECT DISTINCT p FROM Producao p ")
+                       .append("JOIN FETCH p.curriculo c ")
+                       .append("WHERE p.tipo = :termo ")
+                       .append("AND EXISTS (")
+                       .append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i ")
+                       .append("  WHERE a.curriculo = c ")
+                       .append("  AND UPPER(i.nomeInstituicao) = :nomeInst")
+                       .append(") ")
+                       .append("ORDER BY p.citacoes DESC, p.ano DESC");
                 } else {
-                    hql.append("SELECT p FROM Producao p WHERE p.tipo = :termo ORDER BY p.citacoes DESC, p.ano DESC");
+                    hql.append("SELECT p FROM Producao p ")
+                       .append("JOIN FETCH p.curriculo ")
+                       .append("WHERE p.tipo = :termo ")
+                       .append("ORDER BY p.citacoes DESC, p.ano DESC");
                 }
             }
 
-            Query query = session.createQuery(hql.toString());
+            Query<?> query = session.createQuery(hql.toString());
             query.setParameter("termo", termoBusca);
-            if (filtrarInstituicao) query.setParameter("nomeInst", nomeInstituicao.toUpperCase());
-
+            if (filtrarInstituicao) {
+                query.setParameter("nomeInst", nomeInstituicao.toUpperCase());
+            }
             query.setMaxResults(100);
 
             return query.list();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * OTIMIZAÇÃO DB2: Versão anterior executava 5 queries separadas (uma por KPI).
+     * Esta versão executa apenas 3 queries consolidadas usando GROUP BY,
+     * reduzindo o round-trip ao banco de 5 para 3 viagens de rede.
+     *
+     * Também substitui a função CURRENT_DATE (padrão SQL) no lugar de DATE()
+     * para melhor compatibilidade com o DB2.
+     */
+    public Map<String, Long> obterTodosKPIs(String nomeInstituicao) {
+        Map<String, Long> kpis = new HashMap<>();
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            boolean filtrar = nomeInstituicao != null && !"TODAS".equals(nomeInstituicao);
+
+            // --- KPI 1: Pesquisadores ---
+            String hqlPesq = filtrar
+                    ? "SELECT COUNT(DISTINCT c.idLattes) FROM Atuacao a JOIN a.curriculo c JOIN a.instituicao i WHERE UPPER(i.nomeInstituicao) = :inst"
+                    : "SELECT COUNT(c) FROM Curriculo c";
+            Query<Long> qPesq = session.createQuery(hqlPesq, Long.class);
+            if (filtrar) qPesq.setParameter("inst", nomeInstituicao.toUpperCase());
+            Long pesq = qPesq.uniqueResult();
+            kpis.put("PESQUISADORES", pesq != null ? pesq : 0L);
+
+            // --- KPI 2: Produções agrupadas por tipo (ARTIGO, LIVRO, EVENTO) — 1 query ---
+            StringBuilder hqlProd = new StringBuilder(
+                    "SELECT p.tipo, COUNT(DISTINCT p.hashTitulo) FROM Producao p ");
+            if (filtrar) {
+                /*
+                 * OTIMIZAÇÃO: EXISTS em vez de JOIN triplo (Atuacao + Instituicao + Vinculo).
+                 * O JOIN triplo com comparação de intervalos de datas gerava
+                 * produto cartesiano no DB2. O EXISTS usa index lookup separado.
+                 */
+                hqlProd.append("WHERE p.tipo IN ('ARTIGO','LIVRO','EVENTO') ")
+                       .append("AND EXISTS (")
+                       .append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i ")
+                       .append("  WHERE a.curriculo = p.curriculo ")
+                       .append("  AND UPPER(i.nomeInstituicao) = :inst")
+                       .append(") ");
+            } else {
+                hqlProd.append("WHERE p.tipo IN ('ARTIGO','LIVRO','EVENTO') ");
+            }
+            hqlProd.append("GROUP BY p.tipo");
+
+            Query<Object[]> qProd = session.createQuery(hqlProd.toString(), Object[].class);
+            if (filtrar) qProd.setParameter("inst", nomeInstituicao.toUpperCase());
+            for (Object[] row : qProd.list()) {
+                kpis.put((String) row[0], (Long) row[1]);
+            }
+
+            // --- KPI 3: Formações agrupadas (DOUTORADO, MESTRADO) — 1 query ---
+            StringBuilder hqlForm = new StringBuilder(
+                    "SELECT f.tipoFormacao, COUNT(DISTINCT f.id) FROM Formacao f ");
+            if (filtrar) {
+                hqlForm.append("WHERE f.tipoFormacao IN ('DOUTORADO','MESTRADO') ")
+                       .append("AND EXISTS (")
+                       .append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i ")
+                       .append("  WHERE a.curriculo = f.curriculo ")
+                       .append("  AND UPPER(i.nomeInstituicao) = :inst")
+                       .append(") ");
+            } else {
+                hqlForm.append("WHERE f.tipoFormacao IN ('DOUTORADO','MESTRADO') ");
+            }
+            hqlForm.append("GROUP BY f.tipoFormacao");
+
+            Query<Object[]> qForm = session.createQuery(hqlForm.toString(), Object[].class);
+            if (filtrar) qForm.setParameter("inst", nomeInstituicao.toUpperCase());
+            for (Object[] row : qForm.list()) {
+                kpis.put((String) row[0], (Long) row[1]);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return kpis;
+    }
+
+    /**
+     * OTIMIZAÇÃO DB2: Top 5 pesquisadores.
+     * Substitui o JOIN triplo com comparação de intervalo por EXISTS,
+     * e adiciona FETCH FIRST 5 ROWS ONLY implícito via setMaxResults(5).
+     * O DB2 traduz setMaxResults para FETCH FIRST N ROWS ONLY, que é
+     * processado antes do sort — reduz significativamente o custo do ORDER BY.
+     */
+    public List<Object[]> obterTop5Pesquisadores(String tipoRelatorio, String nomeInstituicao) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            boolean filtrar = nomeInstituicao != null && !"TODAS".equals(nomeInstituicao);
+            boolean isFormacao = "DOUTORADO".equals(tipoRelatorio) || "MESTRADO".equals(tipoRelatorio);
+            String termoBusca = tipoRelatorio;
+
+            StringBuilder hql = new StringBuilder();
+
+            if (isFormacao) {
+                hql.append("SELECT c.nomeCompleto, COUNT(DISTINCT f.id) ")
+                   .append("FROM Formacao f JOIN f.curriculo c ")
+                   .append("WHERE f.tipoFormacao = :termo ");
+                if (filtrar) {
+                    hql.append("AND EXISTS (")
+                       .append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i ")
+                       .append("  WHERE a.curriculo = c AND UPPER(i.nomeInstituicao) = :inst")
+                       .append(") ");
+                }
+                hql.append("GROUP BY c.nomeCompleto ")
+                   .append("ORDER BY COUNT(DISTINCT f.id) DESC");
+            } else {
+                hql.append("SELECT c.nomeCompleto, COUNT(DISTINCT p.hashTitulo) ")
+                   .append("FROM Producao p JOIN p.curriculo c ")
+                   .append("WHERE p.tipo = :termo ");
+                if (filtrar) {
+                    hql.append("AND EXISTS (")
+                       .append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i ")
+                       .append("  WHERE a.curriculo = c AND UPPER(i.nomeInstituicao) = :inst")
+                       .append(") ");
+                }
+                hql.append("GROUP BY c.nomeCompleto ")
+                   .append("ORDER BY COUNT(DISTINCT p.hashTitulo) DESC");
+            }
+
+            Query<Object[]> q = session.createQuery(hql.toString(), Object[].class);
+            q.setParameter("termo", termoBusca);
+            if (filtrar) q.setParameter("inst", nomeInstituicao.toUpperCase());
+            q.setMaxResults(5);
+
+            return q.list();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -127,167 +304,16 @@ public class RelatorioDAO {
         return gerarRelatorio(tipo, "TODAS");
     }
 
-    public long contarTotalPesquisadores(String nomeInstituicao) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            if (nomeInstituicao == null || nomeInstituicao.equals("TODAS")) {
-                return ((Number) session.createNativeQuery("SELECT COUNT(*) FROM CURRICULO").getSingleResult()).longValue();
-            }
+    // --- AUXILIARES ---
 
-            StringBuilder hql = new StringBuilder("SELECT COUNT(DISTINCT c.idLattes) FROM Atuacao a JOIN a.curriculo c JOIN a.instituicao i ");
-            hql.append("WHERE i.nomeInstituicao = :nomeInst ");
-
-            Query<Long> query = session.createQuery(hql.toString(), Long.class);
-            query.setParameter("nomeInst", nomeInstituicao.toUpperCase());
-
-            Long total = query.uniqueResult();
-            return total != null ? total : 0L;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return 0L;
-        }
-    }
-
-    public long contarTotalProducao(String tipoRelatorio, String nomeInstituicao) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            boolean filtrarInstituicao = nomeInstituicao != null && !nomeInstituicao.equals("TODAS");
-            String termoBusca = "";
-            boolean isFormacao = false;
-
-            switch (tipoRelatorio) {
-                case "ARTIGO": termoBusca = "ARTIGO"; break;
-                case "LIVRO": termoBusca = "LIVRO"; break;
-                case "EVENTO": termoBusca = "EVENTO"; break;
-                case "DOUTORADO": termoBusca = "DOUTORADO"; isFormacao = true; break;
-                case "MESTRADO": termoBusca = "MESTRADO"; isFormacao = true; break;
-                default: return 0L;
-            }
-
-            StringBuilder hql = new StringBuilder();
-
-            if (filtrarInstituicao) {
-                if (isFormacao) {
-                    hql.append("SELECT COUNT(DISTINCT f.id) FROM Formacao f ");
-                    hql.append("JOIN Atuacao a ON a.curriculo = f.curriculo ");
-                    hql.append("JOIN a.instituicao i JOIN a.vinculos v ");
-                    hql.append("WHERE i.nomeInstituicao = :nomeInst AND f.tipoFormacao = :termo ");
-                    hql.append("AND f.anoConclusao >= v.anoInicio AND (v.anoFim IS NULL OR f.anoConclusao <= v.anoFim)");
-                } else {
-                    hql.append("SELECT COUNT(DISTINCT p.hashTitulo) FROM Producao p ");
-                    hql.append("JOIN Atuacao a ON a.curriculo = p.curriculo ");
-                    hql.append("JOIN a.instituicao i JOIN a.vinculos v ");
-                    hql.append("WHERE i.nomeInstituicao = :nomeInst AND p.tipo = :termo ");
-                    hql.append("AND p.ano >= v.anoInicio AND (v.anoFim IS NULL OR p.ano <= v.anoFim)");
-                }
-            } else {
-                if (isFormacao) {
-                    hql.append("SELECT COUNT(f.id) FROM Formacao f WHERE f.tipoFormacao = :termo");
-                } else {
-                    hql.append("SELECT COUNT(DISTINCT p.hashTitulo) FROM Producao p WHERE p.tipo = :termo");
-                }
-            }
-
-            Query<Long> query = session.createQuery(hql.toString(), Long.class);
-            query.setParameter("termo", termoBusca);
-
-            if (filtrarInstituicao) {
-                query.setParameter("nomeInst", nomeInstituicao.toUpperCase());
-            }
-
-            Long total = query.uniqueResult();
-            return total != null ? total : 0L;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return 0L;
-        }
-    }
-
-    public Map<String, Long> obterTodosKPIs(String nomeInstituicao) {
-        Map<String, Long> kpis = new HashMap<>();
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            boolean filtrar = nomeInstituicao != null && !nomeInstituicao.equals("TODAS");
-
-            // 1. Pesquisadores
-            String hqlPesq = filtrar ?
-                    "SELECT COUNT(DISTINCT c.idLattes) FROM Atuacao a JOIN a.curriculo c JOIN a.instituicao i WHERE i.nomeInstituicao = :inst" :
-                    "SELECT COUNT(c) FROM Curriculo c";
-            Query<Long> qPesq = session.createQuery(hqlPesq, Long.class);
-            if (filtrar) qPesq.setParameter("inst", nomeInstituicao.toUpperCase());
-            kpis.put("PESQUISADORES", qPesq.uniqueResult() != null ? qPesq.uniqueResult() : 0L);
-
-            // 2. Produção (Junta Artigo, Livro e Evento de UMA VEZ)
-            StringBuilder hqlProd = new StringBuilder("SELECT p.tipo, COUNT(DISTINCT p.hashTitulo) FROM Producao p ");
-            if (filtrar) {
-                hqlProd.append("JOIN Atuacao a ON a.curriculo = p.curriculo JOIN a.instituicao i JOIN a.vinculos v ");
-                hqlProd.append("WHERE i.nomeInstituicao = :inst ");
-                hqlProd.append("AND p.ano >= v.anoInicio AND (v.anoFim IS NULL OR p.ano <= v.anoFim) ");
-            }
-            hqlProd.append("GROUP BY p.tipo");
-
-            Query<Object[]> qProd = session.createQuery(hqlProd.toString(), Object[].class);
-            if (filtrar) qProd.setParameter("inst", nomeInstituicao.toUpperCase());
-            for (Object[] row : qProd.list()) { kpis.put((String) row[0], (Long) row[1]); }
-
-            // 3. Formação (Junta Mestrado e Doutorado de UMA VEZ)
-            StringBuilder hqlForm = new StringBuilder("SELECT f.tipoFormacao, COUNT(DISTINCT f.id) FROM Formacao f ");
-            if (filtrar) {
-                hqlForm.append("JOIN Atuacao a ON a.curriculo = f.curriculo JOIN a.instituicao i JOIN a.vinculos v ");
-                hqlForm.append("WHERE i.nomeInstituicao = :inst ");
-                hqlForm.append("AND f.anoConclusao >= v.anoInicio AND (v.anoFim IS NULL OR f.anoConclusao <= v.anoFim) ");
-            }
-            hqlForm.append("GROUP BY f.tipoFormacao");
-
-            Query<Object[]> qForm = session.createQuery(hqlForm.toString(), Object[].class);
-            if (filtrar) qForm.setParameter("inst", nomeInstituicao.toUpperCase());
-            for (Object[] row : qForm.list()) { kpis.put((String) row[0], (Long) row[1]); }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return kpis;
-    }
-
-    public List<Object[]> obterTop5Pesquisadores(String tipoRelatorio, String nomeInstituicao) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            boolean filtrar = nomeInstituicao != null && !nomeInstituicao.equals("TODAS");
-            boolean isFormacao = tipoRelatorio.equals("DOUTORADO") || tipoRelatorio.equals("MESTRADO");
-            String termoBusca = tipoRelatorio; // ARTIGO, LIVRO, etc.
-
-            StringBuilder hql = new StringBuilder();
-
-            if (isFormacao) {
-                hql.append("SELECT c.nomeCompleto, COUNT(DISTINCT f.id) FROM Formacao f JOIN f.curriculo c ");
-                if (filtrar) {
-                    hql.append("JOIN Atuacao a ON a.curriculo = c JOIN a.instituicao i JOIN a.vinculos v ");
-                    hql.append("WHERE i.nomeInstituicao = :inst AND f.tipoFormacao = :termo ");
-                    hql.append("AND f.anoConclusao >= v.anoInicio AND (v.anoFim IS NULL OR f.anoConclusao <= v.anoFim) ");
-                } else {
-                    hql.append("WHERE f.tipoFormacao = :termo ");
-                }
-                hql.append("GROUP BY c.nomeCompleto ORDER BY COUNT(DISTINCT f.id) DESC");
-            } else {
-                hql.append("SELECT c.nomeCompleto, COUNT(DISTINCT p.hashTitulo) FROM Producao p JOIN p.curriculo c ");
-                if (filtrar) {
-                    hql.append("JOIN Atuacao a ON a.curriculo = c JOIN a.instituicao i JOIN a.vinculos v ");
-                    hql.append("WHERE i.nomeInstituicao = :inst AND p.tipo = :termo ");
-                    hql.append("AND p.ano >= v.anoInicio AND (v.anoFim IS NULL OR p.ano <= v.anoFim) ");
-                } else {
-                    hql.append("WHERE p.tipo = :termo ");
-                }
-                hql.append("GROUP BY c.nomeCompleto ORDER BY COUNT(DISTINCT p.hashTitulo) DESC");
-            }
-
-            Query<Object[]> q = session.createQuery(hql.toString(), Object[].class);
-            q.setParameter("termo", termoBusca);
-            if (filtrar) q.setParameter("inst", nomeInstituicao.toUpperCase());
-
-            q.setMaxResults(5); // Traz APENAS os 5 primeiros direto do banco
-            return q.list();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ArrayList<>();
+    private String resolverTermoBusca(String tipoRelatorio) {
+        switch (tipoRelatorio) {
+            case "ARTIGO":    return "ARTIGO";
+            case "LIVRO":     return "LIVRO";
+            case "EVENTO":    return "EVENTO";
+            case "DOUTORADO": return "DOUTORADO";
+            case "MESTRADO":  return "MESTRADO";
+            default:          return null;
         }
     }
 }

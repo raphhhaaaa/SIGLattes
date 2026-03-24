@@ -19,14 +19,17 @@ public class AuditLogService {
         new AuditLogService().registrarLogGeral(acao, usuario, detalhes);
     }
 
-    public static void registrarExtracao(String tipoExtracao, String usuario, boolean sucesso, String idLattes, String nomePesquisador) {
-        if (!ConfigManager.getInstance().isAuditQueries()) { return; }
+    public static void registrarExtracao(String tipoExtracao, String usuario, boolean sucesso,
+                                         String idLattes, String nomePesquisador) {
+        if (!ConfigManager.getInstance().isAuditQueries()) return;
 
-        String acao = sucesso ? "LOTE_SUCESSO" : "LOTE_FALHA";
+        String acao;
         if (tipoExtracao.contains("PULADO") || tipoExtracao.contains("ERRO") || tipoExtracao.contains("NAO_ENCONTRADO")) {
             acao = tipoExtracao;
         } else if (!tipoExtracao.equals("LOTE") && !tipoExtracao.equals("LOTE_CPF")) {
             acao = tipoExtracao + (sucesso ? "_SUCESSO" : "_FALHA");
+        } else {
+            acao = sucesso ? "LOTE_SUCESSO" : "LOTE_FALHA";
         }
 
         String detalhes = String.format("Tipo: %s | ID: %s | Nome: %s",
@@ -38,9 +41,7 @@ public class AuditLogService {
     }
 
     public void registrarLogGeral(String acao, String usuario, String detalhes) {
-        if (!isAuditoriaHabilitada(acao)) {
-            return;
-        }
+        if (!isAuditoriaHabilitada(acao)) return;
         salvarNoBanco(acao, usuario, "N/A", detalhes);
     }
 
@@ -56,23 +57,59 @@ public class AuditLogService {
         salvarNoBanco("PROCESSAMENTO", "SISTEMA", idLattes, "Processamento registrado");
     }
 
-    // contagem para a dashboard
+    /**
+     * OTIMIZAÇÃO DB2: A versão anterior usava DATE(l.dataHora) = CURRENT_DATE.
+     *
+     * Problema: aplicar uma função (DATE()) sobre a coluna indexada (data_hora)
+     * impede o uso do índice no DB2 — o banco é forçado a fazer full table scan
+     * e aplicar DATE() em cada linha.
+     *
+     * Solução: usa um intervalo explícito (>= início do dia AND < início do próximo dia),
+     * permitindo que o índice na coluna data_hora seja usado com range scan.
+     *
+     * Antes:  WHERE DATE(l.dataHora) = CURRENT_DATE           → full scan
+     * Depois: WHERE l.dataHora >= :inicioHoje AND l.dataHora < :amanha → index range scan
+     */
     public long contarProcessamentosHoje() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+
+            // Calcula o intervalo do dia atual no lado Java (sem funções no SQL)
+            java.util.Calendar cal = java.util.Calendar.getInstance();
+            cal.set(java.util.Calendar.HOUR_OF_DAY, 0);
+            cal.set(java.util.Calendar.MINUTE, 0);
+            cal.set(java.util.Calendar.SECOND, 0);
+            cal.set(java.util.Calendar.MILLISECOND, 0);
+            Date inicioHoje = cal.getTime();
+
+            cal.add(java.util.Calendar.DAY_OF_MONTH, 1);
+            Date inicioAmanha = cal.getTime();
+
             return session.createQuery(
-                            "SELECT COUNT(l) FROM LogAuditoria l WHERE DATE(l.dataHora) = CURRENT_DATE AND (l.tipo LIKE '%CPF%' OR l.tipo LIKE '%ID%' OR l.tipo LIKE '%LOTE%') ", Long.class)
+                    "SELECT COUNT(l) FROM LogAuditoria l " +
+                    "WHERE l.dataHora >= :inicioHoje " +
+                    "AND l.dataHora < :inicioAmanha " +
+                    "AND (l.tipo LIKE '%CPF%' OR l.tipo LIKE '%ID%' OR l.tipo LIKE '%LOTE%')",
+                    Long.class)
+                    .setParameter("inicioHoje", inicioHoje)
+                    .setParameter("inicioAmanha", inicioAmanha)
                     .uniqueResult();
+
         } catch (Exception e) {
             e.printStackTrace();
             return 0L;
         }
     }
 
+    /**
+     * OTIMIZAÇÃO DB2: Leitura do log limitada aos 10000 mais recentes.
+     * Garante que o ORDER BY DESC aproveite o índice em data_hora
+     * (o DB2 pode fazer index scan reverso em vez de sort).
+     */
     public List<String> lerLogCompleto() {
         List<String> linhas = new ArrayList<>();
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            // Traz apenas os 10000 mais recentes para proteger a memória RAM
-            List<LogAuditoria> logs = session.createQuery("FROM LogAuditoria ORDER BY dataHora DESC", LogAuditoria.class)
+            List<LogAuditoria> logs = session.createQuery(
+                    "FROM LogAuditoria ORDER BY dataHora DESC", LogAuditoria.class)
                     .setMaxResults(10000)
                     .list();
 
@@ -90,7 +127,6 @@ public class AuditLogService {
         return linhas;
     }
 
-    // Retorna um texto simbólico para a tela não dar erro
     public String getCaminhoArquivo() {
         return "Armazenado com segurança no Banco de Dados";
     }
@@ -100,11 +136,10 @@ public class AuditLogService {
             Transaction tx = session.beginTransaction();
             try {
                 session.createQuery("DELETE FROM LogAuditoria").executeUpdate();
-
-                // Cria um registro para auditar quem apagou a tabela
-                LogAuditoria logReset = new LogAuditoria(new Date(), "SEGURANCA", "SISTEMA", "N/A", "Todos os logs foram apagados do banco.");
+                LogAuditoria logReset = new LogAuditoria(
+                        new Date(), "SEGURANCA", "SISTEMA", "N/A",
+                        "Todos os logs foram apagados do banco.");
                 session.save(logReset);
-
                 tx.commit();
             } catch (Exception e) {
                 if (tx != null && tx.isActive()) tx.rollback();
@@ -112,20 +147,17 @@ public class AuditLogService {
             }
         }
     }
-    // --- encapsula o Hibernate de forma assincrona e rapida ---
+
     private static void salvarNoBanco(String tipo, String usuario, String identificador, String mensagem) {
         Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             tx = session.beginTransaction();
-
             LogAuditoria log = new LogAuditoria(
                     new Date(),
                     tipo,
                     (usuario != null && !usuario.isEmpty()) ? usuario : "SISTEMA",
                     (identificador != null && !identificador.isEmpty()) ? identificador : "N/A",
-                    mensagem
-            );
-
+                    mensagem);
             session.save(log);
             tx.commit();
         } catch (Exception e) {
