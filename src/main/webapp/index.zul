@@ -17,12 +17,15 @@
                   viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ExtratorVM')"
                   validationMessages="@id('vmsgs')">
 
-        <west id="sidebarMenu" width="260px" border="none" sclass="sidebar-wrapper">
+        <west id="sidebarMenu"
+              width="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? '260px' : '75px'}"
+              border="none"
+              sclass="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? 'sidebar-wrapper' : 'sidebar-wrapper sidebar-mini'}">
             <include src="/navbar.zul" />
         </west>
 
-    <center border="none" sclass="main-content-wrapper" autoscroll="true">
-    <vlayout spacing="0">
+    <center border="none" sclass="main-content-wrapper">
+    <vlayout vflex="1" spacing="0">
         <include src="/header.zul" />
 
         <style>
@@ -43,7 +46,7 @@
             }
         </style>
 
-        <div sclass="container-fluid flex-grow-1" style="padding: 20px;">
+        <div sclass="container-fluid" vflex="1" style="padding: 20px; overflow-y: auto; overflow-x: hidden;">
             <div sclass="row">
                 <div sclass="col-md-12">
 

@@ -9,15 +9,23 @@
 
 <zk xmlns="http://www.zkoss.org/2005/zul" xmlns:n="native">
 
-    <div sclass="d-flex flex-column min-vh-100"
-         apply="org.zkoss.bind.BindComposer"
-         viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ConfigVM')">
+    <borderlayout width="100vw" height="100vh"
+                  apply="org.zkoss.bind.BindComposer"
+                  viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ConfigVM')"
+                  validationMessages="@id('vmsgs')">
 
-        <include src="/header.zul"/>
-        <include src="/navbar.zul"/>
+    <west id="sidebarMenu"
+          width="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? '260px' : '75px'}"
+          border="none"
+          sclass="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? 'sidebar-wrapper' : 'sidebar-wrapper sidebar-mini'}">
+        <include src="/navbar.zul" />
+    </west>
 
-        <div sclass="container-fluid flex-grow-1" style="padding: 20px;">
+    <center border="none" sclass="main-content-wrapper">
+    <vlayout vflex="1" spacing="0">
+        <include src="/header.zul" />
 
+        <div sclass="container-fluid" vflex="1" style="padding: 20px; overflow-y: auto; overflow-x: hidden;">
             <div sclass="row mb-3">
                 <div sclass="col-md-12">
                     <n:h4 class="text-secondary"><n:i class="fa-solid fa-sliders"></n:i> Configurações do Sistema</n:h4>
@@ -284,9 +292,8 @@
                     <button label="Salvar Todas as Configurações" onClick="@command('salvar')" sclass="btn btn-outline-success font-weight-bold px-4" height="45px" iconSclass="z-icon-save"/>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <include src="/footer.zul"/>
-
+        </div>     <include src="/footer.zul"/>
+    </vlayout>
+    </center>
+    </borderlayout>
 </zk>

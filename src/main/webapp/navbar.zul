@@ -21,23 +21,60 @@
     </div>
 
     <vlayout sclass="modern-sidebar" vflex="1" spacing="0" style="overflow-y: auto; overflow-x: hidden;">
-        <a label="Extrator" iconSclass="fas fa-cloud-download-alt" sclass="sidebar-item active" href="/index.zul" tooltiptext="Extrator"/>
-        <a label="Verificar Atualizações" iconSclass="fa fa-refresh" sclass="sidebar-item" href="/paginas/ferramentas/verificacao.zul" tooltiptext="Verificar Atualizações"/>
+
+        <a label="Extrator Lattes" iconSclass="fas fa-cloud-download-alt"
+           sclass="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/index.zul" tooltiptext="Extrator Lattes"/>
+
+        <a label="Verificar Atualizações" iconSclass="fa fa-refresh"
+           sclass="${desktop.requestPath.contains('verificacao') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/paginas/ferramentas/verificacao.zul" tooltiptext="Verificar Atualizações"/>
 
         <label value="CADASTROS" sclass="sidebar-section-title"/>
-        <a label="Pessoas" iconSclass="fas fa-users" sclass="sidebar-item" href="/paginas/pessoa/pessoaList.zul" tooltiptext="Pessoas"/>
-        <a label="Instituições" iconSclass="fas fa-university" sclass="sidebar-item" href="/paginas/instituicao/instituicaoList.zul" tooltiptext="Instituições"/>
-        <a label="Cursos" iconSclass="fas fa-graduation-cap" sclass="sidebar-item" href="/paginas/curso/cursoList.zul" tooltiptext="Cursos"/>
+
+        <a label="Pessoas" iconSclass="fas fa-users"
+           sclass="${desktop.requestPath.contains('pessoaList') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/paginas/pessoa/pessoaList.zul" tooltiptext="Pessoas"/>
+
+        <a label="Instituições" iconSclass="fas fa-university"
+           sclass="${desktop.requestPath.contains('instituicaoList') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/paginas/instituicao/instituicaoList.zul" tooltiptext="Instituições"/>
+
+        <a label="Cursos" iconSclass="fas fa-graduation-cap"
+           sclass="${desktop.requestPath.contains('cursoList') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/paginas/curso/cursoList.zul" tooltiptext="Cursos"/>
 
         <label value="RELATÓRIOS" sclass="sidebar-section-title"/>
-        <a label="Dinâmico" iconSclass="fas fa-chart-pie" sclass="sidebar-item" href="/paginas/relatorio/relatorioDinamico.zul" tooltiptext="Relatório Dinâmico"/>
-        <a label="Revistas (Qualis)" iconSclass="fas fa-book-open" sclass="sidebar-item" href="/paginas/relatorio/relatorioRevistas.zul" tooltiptext="Revistas (Qualis)"/>
-        <a label="Produtividade" iconSclass="fas fa-chart-line" sclass="sidebar-item" href="/paginas/relatorio/relatorioProdutividade.zul" tooltiptext="Produtividade"/>
-        <a label="Consulta SQL" iconSclass="fas fa-database" sclass="sidebar-item" href="/paginas/relatorio/consultaSql.zul" tooltiptext="Consulta SQL Livre"/>
+
+        <a label="Dinâmico" iconSclass="fas fa-chart-pie"
+           sclass="${desktop.requestPath.contains('relatorioDinamico') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/paginas/relatorio/relatorioDinamico.zul" tooltiptext="Relatório Dinâmico"/>
+
+        <a label="Revistas" iconSclass="fas fa-book-open"
+           sclass="${desktop.requestPath.contains('relatorioRevistas') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/paginas/relatorio/relatorioRevistas.zul" tooltiptext="Revistas (Qualis)"/>
+
+        <a label="Produtividade" iconSclass="fas fa-chart-line"
+           sclass="${desktop.requestPath.contains('relatorioProdutividade') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/paginas/relatorio/relatorioProdutividade.zul" tooltiptext="Produtividade"/>
+
+        <a label="Consulta SQL" iconSclass="fas fa-database"
+           sclass="${desktop.requestPath.contains('consultaSql') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/paginas/relatorio/consultaSql.zul" tooltiptext="Consulta SQL Livre"/>
 
         <label value="SISTEMA" sclass="sidebar-section-title"/>
-        <a label="Usuários" iconSclass="fas fa-user-shield" sclass="sidebar-item" href="/paginas/sistema/usuarioList.zul" tooltiptext="Gestão de Utilizadores"/>
-        <a label="Configurações" iconSclass="fas fa-cog" sclass="sidebar-item" href="/paginas/ferramentas/config.zul" tooltiptext="Configurações Globais"/>
-        <a label="Logs" iconSclass="fas fa-history" sclass="sidebar-item" href="/paginas/sistema/logs.zul" tooltiptext="Logs de Auditoria"/>
+
+        <a label="Utilizadores" iconSclass="fas fa-user-shield"
+           sclass="${desktop.requestPath.contains('usuarioList') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/paginas/sistema/usuarioList.zul" tooltiptext="Gestão de Utilizadores"/>
+
+        <a label="Configurações" iconSclass="fas fa-cog"
+           sclass="${desktop.requestPath.contains('config') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/paginas/ferramentas/config.zul" tooltiptext="Configurações Globais"/>
+
+        <a label="Logs" iconSclass="fas fa-history"
+           sclass="${desktop.requestPath.contains('logs') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/paginas/sistema/logs.zul" tooltiptext="Logs de Auditoria"/>
+
     </vlayout>
 </vlayout>

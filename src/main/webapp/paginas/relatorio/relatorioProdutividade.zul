@@ -17,16 +17,23 @@
         .z-tab-selected { font-weight: bold; background: #fff; border-top: 2px solid #007bff; }
     </style>
 
-    <div sclass="d-flex flex-column"
-         viewModel="@id('vm') @init('com.uem.extrator.viewmodel.RelatorioProdutividadeVM')"
-         apply="org.zkoss.bind.BindComposer">
+    <borderlayout width="100vw" height="100vh"
+                  apply="org.zkoss.bind.BindComposer"
+                  viewModel="@id('vm') @init('com.uem.extrator.viewmodel.RelatorioProdutividadeVM')">
 
-        <include src="/header.zul"/>
-        <include src="/navbar.zul"/>
+    <west id="sidebarMenu"
+          width="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? '260px' : '75px'}"
+          border="none"
+          sclass="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? 'sidebar-wrapper' : 'sidebar-wrapper sidebar-mini'}">
+        <include src="/navbar.zul" />
+    </west>
 
-        <window width="100%">
+    <center border="none" sclass="main-content-wrapper">
+        <vlayout vflex="1" spacing="0">
+            <include src="/header.zul" />
 
-            <div class="container-fluid pt-4 pb-5">
+            <div sclass="container-fluid pt-4 pb-5" vflex="1" style="overflow-y: auto; overflow-x: hidden;">
+
                 <div class="row mb-3">
                     <div class="col-12">
                         <n:h3 class="text-primary" style="font-weight: bold;">
@@ -158,9 +165,8 @@
                             </listbox>
                         </div>
                     </div>
-
-                </div>
-            </div>
-        </window>
-    </div>
+                </div> </div> <include src="/footer.zul"/>
+        </vlayout>
+    </center>
+    </borderlayout>
 </zk>

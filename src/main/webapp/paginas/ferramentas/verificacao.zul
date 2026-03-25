@@ -12,12 +12,21 @@
 <zk xmlns="http://www.zkoss.org/2005/zul"
     xmlns:n="http://www.zkoss.org/2005/zk/native">
 
-    <div sclass="d-flex flex-column min-vh-100"
-         apply="org.zkoss.bind.BindComposer"
-         viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ExtratorVM')">
+    <borderlayout width="100vw" height="100vh"
+                  apply="org.zkoss.bind.BindComposer"
+                  viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ExtratorVM')"
+                  validationMessages="@id('vmsgs')">
 
-        <include src="/header.zul"/>
-        <include src="/navbar.zul"/>
+        <west id="sidebarMenu"
+              width="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? '260px' : '75px'}"
+              border="none"
+              sclass="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? 'sidebar-wrapper' : 'sidebar-wrapper sidebar-mini'}">
+            <include src="/navbar.zul" />
+        </west>
+
+    <center border="none" sclass="main-content-wrapper">
+    <vlayout vflex="1" spacing="0">
+        <include src="/header.zul" />
 
         <style>
             .log-box { font-family: monospace; background-color: #f8f9fa; font-size: 11px; resize: none; border: 1px solid #ced4da; }
@@ -111,7 +120,7 @@
                 </div>
             </div>
         </div>
-
         <include src="/footer.zul"/>
-
-    </div> </zk>
+    </vlayout>
+    </center>
+    </borderlayout> </zk>
