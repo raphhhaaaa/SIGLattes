@@ -12,13 +12,18 @@
 <zk xmlns="http://www.zkoss.org/2005/zul"
     xmlns:n="http://www.zkoss.org/2005/zk/native">
 
-    <div sclass="d-flex flex-column min-vh-100"
-         apply="org.zkoss.bind.BindComposer"
-         viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ExtratorVM')"
-         validationMessages="@id('vmsgs')">
+    <borderlayout width="100vw" height="100vh"
+                  apply="org.zkoss.bind.BindComposer"
+                  viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ExtratorVM')"
+                  validationMessages="@id('vmsgs')">
 
-        <include src="/header.zul"/>
-        <include src="/navbar.zul"/>
+        <west id="sidebarMenu" width="260px" border="none" sclass="sidebar-wrapper">
+            <include src="/navbar.zul" />
+        </west>
+
+    <center border="none" sclass="main-content-wrapper" autoscroll="true">
+    <vlayout spacing="0">
+        <include src="/header.zul" />
 
         <style>
             .z-tabbox { border: none !important; margin: 0 !important; padding: 0 !important; }
@@ -224,7 +229,8 @@
                 </div>
             </div>
         </div>
-
         <include src="/footer.zul"/>
-
-    </div> </zk>
+            </vlayout>
+        </center>
+    </borderlayout>
+</zk>

@@ -326,7 +326,7 @@ public class AutomacaoService {
             String url = dbProps.getProperty("url");
 
             // Extrair nome do banco da URL
-            String dbName = "lattesdb";
+            String dbName = "lattes";
             Matcher m = Pattern.compile("3306/(.*?)\\?").matcher(url);
             if (m.find()) dbName = m.group(1);
 
