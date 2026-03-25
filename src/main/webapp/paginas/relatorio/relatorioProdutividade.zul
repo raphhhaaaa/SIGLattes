@@ -54,7 +54,7 @@
 
                                 <label value=" | " style="padding: 12px; color: #ccc;"/>
 
-                                <button label="Exportar CSV" iconSclass="fas fa-file-csv" zclass="btn btn-outline-success" onClick="@command('exportarCSV')" />
+                                <button label="Exportar CSV" iconSclass="fas fa-file-csv" zclass="btn btn-outline-success" onClick="@command('exportarCSV')" disabled="@load(empty vm.listaProdutividade)"/>
                             </div>
                         </div>
                     </div>

@@ -830,3 +830,25 @@ span.required:after {
     filter: alpha(opacity = 32);
     z-index: 100!important;
 }
+
+/* 1. TIPOGRAFIA MODERNA (Importando a fonte 'Inter' do Google) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+body, .z-label, .z-button, .z-listcell-content, .z-textbox {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+body {
+    background-color: #f8fafc; /* Fundo Slate ultra claro */
+    color: #334155; /* Texto principal chumbo (não preto) */
+    -webkit-font-smoothing: antialiased;
+}
+
+.card {
+    border: none !important;
+    border-radius: 16px !important; /* Cantos bem mais arredondados */
+    background: #ffffff;
+    /* Sombra dupla: uma difusa e outra de contato para dar profundidade real */
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
