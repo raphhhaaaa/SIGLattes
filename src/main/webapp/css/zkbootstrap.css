@@ -859,8 +859,8 @@ body {
 
 /* Fundo da barra lateral e limite direito */
 .sidebar-wrapper {
-    background-color: #ffffff !important; /* Slate Night super elegante */
-    border-right: 1px solid #ffffff !important;
+    background-color: #ffffff !important;
+    border-right: 1px solid #e2e8f0 !important;
 }
 
 /* Área do logotipo */
@@ -868,7 +868,7 @@ body {
     display: flex;
     align-items: center;
     padding: 24px 20px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid #f1f5f9
 }
 
 .brand-text {
@@ -917,7 +917,7 @@ body {
 
 /* Efeito Hover (passar o rato) */
 .sidebar-item:hover {
-    background-color: rgba(255, 255, 255, 0.05) !important;
+    background-color: #f8fafc !important;
     color: rgba(60, 140, 253, 0.78) !important;
 }
 
@@ -929,7 +929,7 @@ body {
 .sidebar-item.active {
     background-color: var(--bs-primary) !important;
     color: #ffffff !important;
-    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.4);
+    box-shadow: 0 4px 10px rgba(13, 110, 253, 0.3);
 }
 
 .sidebar-item.active i {

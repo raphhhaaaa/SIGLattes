@@ -46,14 +46,14 @@
             }
         </style>
 
-        <div sclass="container-fluid" vflex="1" style="padding: 20px; overflow-y: auto; overflow-x: hidden;">
+        <div sclass="container-fluid" vflex="1" style="padding: 0px; overflow-y: auto; overflow-x: hidden;">
             <div sclass="row">
                 <div sclass="col-md-12">
 
                     <div sclass="card shadow-sm">
-                        <div sclass="card-header bg-primary text-white">
-                            <n:h5 class="mb-0"><n:i class="fa fa-search"></n:i> Extrator de Currículos Lattes</n:h5>
-                        </div>
+<!--                        <div sclass="card-header bg-primary text-white">-->
+<!--                            <n:h5 class="mb-0"><n:i class="fa fa-search"></n:i> Extrator de Currículos Lattes</n:h5>-->
+<!--                        </div>-->
 
                         <div sclass="card-body card-body-zero"
                              apply="org.zkoss.bind.BindComposer"
@@ -100,8 +100,9 @@
                                         <div sclass="row">
                                             <div sclass="col-md-5">
                                                 <label value="Carregue um arquivo .txt:" sclass="font-weight-bold d-block mb-2"/>
-                                                <button label="Selecionar Arquivo TXT" upload="true,maxsize=5000" onUpload="@command('carregarArquivo', media=event.media)" disabled="@load(vm.processando)" iconSclass="z-icon-cloud-upload" sclass="btn btn-success btn-block"/>
-                                                <button label="Parar Processamento" onClick="@command('cancelarProcessamentoLote')" visible="@load(vm.processando)" iconSclass="z-icon-stop" sclass="btn btn-danger btn-block mt-2"/>
+                                                <button label="Selecionar Arquivo TXT" upload="true,maxsize=5000" onUpload="@command('carregarArquivo', media=event.media)" disabled="@load(vm.processando)" iconSclass="z-icon-cloud-upload" sclass="btn btn-outline-success btn-block"/>
+                                                <button label="Parar Processamento" onClick="@command('cancelarProcessamentoLote')" visible="@load(vm.processando)" iconSclass="z-icon-stop" sclass="btn btn-outline-danger btn-block"/>
+                                                <button label="Limpar Tudo" onClick="@command('limpar')" visible="@load(vm.abaSelecionada ne 0 and vm.abaSelecionada ne 1)" disabled="@load(vm.processando)" sclass="btn btn-outline-secondary" iconSclass="z-icon-eraser"/>
                                             </div>
                                             <div sclass="col-md-7">
                                                 <label value="Log de Processamento:" style="font-weight: bold; font-size: 12px;"/>
@@ -133,12 +134,14 @@
                             </tabbox>
 
                             <div style="padding: 0px 20px 20px 20px; padding-bottom: 0px">
-                                <separator bar="true" height="15px"/>
-                                <hlayout spacing="10px" style="padding-top: 5px;">
+
+                                <hlayout spacing="10px" style="padding-top: 5px; margin-bottom: 30px">
                                     <button label="Pesquisar" onClick="@command('buscarPorId')" visible="@load(vm.abaSelecionada eq 0)" disabled="@load(vm.processando)" sclass="btn btn-outline-primary" iconSclass="z-icon-search"/>
                                     <button label="Pesquisar" onClick="@command('buscarPesquisador')" visible="@load(vm.abaSelecionada eq 1 or vm.abaSelecionada eq 2)" disabled="@load(vm.processando)" sclass="btn btn-outline-primary" iconSclass="z-icon-search"/>
-                                    <button label="Limpar Tudo" onClick="@command('limpar')" visible="@load(vm.abaSelecionada ne 4)" disabled="@load(vm.processando)" sclass="btn btn-outline-secondary" iconSclass="z-icon-eraser"/>
+                                    <button label="Limpar Tudo" onClick="@command('limpar')" visible="@load(vm.abaSelecionada eq 0 or vm.abaSelecionada eq 1)" disabled="@load(vm.processando)" sclass="btn btn-outline-secondary" iconSclass="z-icon-eraser"/>
                                 </hlayout>
+
+                                <separator bar="true" height="15px"/>
 
                                 <vlayout visible="@load(vm.barraVisivel)" spacing="0">
                                     <separator height="20px"/>
@@ -155,7 +158,7 @@
 
                             <separator height="0px"/>
 
-                            <div sclass="row" style="padding: 15px 17px;">
+                            <div sclass="row" style="padding: 30px 17px;">
                                 <div sclass="col-md-12 mb-2">
                                     <n:h3 class="h4 text-primary">Dashboard - Métricas</n:h3>
                                     <label value="Monitoramento do Sistema" sclass="h5 text-secondary"/>
