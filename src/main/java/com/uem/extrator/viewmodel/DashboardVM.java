@@ -3,9 +3,15 @@ package com.uem.extrator.viewmodel;
 import com.uem.extrator.dao.CurriculoDAO;
 import com.uem.extrator.model.Curriculo;
 import com.uem.extrator.service.LattesService;
+import com.uem.extrator.util.HibernateUtil;
 import org.zkoss.bind.annotation.Init;
 import org.zkoss.bind.annotation.Command;
 import org.zkoss.bind.annotation.NotifyChange;
+import org.hibernate.Session;
+import org.zkoss.zk.ui.util.Clients;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class DashboardVM {
 

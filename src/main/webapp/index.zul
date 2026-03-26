@@ -8,6 +8,7 @@
 <?link rel="stylesheet" type="text/css" href="/css/fontawesome.css"?>
 <?link rel="stylesheet" type="text/css" href="/css/toastr.css"?>
 <?script type="text/javascript" src="/js/toastr.js"?>
+<?script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chart.js"?>
 
 <zk xmlns="http://www.zkoss.org/2005/zul"
     xmlns:n="http://www.zkoss.org/2005/zk/native">
@@ -58,10 +59,7 @@
 <!--                            <n:h5 class="mb-0"><n:i class="fa fa-search"></n:i> Extrator de Currículos Lattes</n:h5>-->
 <!--                        </div>-->
 
-                        <div sclass="card-body card-body-zero"
-                             apply="org.zkoss.bind.BindComposer"
-                             viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ExtratorVM')"
-                             validationMessages="@id('vmsgs')">
+                        <div sclass="card-body card-body-zero">
 
                             <tabbox id="tb" sclass="nav-tabs" selectedIndex="@bind(vm.abaSelecionada)" width="100%">
                                 <tabs>
@@ -228,6 +226,113 @@
                                                     <label value="Currículos Processados Hoje" style="font-size: 11px; opacity: 0.9;"/>
                                                 </vlayout>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <separator bar="true" height="15px" style="margin-top: 15px; margin-bottom: 15px;"/>
+
+                                <!-- SCRIPT JS PARA CARREGAR OS DADOS PROCESSADOS DOS GRÁFICOS VINDOS DO JAVA !-->
+                                <script type="text/javascript"><![CDATA[
+        var chartPesquisadores = null;
+        var chartProducoes = null;
+
+        function renderizarGraficos(labels1, data1, labels2, data2) {
+            var ctxBar = document.getElementById('barChart');
+            var ctxPie = document.getElementById('pieChart');
+
+            if(!ctxBar || !ctxPie) return; // Se a tela não estiver pronta, ignora
+
+            // 1. Remove os spinners de carregamento da tela
+            var loadingBar = document.getElementById('loadingBar');
+            var loadingPie = document.getElementById('loadingPie');
+            if (loadingBar) loadingBar.style.display = 'none';
+            if (loadingPie) loadingPie.style.display = 'none';
+
+            // 2. Revela as telas de pintura (canvas) suavemente
+            ctxBar.style.display = 'block';
+            ctxPie.style.display = 'block';
+
+            // Destrói os gráficos anteriores (importante para quando clicar em "Atualizar")
+            if (chartPesquisadores) chartPesquisadores.destroy();
+            if (chartProducoes) chartProducoes.destroy();
+
+            // GRÁFICO 1: BARRAS (Evolução UEM)
+            chartPesquisadores = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: labels1,
+                    datasets: [{
+                        label: 'Qtd. Produções',
+                        data: data1,
+                        backgroundColor: 'rgba(79, 70, 229, 0.85)', /* Indigo Premium */
+                        borderRadius: 6,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { borderDash: [2, 4], color: '#e2e8f0' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // GRÁFICO 2: DONUT / PIZZA (Produções)
+            chartProducoes = new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: labels2,
+                    datasets: [{
+                        data: data2,
+                        backgroundColor: [
+                            '#4f46e5', '#3b82f6', '#0ea5e9', '#06b6d4', '#14b8a6',
+                            '#10b981', '#84cc16', '#eab308', '#f59e0b', '#ef4444'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff',
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '65%', /* Faz o buraco no meio (Donut elegante) */
+                    plugins: {
+                        legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } }
+                    }
+                }
+            });
+        }
+    ]]></script>
+
+                                <div sclass="col-md-7 mt-3">
+                                    <n:h3 class="h4 text-primary">Gráficos de Produção Científica</n:h3>
+                                    <div sclass="card shadow-sm dashboard-card" style="cursor: default;">
+                                        <div sclass="card-body">
+                                            <n:h5 class="card-title text-secondary fw-bold" style="font-size: 14px; letter-spacing: 1px;">EVOLUÇÃO DE PRODUÇÃO (UEM)</n:h5>
+                                            <separator bar="true" sclass="mb-3"/>
+
+                                            <n:div id="loadingBar" class="text-center" style="padding: 40px 0;">
+                                                <n:div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></n:div>
+                                            </n:div>
+
+                                            <n:canvas id="barChart" height="110" style="display: none;"></n:canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div sclass="col-md-5 mt-3">
+                                    <div sclass="card shadow-sm dashboard-card" style="cursor: default;">
+                                        <div sclass="card-body">
+                                            <n:h5 class="card-title text-secondary fw-bold" style="font-size: 14px; letter-spacing: 1px;">TIPOS DE PRODUÇÃO (UEM)</n:h5>
+                                            <separator bar="true" sclass="mb-3"/>
+
+                                            <n:div id="loadingPie" class="text-center" style="padding: 55px 0;">
+                                                <n:div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></n:div>
+                                            </n:div>
+
+                                            <n:canvas id="pieChart" height="150" style="display: none;"></n:canvas>
                                         </div>
                                     </div>
                                 </div>
