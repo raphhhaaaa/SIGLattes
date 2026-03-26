@@ -47,7 +47,7 @@
                                 <div sclass="col-md-12 mb-4">
                                     <div sclass="alert alert-warning">
                                         <n:strong>Como funciona:</n:strong> O sistema verifica a data da última atualização de cada currículo salvo no banco local e compara com a data informada pelo webservice do CNPq. Se a data do CNPq for mais recente, o currículo é marcado para atualização.
-                                        <n:br><label style="color:gray; font-style:italic;">Nota: Este processo consulta currículos já salvos no sistema e pode demorar alguns minutos dependendo da quantidade.</label></n:br>
+                                        <label style="color:gray; font-style:italic; padding: 100px;">Nota: Este processo consulta currículos já salvos no sistema e pode demorar alguns minutos dependendo da quantidade.</label>
                                     </div>
 
                                     <hlayout spacing="10px">

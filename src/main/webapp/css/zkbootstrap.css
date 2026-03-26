@@ -859,8 +859,8 @@ body {
 
 /* Fundo da barra lateral e limite direito */
 .sidebar-wrapper {
-    background-color: #0f172a !important; /* Slate Night super elegante */
-    border-right: 1px solid #1e293b !important;
+    background-color: #ffffff !important; /* Slate Night super elegante */
+    border-right: 1px solid #ffffff !important;
 }
 
 /* Área do logotipo */
@@ -918,11 +918,11 @@ body {
 /* Efeito Hover (passar o rato) */
 .sidebar-item:hover {
     background-color: rgba(255, 255, 255, 0.05) !important;
-    color: #ffffff !important;
+    color: rgba(60, 140, 253, 0.78) !important;
 }
 
 .sidebar-item:hover i {
-    color: #ffffff !important;
+    color: rgba(60, 140, 253, 0.78) !important;
 }
 
 /* ITEM ATIVO / SELECIONADO */
@@ -978,7 +978,7 @@ body {
 }
 
 .sidebar-toggle-btn-inner:hover {
-    color: #ffffff !important;
+    color: rgba(60, 140, 253, 0.78)  !important;
 }
 
 /* ------------------------------------------- */
