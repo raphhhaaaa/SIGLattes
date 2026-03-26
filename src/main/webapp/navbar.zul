@@ -1,10 +1,10 @@
 <vlayout sclass="sidebar-nav" vflex="1" hflex="1" spacing="0">
 
     <div sclass="sidebar-brand">
-        <div sclass="brand-content">
-            <!-- <image src="/images/uem.png" height="32px" sclass="brand-icon"/>
-            <label value="Mindy" sclass="brand-text"/> !-->
-        </div>
+<!--        <div sclass="brand-content">-->
+<!--            &lt;!&ndash; <image src="/images/uem.png" height="32px" sclass="brand-icon"/>-->
+<!--            <label value="Mindy" sclass="brand-text"/> !&ndash;&gt;-->
+<!--        </div>-->
 
         <a iconSclass="fas fa-bars" sclass="sidebar-toggle-btn-inner" tooltiptext="Recolher/Expandir">
             <attribute name="onClick"><![CDATA[

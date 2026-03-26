@@ -6,9 +6,14 @@
 <?link rel="stylesheet" type="text/css" href="/css/fontawesome.css"?>
 
     <zk xmlns="http://www.zkoss.org/2005/zul" xmlns:n="native">
-        <borderlayout width="100vw" height="100vh"
-                      apply="org.zkoss.bind.BindComposer"
-                      viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ConsultaSqlVM')">
+    <borderlayout width="100vw" height="100vh"
+                  apply="org.zkoss.bind.BindComposer"
+                  viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ConsultaSqlVM')"
+                  validationMessages="@id('vmsgs')">
+
+        <north border="none">
+            <include src="/header.zul" />
+        </north>
 
         <west id="sidebarMenu"
               width="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? '260px' : '75px'}"
@@ -18,8 +23,7 @@
         </west>
 
         <center border="none" sclass="main-content-wrapper">
-        <vlayout vflex="1" spacing="0">
-        <include src="/header.zul" />
+            <vlayout vflex="1" spacing="0">
 
         <div sclass="container-fluid" vflex="1" style="padding: 20px; overflow-y: auto; overflow-x: hidden;">
 
@@ -178,9 +182,13 @@
 
             </vlayout>
         </window>
-        </div> <include src="/footer.zul"/>
-
-        </vlayout>
+        </div>
+            </vlayout>
         </center>
-        </borderlayout>
-    </zk>
+
+        <south border="none">
+            <include src="/footer.zul"/>
+        </south>
+
+    </borderlayout>
+</zk>

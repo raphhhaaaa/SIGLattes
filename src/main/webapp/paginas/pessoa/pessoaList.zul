@@ -13,6 +13,10 @@
                   viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ListagemVM')"
                   validationMessages="@id('vmsgs')">
 
+        <north border="none">
+            <include src="/header.zul" />
+        </north>
+
         <west id="sidebarMenu"
               width="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? '260px' : '75px'}"
               border="none"
@@ -20,9 +24,8 @@
             <include src="/navbar.zul" />
         </west>
 
-    <center border="none" sclass="main-content-wrapper">
-    <vlayout vflex="1" spacing="0">
-        <include src="/header.zul" />
+        <center border="none" sclass="main-content-wrapper">
+            <vlayout vflex="1" spacing="0">
 
         <div sclass="container-fluid" vflex="1" style="padding: 20px; overflow-y: auto; overflow-x: hidden;">
             <div sclass="row h-100">
@@ -111,9 +114,13 @@
                     </div>
                 </div>
             </div>
-        </div> <include src="/footer.zul"/>
+        </div>
+            </vlayout>
+        </center>
 
-    </vlayout>
-    </center>
+        <south border="none">
+            <include src="/footer.zul"/>
+        </south>
+
     </borderlayout>
 </zk>

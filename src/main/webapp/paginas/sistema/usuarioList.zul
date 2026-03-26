@@ -10,18 +10,22 @@
 <zk xmlns:n="native">
     <borderlayout width="100vw" height="100vh"
                   apply="org.zkoss.bind.BindComposer"
-                  viewModel="@id('vm') @init('com.uem.extrator.viewmodel.UsuarioVM')">
+                  viewModel="@id('vm') @init('com.uem.extrator.viewmodel.UsuarioVM')"
+                  validationMessages="@id('vmsgs')">
 
-    <west id="sidebarMenu"
-          width="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? '260px' : '75px'}"
-          border="none"
-          sclass="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? 'sidebar-wrapper' : 'sidebar-wrapper sidebar-mini'}">
-        <include src="/navbar.zul" />
-    </west>
+        <north border="none">
+            <include src="/header.zul" />
+        </north>
 
-    <center border="none" sclass="main-content-wrapper">
-    <vlayout vflex="1" spacing="0">
-    <include src="/header.zul" />
+        <west id="sidebarMenu"
+              width="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? '260px' : '75px'}"
+              border="none"
+              sclass="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? 'sidebar-wrapper' : 'sidebar-wrapper sidebar-mini'}">
+            <include src="/navbar.zul" />
+        </west>
+
+        <center border="none" sclass="main-content-wrapper">
+            <vlayout vflex="1" spacing="0">
 
     <div sclass="container-fluid" vflex="1" style="padding: 20px; overflow-y: auto; overflow-x: hidden;">
 
@@ -152,8 +156,13 @@
                 </div>
             </div>
         </window>
-    </div> <include src="/footer.zul"/>
-    </vlayout>
-    </center>
+    </div>
+            </vlayout>
+        </center>
+
+        <south border="none">
+            <include src="/footer.zul"/>
+        </south>
+
     </borderlayout>
 </zk>

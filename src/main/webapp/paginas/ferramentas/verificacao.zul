@@ -17,6 +17,10 @@
                   viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ExtratorVM')"
                   validationMessages="@id('vmsgs')">
 
+        <north border="none">
+            <include src="/header.zul" />
+        </north>
+
         <west id="sidebarMenu"
               width="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? '260px' : '75px'}"
               border="none"
@@ -24,9 +28,8 @@
             <include src="/navbar.zul" />
         </west>
 
-    <center border="none" sclass="main-content-wrapper">
-    <vlayout vflex="1" spacing="0">
-        <include src="/header.zul" />
+        <center border="none" sclass="main-content-wrapper">
+            <vlayout vflex="1" spacing="0">
 
         <style>
             .log-box { font-family: monospace; background-color: #f8f9fa; font-size: 11px; resize: none; border: 1px solid #ced4da; }
@@ -120,7 +123,12 @@
                 </div>
             </div>
         </div>
-        <include src="/footer.zul"/>
-    </vlayout>
-    </center>
-    </borderlayout> </zk>
+            </vlayout>
+        </center>
+
+        <south border="none">
+            <include src="/footer.zul"/>
+        </south>
+
+    </borderlayout>
+</zk>
