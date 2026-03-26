@@ -105,7 +105,7 @@
                                             </div>
                                             <div sclass="col-md-7">
                                                 <label value="Log de Processamento:" style="font-weight: bold; font-size: 12px;"/>
-                                                <textbox value="@load(vm.logBatch)" readonly="true" multiline="true" rows="8" width="100%" sclass="form-control log-box"/>
+                                                <textbox value="@load(vm.logBatch)" readonly="true" multiline="true" rows="8" width="100%" sclass="form-control log-box" style="margin-top: 7px;"/>
                                                 <div visible="@load(vm.processando)" sclass="mt-2 text-center text-primary"><n:i class="fa fa-spinner fa-spin"></n:i> Processando...</div>
                                             </div>
                                         </div>
@@ -137,7 +137,7 @@
                                 <hlayout spacing="10px" style="padding-top: 5px;">
                                     <button label="Pesquisar" onClick="@command('buscarPorId')" visible="@load(vm.abaSelecionada eq 0)" disabled="@load(vm.processando)" sclass="btn btn-outline-primary" iconSclass="z-icon-search"/>
                                     <button label="Pesquisar" onClick="@command('buscarPesquisador')" visible="@load(vm.abaSelecionada eq 1 or vm.abaSelecionada eq 2)" disabled="@load(vm.processando)" sclass="btn btn-outline-primary" iconSclass="z-icon-search"/>
-                                    <button label="Limpar Tudo" onClick="@command('limpar')" visible="@load(vm.abaSelecionada ne 3)" disabled="@load(vm.processando)" sclass="btn btn-outline-secondary" iconSclass="z-icon-eraser"/>
+                                    <button label="Limpar Tudo" onClick="@command('limpar')" visible="@load(vm.abaSelecionada ne 4)" disabled="@load(vm.processando)" sclass="btn btn-outline-secondary" iconSclass="z-icon-eraser"/>
                                 </hlayout>
 
                                 <vlayout visible="@load(vm.barraVisivel)" spacing="0">
@@ -155,7 +155,7 @@
 
                             <separator height="0px"/>
 
-                            <div sclass="row" style="padding: 33px 15px;">
+                            <div sclass="row" style="padding: 15px 17px;">
                                 <div sclass="col-md-12 mb-2">
                                     <n:h3 class="h4 text-primary">Dashboard - Métricas</n:h3>
                                     <label value="Monitoramento do Sistema" sclass="h5 text-secondary"/>
