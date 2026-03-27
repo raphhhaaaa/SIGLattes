@@ -16,7 +16,9 @@
 
     <n:nav class="navbar pt-0 pl-0 pb-2" style="background-color: white; background-image:url(${c:encodeURL('/images/header_background.png')  }); background-repeat: repeat-x; background-position: bottom;">
 
-        <div class="container-fluid p-0 d-flex w-100 flex-nowrap justify-content-between align-items-center">
+        <div class="container-fluid p-0 d-flex w-100 flex-nowrap justify-content-between align-items-center"
+             apply="org.zkoss.bind.BindComposer"
+             viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ExtratorVM')">
 
             <n:a href="/ExtratorLattes" style="text-decoration: none" class="text-truncate">
                 <div class="d-flex align-items-center m-0 h4 text-truncate">
