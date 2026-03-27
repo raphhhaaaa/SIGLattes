@@ -24,6 +24,7 @@ import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.util.Clients;
 import org.zkoss.zk.ui.event.EventListener;
 
+import javax.management.Query;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -65,6 +66,7 @@ public class ExtratorVM {
     private Long totalCurriculos;
     private String textoDesatualizados = "...";
     private Long consultasHoje;
+    private Long totalPesquisadoresUem;
 
     // --- STATUS CONEXÃO --- //
     private boolean online;
@@ -96,11 +98,12 @@ public class ExtratorVM {
     }
 
     @Command
-    @NotifyChange({"totalCurriculos", "textoDesatualizados", "consultasHoje", "online", "statusTexto", "statusClasse", "statusIcone"})
+    @NotifyChange({"totalCurriculos", "totalPesquisadoresUem", "textoDesatualizados", "consultasHoje", "online", "statusTexto", "statusClasse", "statusIcone"})
     public void atualizarDashboard() {
         // 1. Métricas rápidas
         this.totalCurriculos = curriculoDAO.contarTotalCurriculos();
         this.consultasHoje = curriculoDAO.getConsultasHoje();
+        this.totalPesquisadoresUem = curriculoDAO.contarPesquisadoresUem();
 
         // 2. Ping do CNPq FORA DA THREAD (Síncrono - a tela espera ele terminar para desenhar os cartões)
         this.online = lattesService.testarConexaoCNPq();
@@ -119,11 +122,16 @@ public class ExtratorVM {
 
         // Prepara o Server Push para atualizar a tela depois que os gráficos carregarem
         final Desktop desktop = Executions.getCurrent().getDesktop();
-        if (desktop != null && !desktop.isServerPushEnabled()) {
-            desktop.enableServerPush(true);
+        final org.zkoss.zk.ui.Session zkSession = org.zkoss.zk.ui.Sessions.getCurrent();
+
+        // sistema de cache inteligente
+        String cacheGraficos = (String) zkSession.getAttribute("CACHE_GRAFICOS_UEM");
+
+        if (cacheGraficos != null && !cacheGraficos.isEmpty()) {
+            // se tem cache puxa diretamente sem chamar as threads
+            Clients.evalJavaScript(cacheGraficos);
         }
 
-        // 3. JOGA APENAS OS GRÁFICOS (DB PESADO) PARA O BACKGROUND!
         Executors.newSingleThreadExecutor().submit(() -> {
             try {
                 // Consultas SQL demoradas rodam sem travar a interface
@@ -133,6 +141,7 @@ public class ExtratorVM {
                 if (desktop != null && desktop.isAlive()) {
                     Executions.schedule(desktop, event -> {
                         if (!scriptGraficos.isEmpty()) {
+                            zkSession.setAttribute("CACHE_GRAFICOS_UEM", scriptGraficos);
                             Clients.evalJavaScript(scriptGraficos);
                         }
                     }, new Event("onReady"));
@@ -143,7 +152,6 @@ public class ExtratorVM {
         });
     }
 
-    // O antigo carregarGraficos() agora devolve apenas a String do Javascript, sem bloquear a UI
     private String gerarScriptGraficos() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             String filtroUEM = " AND (i.siglaInstituicao = 'UEM' OR i.nomeInstituicao LIKE '%Universidade Estadual de Maringá%') ";
@@ -1143,4 +1151,5 @@ public class ExtratorVM {
     public List<Curriculo> getListaDesatualizados() { return listaDesatualizados; }
     public String getLogAtualizacao() { return logAtualizacao; }
     public Usuario getUsuarioLogado() { return usuarioLogado; }
+    public Long getTotalPesquisadoresUem() { return totalPesquisadoresUem; }
 }

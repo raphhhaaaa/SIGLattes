@@ -230,7 +230,7 @@
                                     </div>
                                 </div>
 
-                                <separator bar="true" height="15px" style="margin-top: 15px; margin-bottom: 15px;"/>
+                                <separator bar="true" height="15px" style="margin-top: 15px; margin-bottom: 25px;"/>
 
                                 <!-- SCRIPT JS PARA CARREGAR OS DADOS PROCESSADOS DOS GRÁFICOS VINDOS DO JAVA !-->
                                 <script type="text/javascript"><![CDATA[
@@ -272,6 +272,7 @@
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
                         y: { beginAtZero: true, grid: { borderDash: [2, 4], color: '#e2e8f0' } },
@@ -298,6 +299,7 @@
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     cutout: '65%', /* Faz o buraco no meio (Donut elegante) */
                     plugins: {
                         legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } }
@@ -306,9 +308,17 @@
             });
         }
     ]]></script>
+                                <div sclass="d-flex align-items-center mb-1">
+                                    <n:h3 class="h4 text-primary mb-0" style="margin-right: 15px;">Gráficos de Produção Científica</n:h3>
+
+                                    <div sclass="badge badge-pill badge-primary" style="font-size: 13px; padding: 8px 15px; background-color: rgba(13, 110, 253, 0.1); color: #0d6efd; border: 1px solid rgba(13, 110, 253, 0.2);">
+                                        <n:i class="fas fa-users" style="margin-right: 5px;"></n:i>
+                                        <label value="@load(vm.totalPesquisadoresUem)" style="font-weight: bold; font-size: 14px; margin-right: 4px;"/>
+                                        <label value="Curriculos vinculados à UEM" style="font-weight: normal;"/>
+                                    </div>
+                                </div>                                <label value="Universidade Estadual de Maringá" sclass="h5 text-secondary"/>
 
                                 <div sclass="col-md-7 mt-3">
-                                    <n:h3 class="h4 text-primary">Gráficos de Produção Científica</n:h3>
                                     <div sclass="card shadow-sm dashboard-card" style="cursor: default;">
                                         <div sclass="card-body">
                                             <n:h5 class="card-title text-secondary fw-bold" style="font-size: 14px; letter-spacing: 1px;">EVOLUÇÃO DE PRODUÇÃO (UEM)</n:h5>
@@ -318,7 +328,10 @@
                                                 <n:div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></n:div>
                                             </n:div>
 
-                                            <n:canvas id="barChart" height="110" style="display: none;"></n:canvas>
+                                            <n:div style="position: relative; height: 250px; width: 100%;">
+                                                <n:canvas id="barChart" height="250" style="display: none;"></n:canvas>
+                                            </n:div>
+
                                         </div>
                                     </div>
                                 </div>
@@ -332,7 +345,10 @@
                                                 <n:div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></n:div>
                                             </n:div>
 
-                                            <n:canvas id="pieChart" height="150" style="display: none;"></n:canvas>
+                                            <n:div style="position: relative; height: 250px; width: 100%;">
+                                                <n:canvas id="pieChart" height="250" style="display: none;"></n:canvas>
+                                            </n:div>
+
                                         </div>
                                     </div>
                                 </div>
