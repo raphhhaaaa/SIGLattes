@@ -159,7 +159,53 @@
 
                             <separator height="0px"/>
 
-                            <div sclass="row" style="padding: 30px 17px;">
+                            <div sclass="row" style="padding: 10px 17px;">
+
+                                <div sclass="col-md-12 mb-1 d-flex align-items-center">
+                                    <n:h3 class="h4 text-primary mb-0" style="margin-right: 15px;">Gráficos de Produção Científica</n:h3>
+                                    <div sclass="badge badge-pill badge-primary" style="font-size: 13px; padding: 8px 15px; background-color: rgba(13, 110, 253, 0.1); color: #0d6efd; border: 1px solid rgba(13, 110, 253, 0.2);">
+                                        <n:i class="fas fa-users" style="margin-right: 5px;"></n:i>
+                                        <label value="@load(vm.totalPesquisadoresUem)" style="font-weight: bold; font-size: 14px; margin-right: 4px;"/>
+                                        <label value="Curriculos vinculados à UEM" style="font-weight: normal;"/>
+                                    </div>
+                                </div>
+                                <div sclass="col-md-12 mb-2">
+                                    <label value="Universidade Estadual de Maringá" sclass="h5 text-secondary"/>
+                                </div>
+
+                                <div sclass="col-md-7 mt-3">
+                                    <div sclass="card shadow-sm dashboard-card" style="cursor: default;">
+                                        <div sclass="card-body">
+                                            <n:h5 class="card-title text-secondary fw-bold" style="font-size: 14px; letter-spacing: 1px;">EVOLUÇÃO DE PRODUÇÃO (UEM)</n:h5>
+                                            <separator bar="true" sclass="mb-3"/>
+                                            <n:div id="loadingBar" class="text-center" style="padding: 40px 0;">
+                                                <n:div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></n:div>
+                                            </n:div>
+                                            <n:div style="position: relative; height: 250px; width: 100%;">
+                                                <n:canvas id="barChart" height="250" style="display: none;"></n:canvas>
+                                            </n:div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div sclass="col-md-5 mt-3">
+                                    <div sclass="card shadow-sm dashboard-card" style="cursor: default;">
+                                        <div sclass="card-body">
+                                            <n:h5 class="card-title text-secondary fw-bold" style="font-size: 14px; letter-spacing: 1px;">TIPOS DE PRODUÇÃO (UEM)</n:h5>
+                                            <separator bar="true" sclass="mb-3"/>
+                                            <n:div id="loadingPie" class="text-center" style="padding: 55px 0;">
+                                                <n:div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></n:div>
+                                            </n:div>
+                                            <n:div style="position: relative; height: 250px; width: 100%;">
+                                                <n:canvas id="pieChart" height="250" style="display: none;"></n:canvas>
+                                            </n:div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div sclass="col-md-12 mt-4 mb-4">
+                                    <separator bar="true" height="1px"/>
+                                </div>
+
                                 <div sclass="col-md-12 mb-2">
                                     <n:h3 class="h4 text-primary">Dashboard - Métricas</n:h3>
                                     <label value="Monitoramento do Sistema" sclass="h5 text-secondary"/>
@@ -199,19 +245,19 @@
                                 </div>
 
                                 <div sclass="col-md-6">
-                                        <div sclass="card text-white bg-warning mb-3 shadow-sm dashboard-card">
-                                            <div sclass="card-body" style="min-height: 120px;">
-                                                <n:h5 class="card-title">Atualizações CNPq</n:h5>
-                                                <separator bar="true" sclass="mb-3"/>
-                                                <div sclass="d-flex align-items-center">
-                                                    <span sclass="z-icon-refresh" style="font-size: 40px; margin-right: 15px; opacity: 0.8;"/>
-                                                    <vlayout spacing="0">
-                                                        <label value="@load(vm.textoDesatualizados)" sclass="card-value"/>
-                                                        <label value="Currículos Desatualizados" style="font-size: 11px; opacity: 0.9;"/>
-                                                    </vlayout>
-                                                </div>
+                                    <div sclass="card text-white bg-warning mb-3 shadow-sm dashboard-card">
+                                        <div sclass="card-body" style="min-height: 120px;">
+                                            <n:h5 class="card-title">Atualizações CNPq</n:h5>
+                                            <separator bar="true" sclass="mb-3"/>
+                                            <div sclass="d-flex align-items-center">
+                                                <span sclass="z-icon-refresh" style="font-size: 40px; margin-right: 15px; opacity: 0.8;"/>
+                                                <vlayout spacing="0">
+                                                    <label value="@load(vm.textoDesatualizados)" sclass="card-value"/>
+                                                    <label value="Currículos Desatualizados" style="font-size: 11px; opacity: 0.9;"/>
+                                                </vlayout>
                                             </div>
                                         </div>
+                                    </div>
                                 </div>
 
                                 <div sclass="col-md-6">
@@ -230,128 +276,78 @@
                                     </div>
                                 </div>
 
-                                <separator bar="true" height="15px" style="margin-top: 15px; margin-bottom: 25px;"/>
-
-                                <!-- SCRIPT JS PARA CARREGAR OS DADOS PROCESSADOS DOS GRÁFICOS VINDOS DO JAVA !-->
                                 <script type="text/javascript"><![CDATA[
-        var chartPesquisadores = null;
-        var chartProducoes = null;
+                                    var chartPesquisadores = null;
+                                    var chartProducoes = null;
 
-        function renderizarGraficos(labels1, data1, labels2, data2) {
-            var ctxBar = document.getElementById('barChart');
-            var ctxPie = document.getElementById('pieChart');
+                                    function renderizarGraficos(labels1, data1, labels2, data2) {
+                                        var ctxBar = document.getElementById('barChart');
+                                        var ctxPie = document.getElementById('pieChart');
 
-            if(!ctxBar || !ctxPie) return; // Se a tela não estiver pronta, ignora
+                                        if(!ctxBar || !ctxPie) return;
 
-            // 1. Remove os spinners de carregamento da tela
-            var loadingBar = document.getElementById('loadingBar');
-            var loadingPie = document.getElementById('loadingPie');
-            if (loadingBar) loadingBar.style.display = 'none';
-            if (loadingPie) loadingPie.style.display = 'none';
+                                        // Remove spinners
+                                        var loadingBar = document.getElementById('loadingBar');
+                                        var loadingPie = document.getElementById('loadingPie');
+                                        if (loadingBar) loadingBar.style.display = 'none';
+                                        if (loadingPie) loadingPie.style.display = 'none';
 
-            // 2. Revela as telas de pintura (canvas) suavemente
-            ctxBar.style.display = 'block';
-            ctxPie.style.display = 'block';
+                                        // Mostra canvas
+                                        ctxBar.style.display = 'block';
+                                        ctxPie.style.display = 'block';
 
-            // Destrói os gráficos anteriores (importante para quando clicar em "Atualizar")
-            if (chartPesquisadores) chartPesquisadores.destroy();
-            if (chartProducoes) chartProducoes.destroy();
+                                        if (chartPesquisadores) chartPesquisadores.destroy();
+                                        if (chartProducoes) chartProducoes.destroy();
 
-            // GRÁFICO 1: BARRAS (Evolução UEM)
-            chartPesquisadores = new Chart(ctxBar, {
-                type: 'bar',
-                data: {
-                    labels: labels1,
-                    datasets: [{
-                        label: 'Qtd. Produções',
-                        data: data1,
-                        backgroundColor: 'rgba(79, 70, 229, 0.85)', /* Indigo Premium */
-                        borderRadius: 6,
-                        borderSkipped: false
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, grid: { borderDash: [2, 4], color: '#e2e8f0' } },
-                        x: { grid: { display: false } }
-                    }
-                }
-            });
+                                        chartPesquisadores = new Chart(ctxBar, {
+                                            type: 'bar',
+                                            data: {
+                                                labels: labels1,
+                                                datasets: [{
+                                                    label: 'Qtd. Produções',
+                                                    data: data1,
+                                                    backgroundColor: 'rgba(79, 70, 229, 0.85)',
+                                                    borderRadius: 6,
+                                                    borderSkipped: false
+                                                }]
+                                            },
+                                            options: {
+                                                responsive: true,
+                                                maintainAspectRatio: false,
+                                                plugins: { legend: { display: false } },
+                                                scales: {
+                                                    y: { beginAtZero: true, grid: { borderDash: [2, 4], color: '#e2e8f0' } },
+                                                    x: { grid: { display: false } }
+                                                }
+                                            }
+                                        });
 
-            // GRÁFICO 2: DONUT / PIZZA (Produções)
-            chartProducoes = new Chart(ctxPie, {
-                type: 'doughnut',
-                data: {
-                    labels: labels2,
-                    datasets: [{
-                        data: data2,
-                        backgroundColor: [
-                            '#4f46e5', '#3b82f6', '#0ea5e9', '#06b6d4', '#14b8a6',
-                            '#10b981', '#84cc16', '#eab308', '#f59e0b', '#ef4444'
-                        ],
-                        borderWidth: 2,
-                        borderColor: '#ffffff',
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '65%', /* Faz o buraco no meio (Donut elegante) */
-                    plugins: {
-                        legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } }
-                    }
-                }
-            });
-        }
-    ]]></script>
-                                <div sclass="d-flex align-items-center mb-1">
-                                    <n:h3 class="h4 text-primary mb-0" style="margin-right: 15px;">Gráficos de Produção Científica</n:h3>
-
-                                    <div sclass="badge badge-pill badge-primary" style="font-size: 13px; padding: 8px 15px; background-color: rgba(13, 110, 253, 0.1); color: #0d6efd; border: 1px solid rgba(13, 110, 253, 0.2);">
-                                        <n:i class="fas fa-users" style="margin-right: 5px;"></n:i>
-                                        <label value="@load(vm.totalPesquisadoresUem)" style="font-weight: bold; font-size: 14px; margin-right: 4px;"/>
-                                        <label value="Curriculos vinculados à UEM" style="font-weight: normal;"/>
-                                    </div>
-                                </div>                                <label value="Universidade Estadual de Maringá" sclass="h5 text-secondary"/>
-
-                                <div sclass="col-md-7 mt-3">
-                                    <div sclass="card shadow-sm dashboard-card" style="cursor: default;">
-                                        <div sclass="card-body">
-                                            <n:h5 class="card-title text-secondary fw-bold" style="font-size: 14px; letter-spacing: 1px;">EVOLUÇÃO DE PRODUÇÃO (UEM)</n:h5>
-                                            <separator bar="true" sclass="mb-3"/>
-
-                                            <n:div id="loadingBar" class="text-center" style="padding: 40px 0;">
-                                                <n:div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></n:div>
-                                            </n:div>
-
-                                            <n:div style="position: relative; height: 250px; width: 100%;">
-                                                <n:canvas id="barChart" height="250" style="display: none;"></n:canvas>
-                                            </n:div>
-
-                                        </div>
-                                    </div>
-                                </div>
-                                <div sclass="col-md-5 mt-3">
-                                    <div sclass="card shadow-sm dashboard-card" style="cursor: default;">
-                                        <div sclass="card-body">
-                                            <n:h5 class="card-title text-secondary fw-bold" style="font-size: 14px; letter-spacing: 1px;">TIPOS DE PRODUÇÃO (UEM)</n:h5>
-                                            <separator bar="true" sclass="mb-3"/>
-
-                                            <n:div id="loadingPie" class="text-center" style="padding: 55px 0;">
-                                                <n:div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></n:div>
-                                            </n:div>
-
-                                            <n:div style="position: relative; height: 250px; width: 100%;">
-                                                <n:canvas id="pieChart" height="250" style="display: none;"></n:canvas>
-                                            </n:div>
-
-                                        </div>
-                                    </div>
-                                </div>
+                                        chartProducoes = new Chart(ctxPie, {
+                                            type: 'doughnut',
+                                            data: {
+                                                labels: labels2,
+                                                datasets: [{
+                                                    data: data2,
+                                                    backgroundColor: [
+                                                        '#4f46e5', '#3b82f6', '#0ea5e9', '#06b6d4', '#14b8a6',
+                                                        '#10b981', '#84cc16', '#eab308', '#f59e0b', '#ef4444'
+                                                    ],
+                                                    borderWidth: 2,
+                                                    borderColor: '#ffffff',
+                                                    hoverOffset: 4
+                                                }]
+                                            },
+                                            options: {
+                                                responsive: true,
+                                                maintainAspectRatio: false,
+                                                cutout: '65%',
+                                                plugins: {
+                                                    legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } }
+                                                }
+                                            }
+                                        });
+                                    }
+                                ]]></script>
 
                             </div>
                         </div>

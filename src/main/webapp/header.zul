@@ -18,7 +18,7 @@
 
         <div class="container-fluid p-0 d-flex w-100 flex-nowrap justify-content-between align-items-center"
              apply="org.zkoss.bind.BindComposer"
-             viewModel="@id('headerVm') @init('com.uem.extrator.viewmodel.ExtratorVM')">
+             viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ExtratorVM')">
 
             <n:a href="/ExtratorLattes" style="text-decoration: none" class="text-truncate">
                 <div class="d-flex align-items-center m-0 h4 text-truncate">
@@ -41,7 +41,7 @@
                 <menuitem label="Sair do Sistema"
                           iconSclass="z-icon-sign-out text-danger"
                           sclass="text-danger font-weight-bold"
-                          onClick="@command('headerVm.logout')"/>
+                          onClick="@command('logout')"/>
             </menupopup>
             </div>
 

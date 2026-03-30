@@ -1,6 +1,6 @@
 <zk xmlns="http://www.zkoss.org/2005/zul" xmlns:n="native" xmlns:w="client">
     <div sclass="text-center py-3 px-2" style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 0.85rem;">
         <n:span class="fw-bold d-block d-md-inline">Núcleo de Processamento de Dados</n:span>
-        <n:span class="d-none d-md-inline"> - </n:span> <n:span class="d-block d-md-inline">Projeto modelo em Maven para desenvolvimento Java com layout responsivo utilizando Bootstrap.</n:span>
+        <n:span class="d-none d-md-inline"> - </n:span> <n:span class="d-block d-md-inline">© 2026 Universidade Estadual de Maringá - Pró-Reitoria de Planejamento e Desenvolvimento Institucional - Extrator Lattes v1.0</n:span>
     </div>
 </zk>

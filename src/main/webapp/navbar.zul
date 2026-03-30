@@ -58,10 +58,13 @@
            sclass="${desktop.requestPath.contains('relatorioProdutividade') ? 'sidebar-item active' : 'sidebar-item'}"
            href="/paginas/relatorio/relatorioProdutividade.zul" tooltiptext="Produtividade"/>
 
+        <zk if="${sessionScope.usuario_logado.admin}">
         <a label="Consulta SQL" iconSclass="fas fa-database"
            sclass="${desktop.requestPath.contains('consultaSql') ? 'sidebar-item active' : 'sidebar-item'}"
            href="/paginas/relatorio/consultaSql.zul" tooltiptext="Consulta SQL Livre"/>
+        </zk>
 
+        <zk if="${sessionScope.usuario_logado.admin}">
         <label value="SISTEMA" sclass="sidebar-section-title"/>
 
         <a label="Utilizadores" iconSclass="fas fa-user-shield"
@@ -75,6 +78,7 @@
         <a label="Logs" iconSclass="fas fa-history"
            sclass="${desktop.requestPath.contains('logs') ? 'sidebar-item active' : 'sidebar-item'}"
            href="/paginas/sistema/logs.zul" tooltiptext="Logs de Auditoria"/>
+        </zk>
 
     </vlayout>
 </vlayout>
