@@ -5,7 +5,7 @@ import com.uem.extrator.dao.ProducaoDAO;
 import com.uem.extrator.model.Curriculo;
 import com.uem.extrator.model.Producao;
 import com.uem.extrator.model.Usuario;
-import com.uem.extrator.service.BibliometriaService;
+import com.uem.extrator.service.SemanticScholarService;
 import com.uem.extrator.service.LattesService;
 import com.uem.extrator.service.AuditLogService;
 import com.uem.extrator.util.ConfigManager;
@@ -1084,22 +1084,22 @@ public class ExtratorVM {
         executor.submit(() -> {
             try {
                 // Vai na internet buscar os dados (Lento)
-                Integer cits = BibliometriaService.buscarCitacoes(artigo.getDoi());
-                String[] acesso = BibliometriaService.buscarStatusAcesso(artigo.getDoi());
+               SemanticScholarService semanticScholarService = new SemanticScholarService();
+
+               Object[] metricas = semanticScholarService.buscarMetricaUnicas(artigo.getDoi());
+
+               Integer cits = (Integer) metricas[0];
+               String[] acesso = (String[]) metricas[1];
 
                 artigo.setCitacoes(cits);
                 artigo.setStatusAcesso(acesso[0]);
+                artigo.setCorAcesso(acesso[1]);
 
                 producaoDAO.atualizarMetricas(artigo);
 
                 // 5. Agenda a atualização da UI de volta no Desktop do ZK
                 Executions.schedule(desktop, new EventListener<Event>() {
                     public void onEvent(Event event) {
-                        // Atualiza o objeto
-                        artigo.setCitacoes(cits);
-                        artigo.setStatusAcesso(acesso[0]);
-                        artigo.setCorAcesso(acesso[1]);
-
                         // Notifica a tela
                         BindUtils.postNotifyChange(null, null, artigo, "citacoes");
                         BindUtils.postNotifyChange(null, null, artigo, "statusAcesso");

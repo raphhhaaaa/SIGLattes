@@ -303,6 +303,59 @@ public class SemanticScholarService {
         }
     }
 
+    public Object[] buscarMetricaUnicas(String doi)  {
+        // [0] = Integer (Citações) | [1] String[] (Status de acesso)
+        Object[] resultado = new Object[]{null, new String[]{"-", "secondary"}};
+        if (doi == null && doi.trim().isEmpty()) return resultado;
+
+        String doiLimpo = limparDoiValido(doi);
+        if (doiLimpo == null || doiLimpo.trim().isEmpty()) return resultado;
+
+        String endpoint = "https://api.semanticscholar.org/graph/v1/paper/DOI:" + doiLimpo + "?fields=citationCount,isOpenAccess";
+
+        try {
+            pedagioApi.acquire();
+            for (int tentativa = 1; tentativa <= MAX_RETRIES; tentativa++) {
+                HttpURLConnection conn = configurarConexao(endpoint, "GET");
+                int statusCode = conn.getResponseCode();
+
+                if (statusCode == 200) {
+                    String jsonResposta = lerResposta(conn.getInputStream());
+                    if (!jsonResposta.isEmpty()) {
+                        JsonObject paper = gson.fromJson(jsonResposta, JsonObject.class);
+
+                        Integer citacoes = null;
+                        if (paper.has("citationCount") && !paper.get("citationCount").isJsonNull()) {
+                            citacoes = paper.get("citationCount").getAsInt();
+                        }
+
+                        String[] acesso = new String[]{"N/A", "secondary"};
+                            if (paper.has("isOpenAcess") && !paper.get("isOpenAcess").isJsonNull()) {
+                                boolean isOpen = paper.get("isOpenAcess").getAsBoolean();
+                                acesso = isOpen ? new String[]{"ABERTO", "sucess"} : new String[]{"FECHADO", "danger"};
+                            }
+
+                            resultado[0] = citacoes;
+                            resultado[1] = acesso;
+                    }
+                    break;
+                } else if (statusCode == 429) {
+                    dormirComJitter(tentativa, "Busca única de Métricas");
+                } else if (statusCode == 404) {
+                    System.out.println("Artigo não encontrado no Semantic Scholar: " + doiLimpo);
+                    break; // sai do loop pq o artigo nao existe
+                } else {
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Erro ao buscar métricas únicas para DOI: " + doi + ": " + e.getMessage());
+        } finally {
+            pedagioApi.release();
+        }
+        return resultado;
+    }
+
     // ==========================================
     // MÉTODOS AUXILIARES E DE SEGURANÇA
     // ==========================================
