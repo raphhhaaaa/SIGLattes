@@ -354,13 +354,11 @@
                     </div>
                 </div>
             </div>
+            <include src="/footer.zul"/>
         </div>
             </vlayout>
         </center>
 
-        <south border="none">
-            <include src="/footer.zul"/>
-        </south>
 
     </borderlayout>
 </zk>

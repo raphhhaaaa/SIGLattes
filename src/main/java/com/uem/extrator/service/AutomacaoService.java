@@ -332,7 +332,7 @@ public class AutomacaoService {
             // 3. Faz o backup seguro (binary dump) para a pasta
             ProcessBuilder pb = new ProcessBuilder(
                     "docker", "exec", "mydb2", "bash", "-c",
-                    "su - db2inst1 -c 'db2 force applications all && sleep 2 && db2 backup database LATTES to " + backupDirDb2 + "'"
+                    "su - db2inst1 -c 'db2 force applications all && sleep 5 && db2 terminate && db2 backup database LATTES to " + backupDirDb2 + "'"
             );
 
             // Junta a saída normal e os erros num fluxo só para lermos no console do Java
