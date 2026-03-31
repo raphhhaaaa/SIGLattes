@@ -2,7 +2,7 @@ package com.uem.extrator.viewmodel;
 
 import com.uem.extrator.dao.*;
 import com.uem.extrator.model.*;
-import com.uem.extrator.service.BibliometriaService;
+import com.uem.extrator.service.SemanticScholarService;
 import org.zkoss.bind.BindUtils;
 import org.zkoss.bind.annotation.*;
 import org.zkoss.zk.ui.Desktop;
@@ -185,9 +185,11 @@ public class ListagemVM {
                     atualizarInterface(desktop, artigo, null, "...", "secondary");
 
                     try {
-                        // 2. Busca na web
-                        Integer cits = BibliometriaService.buscarCitacoes(artigo.getDoi());
-                        String[] acesso = BibliometriaService.buscarStatusAcesso(artigo.getDoi());
+                        SemanticScholarService semanticScholarService = new SemanticScholarService();
+
+                        Object[] metricas = semanticScholarService.buscarMetricaUnicas(artigo.getDoi());
+                        Integer cits = (Integer) metricas[0];
+                        String[] acesso = (String[]) metricas[1];
 
                         // 3. atualiza Objeto e salva no banco
                         artigo.setCitacoes(cits);

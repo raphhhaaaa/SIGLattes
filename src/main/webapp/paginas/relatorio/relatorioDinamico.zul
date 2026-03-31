@@ -23,13 +23,26 @@
 
     </style>
 
-    <div sclass="row" apply="org.zkoss.bind.BindComposer"
-         viewModel="@id('vm') @init('com.uem.extrator.viewmodel.RelatorioDinamicoVM')">
+    <borderlayout width="100vw" height="100vh"
+                  apply="org.zkoss.bind.BindComposer"
+                  viewModel="@id('vm') @init('com.uem.extrator.viewmodel.RelatorioDinamicoVM')"
+                  validationMessages="@id('vmsgs')">
 
-    <include src="/header.zul"/>
-    <include src="/navbar.zul"/>
+        <north border="none">
+            <include src="/header.zul" />
+        </north>
 
-    <div sclass="container-fluid" style="padding: 20px; min-height: 600px;">
+        <west id="sidebarMenu"
+              width="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? '260px' : '75px'}"
+              border="none"
+              sclass="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? 'sidebar-wrapper' : 'sidebar-wrapper sidebar-mini'}">
+            <include src="/navbar.zul" />
+        </west>
+
+        <center border="none" sclass="main-content-wrapper">
+            <vlayout vflex="1" spacing="0">
+
+        <div sclass="container-fluid" vflex="1" style="padding: 20px; overflow-y: auto; overflow-x: hidden;">
         <div sclass="row">
             <div sclass="col-md-12">
 
@@ -137,7 +150,7 @@
                                                   sclass="form-control-sm"/>
                                     </div>
 
-                                    <div style="position: relative; right: -715px" sclass="">
+                                    <div style="position: relative; right: -695px" sclass="">
                                         <button label="Extrair CSV (Resumo)"
                                                 onClick="@command('exportarCsvSimples')"
                                                 iconSclass="z-icon-download"
@@ -320,7 +333,13 @@
                 </div>
             </div>
         </div>
-    </div>
-    </div>
-    <include src="/footer.zul"/>
+        </div>
+            </vlayout>
+        </center>
+
+        <south border="none">
+            <include src="/footer.zul"/>
+        </south>
+
+    </borderlayout>
 </zk>

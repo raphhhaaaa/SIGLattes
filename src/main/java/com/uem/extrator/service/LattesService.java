@@ -120,7 +120,6 @@ public class LattesService {
 
                     if (possuiArtigos) {
                     // enriquece
-                    // enriquecerCurriculoComMetricas(curriculo);
                     SemanticScholarService semanticScholarService = new SemanticScholarService();
                     semanticScholarService.enriquecerDadosBibliometricos(curriculo, producoes);
                     } else {
@@ -143,50 +142,6 @@ public class LattesService {
         }
 
         throw new Exception("Falha após " + (maxRetries+1) + " tentativas. Último erro: " + lastError.getMessage());
-    }
-
-
-    /**
-     * Varre as produções do currículo e busca métricas online (CrossRef/Unpaywall)
-     * em paralelo para agilizar o processo.
-     */
-    private void enriquecerCurriculoComMetricas(Curriculo curriculo) {
-        if (curriculo != null) {
-            String nomeAutor = curriculo.getNomeCompleto();
-            System.out.println("Buscando Índice H para: " + nomeAutor);
-            Integer indiceH = BibliometriaService.buscarIndiceH(nomeAutor);
-            curriculo.setIndiceH(indiceH);
-        }
-
-        if (curriculo.getProducoes() != null && !curriculo.getProducoes().isEmpty()){
-            System.out.println("Enriquecendo " + curriculo.getProducoes().size() + " produções com métricas...");
-
-            // usa parallelStream para fazer várias requisições HTTP ao mesmo tempo
-            curriculo.getProducoes().parallelStream().forEach(artigo -> {
-                String doi = artigo.getDoi();
-
-                // inicializa com padrão para não ficar null no banco
-                if (artigo.getStatusAcesso() == null) artigo.setStatusAcesso("-");
-
-                if (doi != null && !doi.trim().isEmpty()) {
-                    try {
-                        // 1. busca citações (CrossRef)
-                        Integer cits = BibliometriaService.buscarCitacoes(artigo.getDoi());
-                        // 2. busca acesso (Unpaywall)
-                        // retorna array: [0]="ABERTO"/"FECHADO", [1]="success"/"danger"
-                        String[] acesso = BibliometriaService.buscarStatusAcesso(artigo.getDoi());
-
-                        artigo.setCitacoes(cits);
-                        artigo.setStatusAcesso(acesso[0]);
-                        artigo.setDataAtualizacaoMetricas(new Date());
-
-                    } catch (Exception e) {
-                        System.err.println("Erro ao buscar métricas para DOI " + doi + ": " + e.getMessage());
-                    }
-                }
-            });
-            System.out.print(">>> Enriquecimento concluído.");
-        }
     }
 
     // Metodo interno que chama o SOAP

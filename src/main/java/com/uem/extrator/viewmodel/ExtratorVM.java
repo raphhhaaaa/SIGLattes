@@ -5,10 +5,12 @@ import com.uem.extrator.dao.ProducaoDAO;
 import com.uem.extrator.model.Curriculo;
 import com.uem.extrator.model.Producao;
 import com.uem.extrator.model.Usuario;
-import com.uem.extrator.service.BibliometriaService;
+import com.uem.extrator.service.SemanticScholarService;
 import com.uem.extrator.service.LattesService;
 import com.uem.extrator.service.AuditLogService;
 import com.uem.extrator.util.ConfigManager;
+import com.uem.extrator.util.HibernateUtil;
+import org.hibernate.Session;
 import org.zkoss.bind.BindUtils;
 import org.zkoss.bind.annotation.BindingParam;
 import org.zkoss.bind.annotation.Command;
@@ -22,6 +24,7 @@ import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.util.Clients;
 import org.zkoss.zk.ui.event.EventListener;
 
+import javax.management.Query;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -63,6 +66,7 @@ public class ExtratorVM {
     private Long totalCurriculos;
     private String textoDesatualizados = "...";
     private Long consultasHoje;
+    private Long totalPesquisadoresUem;
 
     // --- STATUS CONEXÃO --- //
     private boolean online;
@@ -94,26 +98,93 @@ public class ExtratorVM {
     }
 
     @Command
-    @NotifyChange({"totalCurriculos", "textoDesatualizados", "consultasHoje", "online", "statusTexto", "statusClasse", "statusIcone"})
+    @NotifyChange({"totalCurriculos", "totalPesquisadoresUem", "textoDesatualizados", "consultasHoje", "online", "statusTexto", "statusClasse", "statusIcone"})
     public void atualizarDashboard() {
         // 1. Métricas rápidas
         this.totalCurriculos = curriculoDAO.contarTotalCurriculos();
         this.consultasHoje = curriculoDAO.getConsultasHoje();
+        this.totalPesquisadoresUem = curriculoDAO.contarPesquisadoresUem();
 
-        // 2. Conexão
+        // 2. Ping do CNPq FORA DA THREAD (Síncrono - a tela espera ele terminar para desenhar os cartões)
         this.online = lattesService.testarConexaoCNPq();
 
         if (this.online) {
             this.statusTexto = "LATTES ONLINE";
             this.statusClasse = "bg-success";
             this.statusIcone = "z-icon-check-circle";
-            // Inicia contagem em background se não estiver rodando
             if (!verificandoAtualizacoes) iniciarVerificacaoDesatualizados();
         } else {
             this.statusTexto = "LATTES OFFLINE";
             this.statusClasse = "bg-danger";
             this.statusIcone = "z-icon-exclamation-triangle";
             this.textoDesatualizados = "Off";
+        }
+
+        // Prepara o Server Push para atualizar a tela depois que os gráficos carregarem
+        final Desktop desktop = Executions.getCurrent().getDesktop();
+        final org.zkoss.zk.ui.Session zkSession = org.zkoss.zk.ui.Sessions.getCurrent();
+
+        // sistema de cache inteligente
+        String cacheGraficos = (String) zkSession.getAttribute("CACHE_GRAFICOS_UEM");
+
+        if (cacheGraficos != null && !cacheGraficos.isEmpty()) {
+            // se tem cache puxa diretamente sem chamar as threads
+            Clients.evalJavaScript(cacheGraficos);
+        }
+
+        Executors.newSingleThreadExecutor().submit(() -> {
+            try {
+                // Consultas SQL demoradas rodam sem travar a interface
+                String scriptGraficos = gerarScriptGraficos();
+
+                // Devolve a resposta ponta para a tela (injeta o JS)
+                if (desktop != null && desktop.isAlive()) {
+                    Executions.schedule(desktop, event -> {
+                        if (!scriptGraficos.isEmpty()) {
+                            zkSession.setAttribute("CACHE_GRAFICOS_UEM", scriptGraficos);
+                            Clients.evalJavaScript(scriptGraficos);
+                        }
+                    }, new Event("onReady"));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    private String gerarScriptGraficos() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            String filtroUEM = " AND (i.siglaInstituicao = 'UEM' OR i.nomeInstituicao LIKE '%Universidade Estadual de Maringá%') ";
+            int anoAtual = java.time.Year.now().getValue();
+            int anoLimite = anoAtual - 10;
+
+            // Gráfico 1: Evolução
+            String hql1 = "SELECT p.ano, COUNT(p.id) " +
+                    "FROM Curriculo c JOIN c.producoes p JOIN c.atuacoes a JOIN a.instituicao i " +
+                    "WHERE p.ano >= " + anoLimite + filtroUEM +
+                    "GROUP BY p.ano " +
+                    "ORDER BY p.ano ASC";
+
+            List<Object[]> res1 = session.createQuery(hql1, Object[].class).getResultList();
+            String labels1 = "['" + res1.stream().map(r -> r[0].toString()).collect(Collectors.joining("','")) + "']";
+            String data1 = "[" + res1.stream().map(r -> r[1].toString()).collect(Collectors.joining(",")) + "]";
+
+            // Gráfico 2: Tipos
+            String hql2 = "SELECT p.tipo, COUNT(p.id) " +
+                    "FROM Curriculo c JOIN c.producoes p JOIN c.atuacoes a JOIN a.instituicao i " +
+                    "WHERE 1=1 " + filtroUEM +
+                    "GROUP BY p.tipo " +
+                    "ORDER BY COUNT(p.id) DESC";
+
+            List<Object[]> res2 = session.createQuery(hql2, Object[].class).getResultList();
+            String labels2 = "['" + res2.stream().map(r -> r[0] != null ? r[0].toString() : "Outros").collect(Collectors.joining("','")) + "']";
+            String data2 = "[" + res2.stream().map(r -> r[1].toString()).collect(Collectors.joining(",")) + "]";
+
+            return String.format("setTimeout(function(){ if(typeof renderizarGraficos === 'function') renderizarGraficos(%s, %s, %s, %s); }, 300);", labels1, data1, labels2, data2);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
         }
     }
 
@@ -1013,22 +1084,22 @@ public class ExtratorVM {
         executor.submit(() -> {
             try {
                 // Vai na internet buscar os dados (Lento)
-                Integer cits = BibliometriaService.buscarCitacoes(artigo.getDoi());
-                String[] acesso = BibliometriaService.buscarStatusAcesso(artigo.getDoi());
+               SemanticScholarService semanticScholarService = new SemanticScholarService();
+
+               Object[] metricas = semanticScholarService.buscarMetricaUnicas(artigo.getDoi());
+
+               Integer cits = (Integer) metricas[0];
+               String[] acesso = (String[]) metricas[1];
 
                 artigo.setCitacoes(cits);
                 artigo.setStatusAcesso(acesso[0]);
+                artigo.setCorAcesso(acesso[1]);
 
                 producaoDAO.atualizarMetricas(artigo);
 
                 // 5. Agenda a atualização da UI de volta no Desktop do ZK
                 Executions.schedule(desktop, new EventListener<Event>() {
                     public void onEvent(Event event) {
-                        // Atualiza o objeto
-                        artigo.setCitacoes(cits);
-                        artigo.setStatusAcesso(acesso[0]);
-                        artigo.setCorAcesso(acesso[1]);
-
                         // Notifica a tela
                         BindUtils.postNotifyChange(null, null, artigo, "citacoes");
                         BindUtils.postNotifyChange(null, null, artigo, "statusAcesso");
@@ -1080,4 +1151,5 @@ public class ExtratorVM {
     public List<Curriculo> getListaDesatualizados() { return listaDesatualizados; }
     public String getLogAtualizacao() { return logAtualizacao; }
     public Usuario getUsuarioLogado() { return usuarioLogado; }
+    public Long getTotalPesquisadoresUem() { return totalPesquisadoresUem; }
 }

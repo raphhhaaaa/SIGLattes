@@ -8,11 +8,24 @@
 <?link rel="stylesheet" type="text/css" href="/css/fontawesome.css"?>
 
 <zk xmlns="http://www.zkoss.org/2005/zul" xmlns:n="native">
+    <borderlayout width="100vw" height="100vh"
+                  apply="org.zkoss.bind.BindComposer"
+                  viewModel="@id('vm') @init('com.uem.extrator.viewmodel.LogVM')"
+                  validationMessages="@id('vmsgs')">
 
-    <div sclass="d-flex flex-column min-vh-100">
+        <north border="none">
+            <include src="/header.zul" />
+        </north>
 
-        <include src="/header.zul"/>
-        <include src="/navbar.zul"/>
+        <west id="sidebarMenu"
+              width="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? '260px' : '75px'}"
+              border="none"
+              sclass="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? 'sidebar-wrapper' : 'sidebar-wrapper sidebar-mini'}">
+            <include src="/navbar.zul" />
+        </west>
+
+        <center border="none" sclass="main-content-wrapper">
+            <vlayout vflex="1" spacing="0">
 
         <style>
             .terminal-log {
@@ -28,9 +41,7 @@
             }
         </style>
 
-        <div sclass="container-fluid flex-grow-1" style="padding: 20px;"
-             apply="org.zkoss.bind.BindComposer"
-             viewModel="@id('vm') @init('com.uem.extrator.viewmodel.LogVM')">
+        <div sclass="container-fluid" vflex="1" style="padding: 20px; overflow-y: auto; overflow-x: hidden;">
 
             <div sclass="row">
                 <div sclass="col-md-12">
@@ -72,7 +83,12 @@
                 </div>
             </div>
         </div>
+            </vlayout>
+        </center>
 
-        <include src="/footer.zul"/>
+        <south border="none">
+            <include src="/footer.zul"/>
+        </south>
 
-    </div> </zk>
+    </borderlayout>
+</zk>

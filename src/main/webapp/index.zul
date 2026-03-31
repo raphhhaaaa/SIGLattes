@@ -8,17 +8,29 @@
 <?link rel="stylesheet" type="text/css" href="/css/fontawesome.css"?>
 <?link rel="stylesheet" type="text/css" href="/css/toastr.css"?>
 <?script type="text/javascript" src="/js/toastr.js"?>
+<?script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chart.js"?>
 
 <zk xmlns="http://www.zkoss.org/2005/zul"
     xmlns:n="http://www.zkoss.org/2005/zk/native">
 
-    <div sclass="d-flex flex-column min-vh-100"
-         apply="org.zkoss.bind.BindComposer"
-         viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ExtratorVM')"
-         validationMessages="@id('vmsgs')">
+    <borderlayout width="100vw" height="100vh"
+                  apply="org.zkoss.bind.BindComposer"
+                  viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ExtratorVM')"
+                  validationMessages="@id('vmsgs')">
 
-        <include src="/header.zul"/>
-        <include src="/navbar.zul"/>
+        <north border="none">
+            <include src="/header.zul" />
+        </north>
+
+        <west id="sidebarMenu"
+              width="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? '260px' : '75px'}"
+              border="none"
+              sclass="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? 'sidebar-wrapper' : 'sidebar-wrapper sidebar-mini'}">
+            <include src="/navbar.zul" />
+        </west>
+
+        <center border="none" sclass="main-content-wrapper">
+            <vlayout vflex="1" spacing="0">
 
         <style>
             .z-tabbox { border: none !important; margin: 0 !important; padding: 0 !important; }
@@ -38,19 +50,16 @@
             }
         </style>
 
-        <div sclass="container-fluid flex-grow-1" style="padding: 20px;">
+        <div sclass="container-fluid" vflex="1" style="padding: 0px; overflow-y: auto; overflow-x: hidden;">
             <div sclass="row">
                 <div sclass="col-md-12">
 
                     <div sclass="card shadow-sm">
-                        <div sclass="card-header bg-primary text-white">
-                            <n:h5 class="mb-0"><n:i class="fa fa-search"></n:i> Extrator de Currículos Lattes</n:h5>
-                        </div>
+<!--                        <div sclass="card-header bg-primary text-white">-->
+<!--                            <n:h5 class="mb-0"><n:i class="fa fa-search"></n:i> Extrator de Currículos Lattes</n:h5>-->
+<!--                        </div>-->
 
-                        <div sclass="card-body card-body-zero"
-                             apply="org.zkoss.bind.BindComposer"
-                             viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ExtratorVM')"
-                             validationMessages="@id('vmsgs')">
+                        <div sclass="card-body card-body-zero">
 
                             <tabbox id="tb" sclass="nav-tabs" selectedIndex="@bind(vm.abaSelecionada)" width="100%">
                                 <tabs>
@@ -92,12 +101,13 @@
                                         <div sclass="row">
                                             <div sclass="col-md-5">
                                                 <label value="Carregue um arquivo .txt:" sclass="font-weight-bold d-block mb-2"/>
-                                                <button label="Selecionar Arquivo TXT" upload="true,maxsize=5000" onUpload="@command('carregarArquivo', media=event.media)" disabled="@load(vm.processando)" iconSclass="z-icon-cloud-upload" sclass="btn btn-success btn-block"/>
-                                                <button label="Parar Processamento" onClick="@command('cancelarProcessamentoLote')" visible="@load(vm.processando)" iconSclass="z-icon-stop" sclass="btn btn-danger btn-block mt-2"/>
+                                                <button label="Selecionar Arquivo TXT" upload="true,maxsize=5000" onUpload="@command('carregarArquivo', media=event.media)" disabled="@load(vm.processando)" iconSclass="z-icon-cloud-upload" sclass="btn btn-outline-success btn-block"/>
+                                                <button label="Parar Processamento" onClick="@command('cancelarProcessamentoLote')" visible="@load(vm.processando)" iconSclass="z-icon-stop" sclass="btn btn-outline-danger btn-block"/>
+                                                <button label="Limpar Tudo" onClick="@command('limpar')" visible="@load(vm.abaSelecionada ne 0 and vm.abaSelecionada ne 1)" disabled="@load(vm.processando)" sclass="btn btn-outline-secondary" iconSclass="z-icon-eraser"/>
                                             </div>
                                             <div sclass="col-md-7">
                                                 <label value="Log de Processamento:" style="font-weight: bold; font-size: 12px;"/>
-                                                <textbox value="@load(vm.logBatch)" readonly="true" multiline="true" rows="8" width="100%" sclass="form-control log-box"/>
+                                                <textbox value="@load(vm.logBatch)" readonly="true" multiline="true" rows="8" width="100%" sclass="form-control log-box" style="margin-top: 7px;"/>
                                                 <div visible="@load(vm.processando)" sclass="mt-2 text-center text-primary"><n:i class="fa fa-spinner fa-spin"></n:i> Processando...</div>
                                             </div>
                                         </div>
@@ -125,12 +135,14 @@
                             </tabbox>
 
                             <div style="padding: 0px 20px 20px 20px; padding-bottom: 0px">
-                                <separator bar="true" height="15px"/>
-                                <hlayout spacing="10px" style="padding-top: 5px;">
+
+                                <hlayout spacing="10px" style="padding-top: 5px; margin-bottom: 30px">
                                     <button label="Pesquisar" onClick="@command('buscarPorId')" visible="@load(vm.abaSelecionada eq 0)" disabled="@load(vm.processando)" sclass="btn btn-outline-primary" iconSclass="z-icon-search"/>
                                     <button label="Pesquisar" onClick="@command('buscarPesquisador')" visible="@load(vm.abaSelecionada eq 1 or vm.abaSelecionada eq 2)" disabled="@load(vm.processando)" sclass="btn btn-outline-primary" iconSclass="z-icon-search"/>
-                                    <button label="Limpar Tudo" onClick="@command('limpar')" visible="@load(vm.abaSelecionada ne 3)" disabled="@load(vm.processando)" sclass="btn btn-outline-secondary" iconSclass="z-icon-eraser"/>
+                                    <button label="Limpar Tudo" onClick="@command('limpar')" visible="@load(vm.abaSelecionada eq 0 or vm.abaSelecionada eq 1)" disabled="@load(vm.processando)" sclass="btn btn-outline-secondary" iconSclass="z-icon-eraser"/>
                                 </hlayout>
+
+                                <separator bar="true" height="15px"/>
 
                                 <vlayout visible="@load(vm.barraVisivel)" spacing="0">
                                     <separator height="20px"/>
@@ -147,7 +159,53 @@
 
                             <separator height="0px"/>
 
-                            <div sclass="row" style="padding: 33px 15px;">
+                            <div sclass="row" style="padding: 10px 17px;">
+
+                                <div sclass="col-md-12 mb-1 d-flex align-items-center">
+                                    <n:h3 class="h4 text-primary mb-0" style="margin-right: 15px;">Gráficos de Produção Científica</n:h3>
+                                    <div sclass="badge badge-pill badge-primary" style="font-size: 13px; padding: 8px 15px; background-color: rgba(13, 110, 253, 0.1); color: #0d6efd; border: 1px solid rgba(13, 110, 253, 0.2);">
+                                        <n:i class="fas fa-users" style="margin-right: 5px;"></n:i>
+                                        <label value="@load(vm.totalPesquisadoresUem)" style="font-weight: bold; font-size: 14px; margin-right: 4px;"/>
+                                        <label value="Curriculos vinculados à UEM" style="font-weight: normal;"/>
+                                    </div>
+                                </div>
+                                <div sclass="col-md-12 mb-2">
+                                    <label value="Universidade Estadual de Maringá" sclass="h5 text-secondary"/>
+                                </div>
+
+                                <div sclass="col-md-7 mt-3">
+                                    <div sclass="card shadow-sm dashboard-card" style="cursor: default;">
+                                        <div sclass="card-body">
+                                            <n:h5 class="card-title text-secondary fw-bold" style="font-size: 14px; letter-spacing: 1px;">EVOLUÇÃO DE PRODUÇÃO (UEM)</n:h5>
+                                            <separator bar="true" sclass="mb-3"/>
+                                            <n:div id="loadingBar" class="text-center" style="padding: 40px 0;">
+                                                <n:div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></n:div>
+                                            </n:div>
+                                            <n:div style="position: relative; height: 250px; width: 100%;">
+                                                <n:canvas id="barChart" height="250" style="display: none;"></n:canvas>
+                                            </n:div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div sclass="col-md-5 mt-3">
+                                    <div sclass="card shadow-sm dashboard-card" style="cursor: default;">
+                                        <div sclass="card-body">
+                                            <n:h5 class="card-title text-secondary fw-bold" style="font-size: 14px; letter-spacing: 1px;">TIPOS DE PRODUÇÃO (UEM)</n:h5>
+                                            <separator bar="true" sclass="mb-3"/>
+                                            <n:div id="loadingPie" class="text-center" style="padding: 55px 0;">
+                                                <n:div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></n:div>
+                                            </n:div>
+                                            <n:div style="position: relative; height: 250px; width: 100%;">
+                                                <n:canvas id="pieChart" height="250" style="display: none;"></n:canvas>
+                                            </n:div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div sclass="col-md-12 mt-4 mb-4">
+                                    <separator bar="true" height="1px"/>
+                                </div>
+
                                 <div sclass="col-md-12 mb-2">
                                     <n:h3 class="h4 text-primary">Dashboard - Métricas</n:h3>
                                     <label value="Monitoramento do Sistema" sclass="h5 text-secondary"/>
@@ -187,19 +245,19 @@
                                 </div>
 
                                 <div sclass="col-md-6">
-                                        <div sclass="card text-white bg-warning mb-3 shadow-sm dashboard-card">
-                                            <div sclass="card-body" style="min-height: 120px;">
-                                                <n:h5 class="card-title">Atualizações CNPq</n:h5>
-                                                <separator bar="true" sclass="mb-3"/>
-                                                <div sclass="d-flex align-items-center">
-                                                    <span sclass="z-icon-refresh" style="font-size: 40px; margin-right: 15px; opacity: 0.8;"/>
-                                                    <vlayout spacing="0">
-                                                        <label value="@load(vm.textoDesatualizados)" sclass="card-value"/>
-                                                        <label value="Currículos Desatualizados" style="font-size: 11px; opacity: 0.9;"/>
-                                                    </vlayout>
-                                                </div>
+                                    <div sclass="card text-white bg-warning mb-3 shadow-sm dashboard-card">
+                                        <div sclass="card-body" style="min-height: 120px;">
+                                            <n:h5 class="card-title">Atualizações CNPq</n:h5>
+                                            <separator bar="true" sclass="mb-3"/>
+                                            <div sclass="d-flex align-items-center">
+                                                <span sclass="z-icon-refresh" style="font-size: 40px; margin-right: 15px; opacity: 0.8;"/>
+                                                <vlayout spacing="0">
+                                                    <label value="@load(vm.textoDesatualizados)" sclass="card-value"/>
+                                                    <label value="Currículos Desatualizados" style="font-size: 11px; opacity: 0.9;"/>
+                                                </vlayout>
                                             </div>
                                         </div>
+                                    </div>
                                 </div>
 
                                 <div sclass="col-md-6">
@@ -218,13 +276,89 @@
                                     </div>
                                 </div>
 
+                                <script type="text/javascript"><![CDATA[
+                                    var chartPesquisadores = null;
+                                    var chartProducoes = null;
+
+                                    function renderizarGraficos(labels1, data1, labels2, data2) {
+                                        var ctxBar = document.getElementById('barChart');
+                                        var ctxPie = document.getElementById('pieChart');
+
+                                        if(!ctxBar || !ctxPie) return;
+
+                                        // Remove spinners
+                                        var loadingBar = document.getElementById('loadingBar');
+                                        var loadingPie = document.getElementById('loadingPie');
+                                        if (loadingBar) loadingBar.style.display = 'none';
+                                        if (loadingPie) loadingPie.style.display = 'none';
+
+                                        // Mostra canvas
+                                        ctxBar.style.display = 'block';
+                                        ctxPie.style.display = 'block';
+
+                                        if (chartPesquisadores) chartPesquisadores.destroy();
+                                        if (chartProducoes) chartProducoes.destroy();
+
+                                        chartPesquisadores = new Chart(ctxBar, {
+                                            type: 'bar',
+                                            data: {
+                                                labels: labels1,
+                                                datasets: [{
+                                                    label: 'Qtd. Produções',
+                                                    data: data1,
+                                                    backgroundColor: 'rgba(79, 70, 229, 0.85)',
+                                                    borderRadius: 6,
+                                                    borderSkipped: false
+                                                }]
+                                            },
+                                            options: {
+                                                responsive: true,
+                                                maintainAspectRatio: false,
+                                                plugins: { legend: { display: false } },
+                                                scales: {
+                                                    y: { beginAtZero: true, grid: { borderDash: [2, 4], color: '#e2e8f0' } },
+                                                    x: { grid: { display: false } }
+                                                }
+                                            }
+                                        });
+
+                                        chartProducoes = new Chart(ctxPie, {
+                                            type: 'doughnut',
+                                            data: {
+                                                labels: labels2,
+                                                datasets: [{
+                                                    data: data2,
+                                                    backgroundColor: [
+                                                        '#4f46e5', '#3b82f6', '#0ea5e9', '#06b6d4', '#14b8a6',
+                                                        '#10b981', '#84cc16', '#eab308', '#f59e0b', '#ef4444'
+                                                    ],
+                                                    borderWidth: 2,
+                                                    borderColor: '#ffffff',
+                                                    hoverOffset: 4
+                                                }]
+                                            },
+                                            options: {
+                                                responsive: true,
+                                                maintainAspectRatio: false,
+                                                cutout: '65%',
+                                                plugins: {
+                                                    legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } }
+                                                }
+                                            }
+                                        });
+                                    }
+                                ]]></script>
+
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+            <include src="/footer.zul"/>
         </div>
+            </vlayout>
+        </center>
 
-        <include src="/footer.zul"/>
 
-    </div> </zk>
+    </borderlayout>
+</zk>

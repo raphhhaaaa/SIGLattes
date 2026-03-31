@@ -8,15 +8,26 @@
 
 <zk xmlns="http://www.zkoss.org/2005/zul" xmlns:n="native">
 
-    <div sclass="d-flex flex-column" style="height: 100vh; overflow: hidden;"
-         viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ListagemVM')"
-         apply="org.zkoss.bind.BindComposer">
+    <borderlayout width="100vw" height="100vh"
+                  apply="org.zkoss.bind.BindComposer"
+                  viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ListagemVM')"
+                  validationMessages="@id('vmsgs')">
 
-        <include src="/header.zul"/>
-        <include src="/navbar.zul"/>
+        <north border="none">
+            <include src="/header.zul" />
+        </north>
 
-        <div sclass="container-fluid flex-grow-1"
-             style="padding: 20px; overflow: hidden;">
+        <west id="sidebarMenu"
+              width="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? '260px' : '75px'}"
+              border="none"
+              sclass="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? 'sidebar-wrapper' : 'sidebar-wrapper sidebar-mini'}">
+            <include src="/navbar.zul" />
+        </west>
+
+        <center border="none" sclass="main-content-wrapper">
+            <vlayout vflex="1" spacing="0">
+
+        <div sclass="container-fluid" vflex="1" style="padding: 20px; overflow-y: auto; overflow-x: hidden;">
             <div sclass="row h-100">
                 <div sclass="col-md-12 h-100">
 
@@ -104,7 +115,12 @@
                 </div>
             </div>
         </div>
+            </vlayout>
+        </center>
 
-        <include src="/footer.zul"/>
+        <south border="none">
+            <include src="/footer.zul"/>
+        </south>
 
-    </div> </zk>
+    </borderlayout>
+</zk>

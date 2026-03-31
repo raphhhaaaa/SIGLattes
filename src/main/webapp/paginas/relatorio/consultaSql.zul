@@ -5,15 +5,27 @@
 <?link rel="stylesheet" type="text/css" href="/css/zkbootstrap.css"?>
 <?link rel="stylesheet" type="text/css" href="/css/fontawesome.css"?>
 
-<zk xmlns="http://www.zkoss.org/2005/zul"
-    xmlns:n="native">
+    <zk xmlns="http://www.zkoss.org/2005/zul" xmlns:n="native">
+    <borderlayout width="100vw" height="100vh"
+                  apply="org.zkoss.bind.BindComposer"
+                  viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ConsultaSqlVM')"
+                  validationMessages="@id('vmsgs')">
 
-    <div sclass="d-flex flex-column" style="height: 100vh; overflow: hidden;"
-         viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ConsultaSqlVM')"
-         apply="org.zkoss.bind.BindComposer">
+        <north border="none">
+            <include src="/header.zul" />
+        </north>
 
-        <include src="/header.zul"/>
-        <include src="/navbar.zul"/>
+        <west id="sidebarMenu"
+              width="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? '260px' : '75px'}"
+              border="none"
+              sclass="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? 'sidebar-wrapper' : 'sidebar-wrapper sidebar-mini'}">
+            <include src="/navbar.zul" />
+        </west>
+
+        <center border="none" sclass="main-content-wrapper">
+            <vlayout vflex="1" spacing="0">
+
+        <div sclass="container-fluid" vflex="1" style="padding: 20px; overflow-y: auto; overflow-x: hidden;">
 
         <window hflex="1" vflex="1"
                 style="padding:20px; background-color:#f4f6f9;">
@@ -170,5 +182,13 @@
 
             </vlayout>
         </window>
-    </div>
+        </div>
+            </vlayout>
+        </center>
+
+        <south border="none">
+            <include src="/footer.zul"/>
+        </south>
+
+    </borderlayout>
 </zk>

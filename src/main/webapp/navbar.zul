@@ -1,115 +1,84 @@
-<zk xmlns:n="native">
+<vlayout sclass="sidebar-nav" vflex="1" hflex="1" spacing="0">
 
-    <zscript><![CDATA[
-        void toggle(Component origem, String idAlvo) {
-            Component alvo = origem.getFellow(idAlvo);
-            alvo.setVisible(!alvo.isVisible());
-        }
-    ]]></zscript>
+    <div sclass="sidebar-brand">
+<!--        <div sclass="brand-content">-->
+<!--            &lt;!&ndash; <image src="/images/uem.png" height="32px" sclass="brand-icon"/>-->
+<!--            <label value="Mindy" sclass="brand-text"/> !&ndash;&gt;-->
+<!--        </div>-->
 
-    <style>
-
-        .list-group-item.list-group-item-action.bg-light.font-weight-bold.text-muted.d-flex.justify-content-between.align-items-center.z-a:hover {
-        background: #e3f2fd;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-        color: #1976d2;
-        }
-
-    </style>
-
-    <div sclass="card shadow-sm" style="min-height: 100%;">
-
-        <div sclass="card-header bg-light d-flex justify-content-between align-items-center"
-             onClick='toggle(self, "divMenuPrincipal")'
-             style="cursor: pointer;"
-             tooltiptext="Clique para mostrar o menu">
-
-            <n:h6 class="mb-0"><n:i class="fa fa-bars"></n:i> Navegação</n:h6>
-            <n:i class="fa fa-chevron-down" style="font-size: 12px;"></n:i>
-        </div>
-
-        <div id="divMenuPrincipal" visible="false" sclass="list-group list-group-flush">
-
-            <a sclass="list-group-item list-group-item-action bg-light font-weight-bold text-muted d-flex justify-content-between align-items-center"
-               onClick='toggle(self, "divCadastros")'
-               style="cursor: pointer;">
-                <span><n:i class="fa fa-folder-open"></n:i> CADASTROS</span>
-                <n:i class="fa fa-caret-down"></n:i>
-            </a>
-            <div id="divCadastros" visible="false" sclass="bg-white">
-                <a href="/paginas/pessoa/pessoaList.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
-                    <n:i class="fa-solid fa-circle-user"></n:i> Pessoas
-                </a>
-                <a href="/paginas/curso/cursoList.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
-                    <n:i class="fa-solid fa-graduation-cap"></n:i> Cursos
-                </a>
-                <a href="/paginas/instituicao/instituicaoList.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
-                    <n:i class="fa-solid fa-school"></n:i> Instituições
-                </a>
-            </div>
-
-
-            <a sclass="list-group-item list-group-item-action bg-light font-weight-bold text-muted d-flex justify-content-between align-items-center"
-               onClick='toggle(self, "divFerramentas")'
-               style="cursor: pointer;">
-                <span><n:i class="fa fa-wrench"></n:i> FERRAMENTAS</span>
-                <n:i class="fa fa-caret-down"></n:i>
-            </a>
-            <div id="divFerramentas" visible="false" sclass="bg-white">
-                <a href="/paginas/ferramentas/verificacao.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
-                    <n:i class="fa fa-refresh"></n:i> Verificar Atualizações
-                </a>
-                <zk if="${sessionScope.usuario_logado.admin}">
-                    <a href="/paginas/ferramentas/config.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
-                        <n:i class="fa fa-cogs"></n:i> Configurações
-                    </a>
-                </zk>
-            </div>
-
-
-            <a sclass="list-group-item list-group-item-action bg-light font-weight-bold text-muted d-flex justify-content-between align-items-center"
-               onClick='toggle(self, "divRelatorios")'
-               style="cursor: pointer;">
-                <span><n:i class="fa fa-file-text"></n:i> RELATÓRIOS</span>
-                <n:i class="fa fa-caret-down"></n:i>
-            </a>
-            <div id="divRelatorios" visible="false" sclass="bg-white">
-                <zk if="${sessionScope.usuario_logado.admin}">
-                <a href="/paginas/relatorio/consultaSql.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
-                    <n:i class="fas fa-database"></n:i> Consulta SQL Manual
-                </a>
-                </zk>
-                <a href="/paginas/relatorio/relatorioDinamico.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
-                    <n:i class="fa-solid fa-clipboard"></n:i> Análise Dinâmica
-                </a>
-                <a href="/paginas/relatorio/relatorioRevistas.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
-                    <n:i class="fas fa-book-open"></n:i> Relatório de Revistas
-                </a>
-                <a href="/paginas/relatorio/relatorioProdutividade.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
-                    <n:i class="fas fa-trophy"></n:i> Relatório de Produtividade
-                </a>
-            </div>
-
-            <zk if="${sessionScope.usuario_logado.admin}">
-                <a sclass="list-group-item list-group-item-action bg-light font-weight-bold text-muted d-flex justify-content-between align-items-center"
-                   onClick='toggle(self, "divSistema")'
-                   style="cursor: pointer;">
-                    <span><n:i class="fa fa-laptop"></n:i> SISTEMA</span>
-                    <n:i class="fa fa-caret-down"></n:i>
-                </a>
-            </zk>
-
-            <div id="divSistema" visible="false" sclass="bg-white">
-                <a href="/paginas/sistema/logs.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
-                    <n:i class="fa fa-list-alt"></n:i> Logs do Sistema
-                </a>
-
-                <a href="/paginas/sistema/usuarioList.zul" sclass="list-group-item list-group-item-action border-0 pl-5" style="color: #136fee;">
-                    <n:i class="fa-solid fa-users"></n:i> Usuários
-                </a>
-            </div>
-
-        </div>
+        <a iconSclass="fas fa-bars" sclass="sidebar-toggle-btn-inner" tooltiptext="Recolher/Expandir">
+            <attribute name="onClick"><![CDATA[
+                org.zkoss.zul.West w = (org.zkoss.zul.West) self.getPage().getFellow("sidebarMenu");
+                if ("260px".equals(w.getWidth())) {
+                    w.setWidth("75px");
+                    w.setSclass("sidebar-wrapper sidebar-mini");
+                } else {
+                    w.setWidth("260px");
+                    w.setSclass("sidebar-wrapper");
+                }
+            ]]></attribute>
+        </a>
     </div>
-</zk>
+
+    <vlayout sclass="modern-sidebar" vflex="1" spacing="0" style="overflow-y: auto; overflow-x: hidden;">
+
+        <a label="Extrator Lattes" iconSclass="fas fa-cloud-download-alt"
+           sclass="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/index.zul" tooltiptext="Extrator Lattes"/>
+
+        <a label="Verificar Atualizações" iconSclass="fa fa-refresh"
+           sclass="${desktop.requestPath.contains('verificacao') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/paginas/ferramentas/verificacao.zul" tooltiptext="Verificar Atualizações"/>
+
+        <label value="CADASTROS" sclass="sidebar-section-title"/>
+
+        <a label="Pessoas" iconSclass="fas fa-users"
+           sclass="${desktop.requestPath.contains('pessoaList') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/paginas/pessoa/pessoaList.zul" tooltiptext="Pessoas"/>
+
+        <a label="Instituições" iconSclass="fas fa-university"
+           sclass="${desktop.requestPath.contains('instituicaoList') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/paginas/instituicao/instituicaoList.zul" tooltiptext="Instituições"/>
+
+        <a label="Cursos" iconSclass="fas fa-graduation-cap"
+           sclass="${desktop.requestPath.contains('cursoList') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/paginas/curso/cursoList.zul" tooltiptext="Cursos"/>
+
+        <label value="RELATÓRIOS" sclass="sidebar-section-title"/>
+
+        <a label="Dinâmico" iconSclass="fas fa-chart-pie"
+           sclass="${desktop.requestPath.contains('relatorioDinamico') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/paginas/relatorio/relatorioDinamico.zul" tooltiptext="Relatório Dinâmico"/>
+
+        <a label="Revistas" iconSclass="fas fa-book-open"
+           sclass="${desktop.requestPath.contains('relatorioRevistas') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/paginas/relatorio/relatorioRevistas.zul" tooltiptext="Revistas (Qualis)"/>
+
+        <a label="Produtividade" iconSclass="fas fa-chart-line"
+           sclass="${desktop.requestPath.contains('relatorioProdutividade') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/paginas/relatorio/relatorioProdutividade.zul" tooltiptext="Produtividade"/>
+
+        <zk if="${sessionScope.usuario_logado.admin}">
+        <a label="Consulta SQL" iconSclass="fas fa-database"
+           sclass="${desktop.requestPath.contains('consultaSql') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/paginas/relatorio/consultaSql.zul" tooltiptext="Consulta SQL Livre"/>
+        </zk>
+
+        <zk if="${sessionScope.usuario_logado.admin}">
+        <label value="SISTEMA" sclass="sidebar-section-title"/>
+
+        <a label="Utilizadores" iconSclass="fas fa-user-shield"
+           sclass="${desktop.requestPath.contains('usuarioList') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/paginas/sistema/usuarioList.zul" tooltiptext="Gestão de Utilizadores"/>
+
+        <a label="Configurações" iconSclass="fas fa-cog"
+           sclass="${desktop.requestPath.contains('config') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/paginas/ferramentas/config.zul" tooltiptext="Configurações Globais"/>
+
+        <a label="Logs" iconSclass="fas fa-history"
+           sclass="${desktop.requestPath.contains('logs') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/paginas/sistema/logs.zul" tooltiptext="Logs de Auditoria"/>
+        </zk>
+
+    </vlayout>
+</vlayout>

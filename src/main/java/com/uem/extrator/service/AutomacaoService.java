@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.util.Scanner;
 import com.uem.extrator.dao.CurriculoDAO;
 import com.uem.extrator.dao.ProducaoDAO;;
+import com.uem.extrator.model.Usuario;
 import com.uem.extrator.util.ConfigManager;
 import com.uem.extrator.service.LattesService;
 import java.nio.file.Files;
@@ -311,7 +312,7 @@ public class AutomacaoService {
     }
 
     private void rodarBackup() {
-        System.out.println("=== [AUTO] Iniciando Backup do Banco de Dados... ===");
+        System.out.println("=== [AUTO] Iniciando Backup do Banco de Dados... (DB2 DOCKER) ===");
         /**
          * Atenção: importante citar que este metodo é feito especificamente para o banco de dados local
          * MYSQL, quando for feita a migração para o banco da UEM (IBM DB2) essa lógica DEVERÁ ser
@@ -319,107 +320,52 @@ public class AutomacaoService {
          */
 
         try {
-            // 1. Ler configurações do Hibernate
-            Properties dbProps = lerConfiguracoesDoHibernate();
-            String user = dbProps.getProperty("user");
-            String pass = dbProps.getProperty("password");
-            String url = dbProps.getProperty("url");
+            // A pasta onde o DB2 vai jogar o backup DENTRO do container
+            // (Esta pasta está segura e mapeada no seu volume db2_data no disco físico)
+            String backupDirDb2 = "/database/data";
 
-            // Extrair nome do banco da URL
-            String dbName = "lattesdb";
-            Matcher m = Pattern.compile("3306/(.*?)\\?").matcher(url);
-            if (m.find()) dbName = m.group(1);
+            System.out.println(">>> BACKUP: Solicitando backup binário nativo ao DB2 via Docker...");
 
-            // 2. Definir pasta de destino
-            String configPath = ConfigManager.getInstance().getConfigPath();
-            File configFile = new File(configPath);
-            Path backupDir = Paths.get(configFile.getParent(), "backups");
-            Files.createDirectories(backupDir);
-
-            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm"));
-            String fileName = "backup_lattes_" + timestamp + ".sql";
-            File backupFile = backupDir.resolve(fileName).toFile();
-
-            System.out.println(">>> BACKUP: Gerando arquivo em: " + backupFile.getAbsolutePath());
-
-            // 3. Executar mysqldump SEM o argumento --result-file
-            // O mysqldump vai jogar o SQL no console (STDOUT) e o Java vai redirecionar para o arquivo
+            // Comando Mágico:
+            // 1. Entra no docker (mydb2)
+            // 2. Desconecta os usuários ativos rapidinho (force applications all) para evitar lock
+            // 3. Faz o backup seguro (binary dump) para a pasta
             ProcessBuilder pb = new ProcessBuilder(
-                    "mysqldump",
-                    "-u", user,
-                    "--password=" + pass,
-                    dbName
+                    "docker", "exec", "mydb2", "bash", "-c",
+                    "su - db2inst1 -c 'db2 force applications all && sleep 5 && db2 terminate && db2 backup database LATTES to " + backupDirDb2 + "'"
             );
 
-            // Redireciona a saída do comando direto para o arquivo físico
-            pb.redirectOutput(backupFile);
-            pb.redirectErrorStream(false); // Mantém erros separados para podermos ler
-
+            // Junta a saída normal e os erros num fluxo só para lermos no console do Java
+            pb.redirectErrorStream(true);
             Process process = pb.start();
 
-            // 4. Ler possíveis erros do mysqldump (stderr)
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+            boolean sucesso = false;
+
+            // Lê o que o DB2 está a responder no terminal invisível
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    // Ignora o aviso chato de senha insegura
-                    if (!line.contains("Using a password")) {
-                        System.err.println("[mysqldump erro] " + line);
+                    System.out.println("[DB2 BACKUP] " + line);
+                    // O DB2 sempre devolve esta frase quando dá certo
+                    if (line.contains("Backup successful")) {
+                        sucesso = true;
                     }
                 }
             }
 
             int exitCode = process.waitFor();
-            if (exitCode == 0) {
-                System.out.println("BACKUP CONCLUÍDO COM SUCESSO! Tamanho: " + (backupFile.length() / 1024) + " KB");
+
+            if (exitCode == 0 && sucesso) {
+                System.out.println(">>> BACKUP CONCLUÍDO COM SUCESSO!");
+                System.out.println(">>> O arquivo de imagem (.001) foi salvo de forma segura no volume do Docker.");
             } else {
-                System.err.println("ERRO AO REALIZAR BACKUP. Código de saída: " + exitCode);
+                System.err.println(">>> ERRO AO REALIZAR BACKUP. Código de saída do Docker: " + exitCode);
             }
 
         } catch (Exception e) {
-            System.err.println("FALHA CRÍTICA NO BACKUP: " + e.getMessage());
+            System.err.println(">>> FALHA CRÍTICA NO BACKUP: " + e.getMessage());
             e.printStackTrace();
         }
-    }
-
-    // auxiliar: le hibernate.cfg.xml para descobrir credenciais
-    private Properties lerConfiguracoesDoHibernate() throws Exception {
-        Properties props = new Properties();
-        try (InputStream input = getClass().getClassLoader().getResourceAsStream("hibernate.cfg.xml")) {
-            if (input == null) throw new Exception("Arquivo hibernate.cfg.xml não existe.");
-
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-
-            // desabilita validação do DTD (para não tentar baixar da “internet” atraves da url no hibernate.cgf.xml
-            try {
-                factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-            } catch (Exception e) { /* Ignora se o parser não suportar */ }
-            factory.setValidating(false);
-
-            DocumentBuilder builder = factory.newDocumentBuilder();
-
-            // se ele tentar baixar algo, entrega um texto vazio
-            builder.setEntityResolver(new org.xml.sax.EntityResolver() {
-                @Override
-                public org.xml.sax.InputSource resolveEntity(String publicId, String systemId) {
-                    return new org.xml.sax.InputSource(new java.io.StringReader(""));
-                }
-            });
-
-            Document doc = builder.parse(input);
-            doc.getDocumentElement().normalize();
-
-            NodeList propertyNodes = doc.getElementsByTagName("property");
-            for (int i = 0; i < propertyNodes.getLength(); i++) {
-                Element element = (Element) propertyNodes.item(i);
-                String name = element.getAttribute("name");
-                String value = element.getTextContent();
-
-                if (name.contains("connection.username")) props.setProperty("user", value);
-                if (name.contains("connection.password")) props.setProperty("password", value);
-                if (name.contains("connection.url")) props.setProperty("url", value);
-            }
-        }
-        return props;
     }
 
     // debug

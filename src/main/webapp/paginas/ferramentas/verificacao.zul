@@ -12,12 +12,24 @@
 <zk xmlns="http://www.zkoss.org/2005/zul"
     xmlns:n="http://www.zkoss.org/2005/zk/native">
 
-    <div sclass="d-flex flex-column min-vh-100"
-         apply="org.zkoss.bind.BindComposer"
-         viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ExtratorVM')">
+    <borderlayout width="100vw" height="100vh"
+                  apply="org.zkoss.bind.BindComposer"
+                  viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ExtratorVM')"
+                  validationMessages="@id('vmsgs')">
 
-        <include src="/header.zul"/>
-        <include src="/navbar.zul"/>
+        <north border="none">
+            <include src="/header.zul" />
+        </north>
+
+        <west id="sidebarMenu"
+              width="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? '260px' : '75px'}"
+              border="none"
+              sclass="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? 'sidebar-wrapper' : 'sidebar-wrapper sidebar-mini'}">
+            <include src="/navbar.zul" />
+        </west>
+
+        <center border="none" sclass="main-content-wrapper">
+            <vlayout vflex="1" spacing="0">
 
         <style>
             .log-box { font-family: monospace; background-color: #f8f9fa; font-size: 11px; resize: none; border: 1px solid #ced4da; }
@@ -38,7 +50,7 @@
                                 <div sclass="col-md-12 mb-4">
                                     <div sclass="alert alert-warning">
                                         <n:strong>Como funciona:</n:strong> O sistema verifica a data da última atualização de cada currículo salvo no banco local e compara com a data informada pelo webservice do CNPq. Se a data do CNPq for mais recente, o currículo é marcado para atualização.
-                                        <n:br><label style="color:gray; font-style:italic;">Nota: Este processo consulta currículos já salvos no sistema e pode demorar alguns minutos dependendo da quantidade.</label></n:br>
+                                        <label style="color:gray; font-style:italic; padding: 100px;">Nota: Este processo consulta currículos já salvos no sistema e pode demorar alguns minutos dependendo da quantidade.</label>
                                     </div>
 
                                     <hlayout spacing="10px">
@@ -111,7 +123,12 @@
                 </div>
             </div>
         </div>
+            </vlayout>
+        </center>
 
-        <include src="/footer.zul"/>
+        <south border="none">
+            <include src="/footer.zul"/>
+        </south>
 
-    </div> </zk>
+    </borderlayout>
+</zk>

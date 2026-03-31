@@ -16,6 +16,7 @@ import org.zkoss.zk.ui.Sessions;
 
 public class UsuarioVM {
 
+    private Usuario usuarioLogado;
     private UsuarioDAO dao = new UsuarioDAO();
     private List<Usuario> listaUsuarios;
     private Usuario usuarioEdicao; // o usuário sendo criado/editado no modal
@@ -24,6 +25,7 @@ public class UsuarioVM {
 
     @Init
     public void init() {
+        usuarioLogado = (Usuario) Sessions.getCurrent().getAttribute("usuario_logado");
         carregarLista();
     }
 
@@ -130,4 +132,5 @@ public class UsuarioVM {
     public boolean isModoEdicao() { return modoEdicao; }
     public String getSenhaTemporaria() { return senhaTemporaria; }
     public void setSenhaTemporaria(String senhaTemporaria) { this.senhaTemporaria = senhaTemporaria; }
+    public Usuario getUsuarioLogado() { return usuarioLogado; }
 }

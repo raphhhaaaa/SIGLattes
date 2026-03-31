@@ -160,6 +160,15 @@ public class CurriculoDAO {
         }
     }
 
+    public Long contarPesquisadoresUem() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery("SELECT COUNT(DISTINCT c.idLattes) FROM Atuacao a JOIN a.curriculo c JOIN a.instituicao i WHERE UPPER(i.nomeInstituicao) = 'UNIVERSIDADE ESTADUAL DE MARINGÁ'", Long.class).uniqueResult();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0L;
+        }
+    }
+
     /**
      * OTIMIZAÇÃO DB2: Busca leve para verificação de atualizações.
      * Seleciona apenas as 3 colunas necessárias em vez de carregar

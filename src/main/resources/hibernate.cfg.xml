@@ -56,7 +56,7 @@
 
         <!-- Conexão IBM DB2 -->
         <property name="hibernate.connection.driver_class">com.ibm.db2.jcc.DB2Driver</property>
-        <property name="hibernate.connection.url">jdbc:db2://localhost:50000/lattes</property>
+        <property name="hibernate.connection.url">jdbc:db2://localhost:50000/lattes:currentSchema=LATTESEXTRATOR;</property>
         <property name="hibernate.connection.username">db2inst1</property>
         <property name="hibernate.connection.password">1973</property>
         <property name="hibernate.dialect">org.hibernate.dialect.DB2Dialect</property>
