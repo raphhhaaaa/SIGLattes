@@ -284,4 +284,45 @@ public class CurriculoDAO {
             default:               return "badge bg-secondary";
         }
     }
+
+    // MÉTODOS DE PAGINAÇÃO //
+
+    public List<Curriculo> listarPaginado(int offset, int limit, String busca) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            boolean temBusca = (busca != null && !busca.trim().isEmpty());
+            String hql = temBusca
+                    ? "FROM Curriculo c WHERE lower(c.nomeCompleto) LIKE :busca OR c.idLattes LIKE :busca ORDER BY c.nomeCompleto"
+                    : "FROM Curriculo c ORDER BY c.nomeCompleto";
+
+            Query<Curriculo> query = session.createQuery(hql, Curriculo.class);
+            if (temBusca) {
+                query.setParameter("busca", "%" + busca.toLowerCase() + "%");
+            }
+            query.setFirstResult(offset); // a partir de qual registro ex: página 2 A PARTIR do registro 10)
+            query.setMaxResults(limit); // quantos registros trazer (ex: 10)
+
+            return query.list();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+
+    public Long contarTotalPaginado(String busca) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            boolean temBusca = (busca != null && !busca.trim().isEmpty());
+            String hql = temBusca
+                    ? "SELECT COUNT(c) FROM Curriculo c WHERE lower(c.nomeCompleto) LIKE :busca OR c.idLattes LIKE :busca"
+                    : "SELECT COUNT(c) FROM Curriculo c";
+
+            Query<Long> query = session.createQuery(hql, Long.class);
+            if (temBusca) {
+                query.setParameter("busca", "%" + busca.toLowerCase() + "%");
+            }
+            return query.uniqueResult();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0L;
+        }
+    }
 }
