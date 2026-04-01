@@ -5,11 +5,16 @@ import com.uem.extrator.service.AuditLogService;
 import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class CurriculoDAO {
+
+    // instancia logger
+    private static final Logger logger = LoggerFactory.getLogger(CurriculoDAO.class);
 
     private AuditLogService auditLogService = new AuditLogService();
     private CursoDAO cursoDAO = new CursoDAO();
@@ -129,7 +134,7 @@ public class CurriculoDAO {
 
                 } catch (Exception e) {
                     if (session.getTransaction().isActive()) session.getTransaction().rollback();
-                    e.printStackTrace();
+                    logger.error("Erro na base de dados (CurriculoDAO)", e);
                     throw e;
                 }
             }
@@ -145,7 +150,7 @@ public class CurriculoDAO {
             return session.createQuery(
                     "FROM Curriculo ORDER BY nomeCompleto", Curriculo.class).list();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (CurriculoDAO)", e);
             return new ArrayList<>();
         }
     }
@@ -155,7 +160,7 @@ public class CurriculoDAO {
             return session.createQuery(
                     "SELECT COUNT(c) FROM Curriculo c", Long.class).uniqueResult();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (CurriculoDAO)", e);
             return 0L;
         }
     }
@@ -164,7 +169,7 @@ public class CurriculoDAO {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.createQuery("SELECT COUNT(DISTINCT c.idLattes) FROM Atuacao a JOIN a.curriculo c JOIN a.instituicao i WHERE UPPER(i.nomeInstituicao) = 'UNIVERSIDADE ESTADUAL DE MARINGÁ'", Long.class).uniqueResult();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (CurriculoDAO)", e);
             return 0L;
         }
     }
@@ -181,7 +186,7 @@ public class CurriculoDAO {
                     "SELECT c.idLattes, c.dataAtualizacao, c.nomeCompleto FROM Curriculo c",
                     Object[].class).list();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (CurriculoDAO)", e);
             return new ArrayList<>();
         }
     }
@@ -194,7 +199,6 @@ public class CurriculoDAO {
      *   1 query para atuacoes
      *   N queries para vinculos de cada atuacao
      *   N queries para atividades de cada atuacao
-     *
      * Solução: uma query principal com JOIN FETCH para tudo que é sempre necessário
      * (formacoes), seguida de queries de inicialização por coleção em lote.
      * O DB2 processa melhor múltiplas queries simples com IN do que Cartesian Products
@@ -227,7 +231,7 @@ public class CurriculoDAO {
             }
             return c;
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (CurriculoDAO)", e);
             return null;
         }
     }
@@ -269,7 +273,7 @@ public class CurriculoDAO {
                     .uniqueResult();
             return count != null && count > 0;
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (CurriculoDAO)", e);
             return false;
         }
     }
@@ -303,7 +307,7 @@ public class CurriculoDAO {
 
             return query.list();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (CurriculoDAO)", e);
             return new ArrayList<>();
         }
     }
@@ -321,7 +325,7 @@ public class CurriculoDAO {
             }
             return query.uniqueResult();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (CurriculoDAO)", e);
             return 0L;
         }
     }

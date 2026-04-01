@@ -6,6 +6,8 @@ import com.uem.extrator.service.AutomacaoService;
 import com.uem.extrator.dao.QualisDAO;
 import com.uem.extrator.model.Qualis;
 import org.hibernate.internal.util.xml.BufferedXMLEventReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -22,18 +24,21 @@ import javax.servlet.annotation.WebListener;
 @WebListener
 public class IniciadorBanco implements ServletContextListener {
 
+    // logger instancia
+    private static final Logger logger = LoggerFactory.getLogger(IniciadorBanco.class);
+
     public void contextInitialized(ServletContextEvent sce) {
-        System.out.println(">>> TOMCAT INICIOU: Acordando o Hibernate...");
+        logger.info(">>> TOMCAT INICIOU: Iniciando o Hibernate...");
 
         try {
             // Força o carregamento do HibernateUtil agora
             HibernateUtil.getSessionFactory();
-            System.out.println(">>> HIBERNATE: Conectado e pronto para uso!");
+            logger.info(">>> HIBERNATE: Conectado e pronto para uso!");
 
             // cria usuario admin se ainda nao existir (se for a primeira vez subindo sistema)
             UsuarioDAO usuarioDAO = new UsuarioDAO();
             if (usuarioDAO.buscarPorLogin("admin") == null) {
-                System.out.println(">>> Criando usuário admin padrão...");
+                logger.info(">>> Criando usuário admin padrão...");
                 Usuario admin = new Usuario("admin", "admin", "Administrador UEM", true);
                 usuarioDAO.salvar(admin);
             }
@@ -45,8 +50,7 @@ public class IniciadorBanco implements ServletContextListener {
             inicializarQualis();
 
         } catch (Exception e) {
-            System.err.println(">>> ERRO: Hibernate falhou ao iniciar.");
-            e.printStackTrace();
+            logger.error(">>> ERRO: Hibernate falhou ao iniciar: ", e);
         }
     }
 
@@ -61,7 +65,7 @@ public class IniciadorBanco implements ServletContextListener {
             // encerra Hibernate
             HibernateUtil.shutdown();
         } catch (Exception e) {
-            System.err.println("Erro ao fechar banco: " + e.getMessage());
+            logger.error("Erro ao fechar banco: ", e);
         }
     }
 
@@ -69,11 +73,11 @@ public class IniciadorBanco implements ServletContextListener {
         com.uem.extrator.dao.QualisDAO qualisDAO = new com.uem.extrator.dao.QualisDAO();
 
         if (qualisDAO.contarTodos() > 0) {
-            System.out.println(">>> [Qualis] Base já populada. Ignorando importação.");
+            logger.info(">>> [QUALIS] Base já populada. Ignorando importação.");
             return;
         }
 
-        System.out.println(">>> [Qualis] Iniciando a leitura do ficheiro CAPES...");
+        logger.info(">>> [QUALIS] Iniciando a leitura do ficheiro CAPES...");
         java.util.Map<String, com.uem.extrator.model.Qualis> mapaQualis = new java.util.HashMap<>();
 
         try (java.io.InputStream is = getClass().getClassLoader().getResourceAsStream("qualis.csv");
@@ -114,12 +118,12 @@ public class IniciadorBanco implements ServletContextListener {
             }
 
             java.util.List<com.uem.extrator.model.Qualis> lote = new java.util.ArrayList<>(mapaQualis.values());
-            System.out.println(">>> [Qualis] Inserindo " + lote.size() + " revistas...");
+            logger.info(">>> [QUALIS] Inserindo {} revistas...", lote.size());
             qualisDAO.salvarEmLote(lote);
-            System.out.println(">>> [Qualis] Importação concluída com sucesso!");
+            logger.info(">>> [QUALIS] Importação concluída com sucesso!");
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(">>> [QUALIS] Erro ao popular Qualis: ", e);
         }
     }
 

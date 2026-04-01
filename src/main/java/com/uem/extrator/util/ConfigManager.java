@@ -5,8 +5,13 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ConfigManager {
+
+    // logger instancia
+    private static final Logger logger = LoggerFactory.getLogger(ConfigManager.class);
 
     private static ConfigManager instance;
     private Properties properties;
@@ -76,7 +81,7 @@ public class ConfigManager {
             try (FileInputStream fis = new FileInputStream(file)) {
                 properties.load(fis);
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("Erro de I/O nas configurações", e);
             }
         } else {
             // se não existir, cria com padrão
@@ -108,7 +113,7 @@ public class ConfigManager {
             if (!properties.containsKey("wsdl_url")) properties.setProperty("wsdl_url", DEFAULT_WSDL);
             properties.store(fos, "Configurações do Extrator Lattes");
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("Erro de I/O nas configurações", e);
         }
     }
 

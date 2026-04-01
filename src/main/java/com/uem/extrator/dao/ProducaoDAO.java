@@ -5,12 +5,17 @@ import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ProducaoDAO {
 
+    // logger instancia
+    private static final Logger logger = LoggerFactory.getLogger(ProducaoDAO.class);
+    
     public void atualizarMetricas(Producao producao) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             Transaction tx = session.beginTransaction();
@@ -20,7 +25,7 @@ public class ProducaoDAO {
                 tx.commit();
             } catch (Exception e) {
                 if (tx != null) tx.rollback();
-                e.printStackTrace();
+                logger.error("Erro na base de dados (ProducaoDAO)", e);
             }
         }
     }
@@ -29,7 +34,7 @@ public class ProducaoDAO {
             // hql simples para contar as linhas na tabela Producao
             return session.createQuery("SELECT COUNT(p) FROM Producao p", Long.class).uniqueResult();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (ProducaoDAO)", e);
             return 0L;
         }
     }
@@ -69,7 +74,7 @@ public class ProducaoDAO {
 
             return query.list();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (ProducaoDAO)", e);
             return new ArrayList<>();
         }
     }

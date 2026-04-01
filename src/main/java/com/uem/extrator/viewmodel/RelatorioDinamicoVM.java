@@ -14,6 +14,8 @@ import org.zkoss.zul.Filedownload;
 import org.zkoss.zul.ListModelList;
 import org.zkoss.zk.ui.util.Clients;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
@@ -22,6 +24,9 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 public class RelatorioDinamicoVM {
+
+    // logger instancia
+    private static final Logger logger = LoggerFactory.getLogger(RelatorioDinamicoVM.class);
 
     // Usuário
     private Usuario usuarioLogado;
@@ -144,7 +149,7 @@ public class RelatorioDinamicoVM {
                 atualizarGraficosPizza();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro ao atualizar gráficos: ", e);
             this.tituloGrafico = "Erro: " + e.getMessage();
         }
     }
@@ -194,7 +199,7 @@ public class RelatorioDinamicoVM {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro ao atualizar gráficos de pizza: ", e);
         }
         labelsTop5.append("]");
         dataTop5.append("]");
@@ -253,7 +258,7 @@ public class RelatorioDinamicoVM {
             baixarCsv(sb, "DETALHADO");
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro ao exportar CSV detalhado: ", e);
             msgErro("Erro ao exportar detalhado: " + e.getMessage());
         }
     }

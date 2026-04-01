@@ -21,8 +21,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import com.uem.extrator.service.SemanticScholarService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LattesService {
+
+    // instancia logger
+    private static final Logger logger = LoggerFactory.getLogger(LattesService.class);
 
     // Aponta para o Localhost na porta do Túnel (-L)
     // CONSTANTES FIXAS
@@ -89,6 +94,8 @@ public class LattesService {
             try {
                 if (i > 0) System.out.println("Tentativa " + (i+1) + " de " + (maxRetries+1) + " para ID " + idLimpo + "...");
 
+                logger.debug("Tentativa {} de {} para ID {} ...", i+1, maxRetries+1, idLimpo);
+
                 ILattesSOAP port = criarCliente();
                 byte[] zipBytes = port.getCurriculoCompactado(idLimpo);
 
@@ -124,7 +131,7 @@ public class LattesService {
                     semanticScholarService.enriquecerDadosBibliometricos(curriculo, producoes);
                     } else {
                         // retorna sem enriquecer
-                        System.out.println("-> API IGNORADA, SEM ARTIGOS: " + curriculo.getNomeCompleto());
+                        logger.debug("-> API IGNORADA, SEM ARTIGOD: {}", curriculo.getNomeCompleto());
                     }
                 }
                 return curriculo;
@@ -148,22 +155,21 @@ public class LattesService {
     public String buscarIdPorDados(String cpf, String nome, String data) throws Exception {
         ILattesSOAP port = criarCliente();
 
-        System.out.println(">>> [SOAP CNPQ] Enviando -> CPF: [" + cpf + "] NOME: [" + nome + "] DATA: [" + data + "]" );
-
+        logger.debug(">>> [SOAP CNPQ] Enviando -> CPF: [{}], NOME: [{}], DATA: [{}]", cpf, nome, data);
         String resposta = port.getIdentificadorCNPq(cpf, nome, data);
 
-        System.out.println(">>> [SOAP CNPQ] Resposta: [" + resposta + "]");
+        logger.debug(">>> [SOAP CNPQ] Resposta: [{}]", resposta);
 
         if (resposta == null || resposta.trim().isEmpty()) {
-            System.out.println(port.getOcorrenciaCV(resposta));
+            logger.debug(port.getOcorrenciaCV(resposta));
             throw new Exception("Erro de CNPq: ID vazio ou nulo." + resposta);
         }
 
         if (resposta.length() != 16) {
-            System.out.println(port.getOcorrenciaCV(resposta));
+            logger.debug(port.getOcorrenciaCV(resposta));
             throw new Exception("Erro de CNPq: " + resposta);
         }
-        System.out.println(port.getOcorrenciaCV(resposta));
+        logger.debug(port.getOcorrenciaCV(resposta));
         return resposta;
     }
 
@@ -213,14 +219,13 @@ public class LattesService {
     }
 
     public RelatorioProcessamento verificarAtualizacao() {
-        System.out.println(">>> AUTOMACAO: Iniciando varredura de atualizacoes no CNPq...");
-
+        logger.info(">>> AUTOMACAO: Iniciando varredura de atualizacoes no CNPq...");
         RelatorioProcessamento relatorio = new RelatorioProcessamento();
 
         // busca leve
         List<Object[]> listaResumida = curriculoDAO.listarResumoParaVerificacao();
         int total = listaResumida.size();
-        System.out.println(">>> AUTOMAÇÃO: " + total + " currículos para verificar.");
+        logger.info(">>> AUTOMAÇÃO: {} currículos para verificar.", total);
 
         // cria pool com 30 Threads (30 currículos por vez)
         // atenção: não aumente muito o numero de threads para não ser bloqueado pelo CNPq (Ip ban)
@@ -259,12 +264,12 @@ public class LattesService {
                         }
                     }
                 } catch (Exception e) {
-                    System.err.println("Erro ao verificar " + nome + ": " + e.getMessage());
+                    logger.error("Erro ao verificar atualizações para {}", nome, e);
                 } finally {
                     int p = processados.incrementAndGet();
                     // Log de progresso a cada 100 currículos para não poluir o console
                     if (p % 100 == 0) {
-                        System.out.println(">>> Progresso: " + p + "/" + total);
+                        logger.debug(">>> Progresso: {} / {}", p, total);
                     }
                 }
             });
@@ -284,7 +289,7 @@ public class LattesService {
         // limpeza final forçada
         System.gc();
 
-        System.out.println(">>> AUTOMAÇÃO: Varredura concluída. Atualizados: " + relatorio.atualizados.size() + ", " + "Erros: " + relatorio.erros.size());
+        logger.info(">>> AUTOMAÇÃO: Varredura concluída. Atualizados: {}, Erros: {}", relatorio.atualizados.size(), relatorio.erros.size());
         if (relatorio.atualizados.size() == 0 && relatorio.erros.size() == 0) {
             System.out.println(">>> AUTOMAÇÃO: Sistema sincronizado!!");
         }
@@ -350,7 +355,7 @@ public class LattesService {
             return (code == 200 || code == 405);
 
         } catch (Exception e) {
-            System.err.println("Falha no teste de conexão: " + e.getMessage());
+            logger.error("Falha no teste de conexão CNPq: ", e);
             return false;
         }
     }

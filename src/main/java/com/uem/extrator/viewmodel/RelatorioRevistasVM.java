@@ -10,6 +10,8 @@ import org.zkoss.bind.annotation.Command;
 import org.zkoss.zk.ui.Sessions;
 import org.zkoss.zul.Filedownload;
 import org.zkoss.bind.annotation.NotifyChange;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
@@ -19,6 +21,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class RelatorioRevistasVM {
+
+    // logger instancia
+    private static final Logger logger = LoggerFactory.getLogger(RelatorioRevistasVM.class);
 
     private Usuario usuarioLogado;
     private List<RelatorioRevistaDTO> listaRelatorio;
@@ -77,7 +82,7 @@ public class RelatorioRevistasVM {
             aplicarFiltros();
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro ao carregar dados da tabela de revistas: ", e);
         }
     }
 

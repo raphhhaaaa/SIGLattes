@@ -18,10 +18,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ListagemVM {
 
     private Usuario usuarioLogado;
+
+    // logger instancia
+    private static final Logger logger = LoggerFactory.getLogger(ListagemVM.class);
 
     // DAOs
     private CurriculoDAO curriculoDAO = new CurriculoDAO();
@@ -170,7 +175,7 @@ public class ListagemVM {
         }
 
         new Thread(() -> {
-            System.out.println(">>> [THREAD] Iniciando varredura UI...");
+            logger.debug(">>> [THREAD] Iniciando varredura UI...");
             boolean houveAtualizacao = false;
 
             for (Producao artigo : this.curriculo.getProducoes()) {
@@ -204,7 +209,7 @@ public class ListagemVM {
                         // pausa de segurança para a API
                         Thread.sleep(100);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        logger.error("Erro buscar métricas bibliométricas", e);
                     }
                 }
                 // Se não precisa atualizar (já tem no banco e é recente), não faz nada.
@@ -216,7 +221,7 @@ public class ListagemVM {
                     public void onEvent(Event event) {
                         // Força o redesenho da lista inteira
                         BindUtils.postNotifyChange(null, null, curriculo, "producoes");
-                        System.out.println(">>> [UI] Refresh Final Executado.");
+                        logger.debug(">>> [UI] Refresh Final Executado.");
                     }
                 }, new Event("refreshAll"));
             }

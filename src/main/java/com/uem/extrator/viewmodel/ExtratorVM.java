@@ -1,5 +1,6 @@
 package com.uem.extrator.viewmodel;
 
+import ch.qos.logback.classic.selector.servlet.LoggerContextFilter;
 import com.uem.extrator.dao.CurriculoDAO;
 import com.uem.extrator.dao.ProducaoDAO;
 import com.uem.extrator.model.Curriculo;
@@ -23,6 +24,8 @@ import org.zkoss.zk.ui.Sessions;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.util.Clients;
 import org.zkoss.zk.ui.event.EventListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.management.Query;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -41,6 +44,9 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 public class ExtratorVM {
+
+    // logger instancia
+    private static final Logger logger = LoggerFactory.getLogger(ExtratorVM.class);
 
     // --- LOGIN --- //
     private Usuario usuarioLogado;
@@ -147,7 +153,7 @@ public class ExtratorVM {
                     }, new Event("onReady"));
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error("Erro na ViewModel de Extração", e);
             }
         });
     }
@@ -183,7 +189,7 @@ public class ExtratorVM {
             return String.format("setTimeout(function(){ if(typeof renderizarGraficos === 'function') renderizarGraficos(%s, %s, %s, %s); }, 300);", labels1, data1, labels2, data2);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na ViewModel de Extração", e);
             return "";
         }
     }
@@ -241,8 +247,7 @@ public class ExtratorVM {
             } catch (Exception e) {
                 this.verificandoAtualizacoes = false;
                 atualizarTextoDesatualizados(desktop, "Erro");
-                System.err.println("Erro ao verificar desatualizados no Dashboard: " + e.getMessage());
-            }
+                logger.error("Erro ao verificar desatualizados no Dashboard", e);            }
         });
     }
 
@@ -351,7 +356,7 @@ public class ExtratorVM {
                     });
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error("Erro na ViewModel de Extração", e);
             }
         });
     }
@@ -640,7 +645,7 @@ public class ExtratorVM {
                     finalizarProcesso(desktop, "❌ Pesquisador não encontrado. Tente verificar o nome exato e a data de nascimento.", false);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error("Erro na ViewModel de Extração", e);
 
                 // log de erro
                 AuditLogService.registrarExtracao("BUSCA_ERRO", login, false, "N/A", "Erro: " + e.getMessage());
@@ -695,7 +700,7 @@ public class ExtratorVM {
                 finalizarProcesso(desktop, "CNPq retornou vazio ou perfil privado.", false);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na ViewModel de Extração", e);
 
             // log de erro técnico
             AuditLogService.registrarExtracao(tipoOrigem, login, false, id, "ERRO: " + e.getMessage());
@@ -715,7 +720,7 @@ public class ExtratorVM {
                     org.zkoss.bind.BindUtils.postNotifyChange(null, null, ExtratorVM.this, "barraVisivel");
                 }, new Event("onUpdate"));
             }
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) { logger.error("Erro na ViewModel de Extração", e); }
     }
 
     private void finalizarProcesso(Desktop desktop, String msg, boolean sucesso) {
@@ -741,7 +746,7 @@ public class ExtratorVM {
                     }
                 }, new Event("onNotify"));
             }
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) { logger.error("Erro na ViewModel de Extração", e); }
     }
 
     // --- UPLOAD ---
@@ -885,7 +890,7 @@ public class ExtratorVM {
                     finalizarProcesso(desktop, "Erro: Não foi possível estruturar o XML.", false);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error("Erro na ViewModel de Extração", e);
                 AuditLogService.registrarExtracao("UPLOAD_MANUAL", login, false, "N/A", "ERRO: " + e.getMessage());
                 finalizarProcesso(desktop, "Falha técnica ao processar arquivo: " + e.getMessage(), false);
             }
@@ -914,7 +919,7 @@ public class ExtratorVM {
                     if (!limpa.isEmpty()) lista.add(limpa);
                 }
             }
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) { logger.error("Erro na ViewModel de Extração", e); }
         return lista;
     }
 
@@ -1021,7 +1026,7 @@ public class ExtratorVM {
                             "setTimeout(function(){ var obj = document.querySelector('textarea.log-box'); if(obj) obj.scrollTop = obj.scrollHeight; }, 50);");
                 }, new Event("onUpdate"));
             }
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) { logger.error("Erro na ViewModel de Extração", e); }
     }
 
     @Command
@@ -1059,7 +1064,7 @@ public class ExtratorVM {
                         event -> org.zkoss.bind.BindUtils.postNotifyChange(null, null, ExtratorVM.this, campo),
                         new Event("onUpdate"));
             }
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) { logger.error("Erro na ViewModel de Extração", e); }
     }
 
     @Command
@@ -1108,7 +1113,7 @@ public class ExtratorVM {
                 }, new Event("updateUI"));
 
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error("Erro na ViewModel de Extração", e);
             }
         });
     }
@@ -1116,7 +1121,7 @@ public class ExtratorVM {
     public static void encerrarThreads() {
         // Envia um sinal de interrupção imediata (shutdownNow) para as 30 threads
         if (executor != null && !executor.isShutdown()) {
-            System.out.println("Parando o extrator Lattes e limpando threads em background...");
+            logger.info("Parando o extrator Lattes e limpando threads em background...");
             executor.shutdownNow();
         }
     }

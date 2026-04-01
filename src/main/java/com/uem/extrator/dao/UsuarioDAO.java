@@ -5,11 +5,17 @@ import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class UsuarioDAO {
 
+    // logger instancia
+    private static final Logger logger = LoggerFactory.getLogger(UsuarioDAO.class);
+    
     public Usuario buscarPorLogin(String login) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             String hql = "FROM Usuario u WHERE u.login = :login";
@@ -17,7 +23,7 @@ public class UsuarioDAO {
             query.setParameter("login", login);
             return query.uniqueResult();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (UsuarioDAO)", e);
             return null;
         }
     }
@@ -32,7 +38,7 @@ public class UsuarioDAO {
                 return true;
             } catch (Exception e) {
                 if (tx != null && tx.isActive()) tx.rollback();
-                e.printStackTrace();
+                logger.error("Erro na base de dados (UsuarioDAO)", e);
                 return false;
             }
         }
@@ -42,7 +48,7 @@ public class UsuarioDAO {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.createQuery("FROM Usuario ORDER BY nome", Usuario.class).list();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (UsuarioDAO)", e);
             return new ArrayList<>();
         }
     }
@@ -56,7 +62,7 @@ public class UsuarioDAO {
                 return true;
             } catch (Exception e) {
                 if (tx != null && tx.isActive()) tx.rollback();
-                e.printStackTrace();
+                logger.error("Erro na base de dados (UsuarioDAO)", e);
                 return false;
             }
         }

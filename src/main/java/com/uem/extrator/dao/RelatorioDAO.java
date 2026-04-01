@@ -3,6 +3,8 @@ package com.uem.extrator.dao;
 import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,6 +13,9 @@ import java.util.Map;
 
 public class RelatorioDAO {
 
+    // logger instancia
+    private static final Logger logger = LoggerFactory.getLogger(RelatorioDAO.class);
+    
     /**
      * OTIMIZAÇÃO DB2: Queries de gráfico por ano.
      *
@@ -101,7 +106,7 @@ public class RelatorioDAO {
             return query.list();
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (RelatorioDAO)", e);
             return new ArrayList<>();
         }
     }
@@ -166,7 +171,7 @@ public class RelatorioDAO {
             return query.list();
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (RelatorioDAO)", e);
             return new ArrayList<>();
         }
     }
@@ -241,7 +246,7 @@ public class RelatorioDAO {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (RelatorioDAO)", e);
         }
         return kpis;
     }
@@ -295,7 +300,7 @@ public class RelatorioDAO {
             return q.list();
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (RelatorioDAO)", e);
             return new ArrayList<>();
         }
     }

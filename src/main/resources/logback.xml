@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <appender name="CONSOLA" class="ch.qos.logback.core.ConsoleAppender">
+
+    <encoder>
+        <pattern>%highlight(%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} -) %msg%n</pattern>
+    </encoder>
+
+    </appender>
+
+    <appender name="FICHEIRO" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>/tmp/logs/lattes-extrator.log</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>/tmp/logs/lattes-extrator-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="WARN">
+        <appender-ref ref="CONSOLA" />
+        <appender-ref ref="FICHEIRO" />
+    </root>
+
+    <logger name="com.uem.extrator" level="INFO" />
+
+</configuration>
