@@ -141,7 +141,7 @@
                                     </div>
 
                                     <div style="flex: 1;">
-                                        <label value="Instituição" style="font-weight: bold; font-size: 12px; color: #777;"/>
+                                        <label value="Instituição vinculada" style="font-weight: bold; font-size: 12px; color: #777;"/>
                                         <combobox model="@load(vm.listaInstituicoes)"
                                                   selectedItem="@bind(vm.instituicaoSelecionada)"
                                                   width="100%"
@@ -150,7 +150,7 @@
                                                   sclass="form-control-sm"/>
                                     </div>
 
-                                    <div style="position: relative; right: -695px" sclass="">
+                                    <div style="position: relative; right: -1250px" sclass="">
                                         <button label="Extrair CSV (Resumo)"
                                                 onClick="@command('exportarCsvSimples')"
                                                 iconSclass="z-icon-download"

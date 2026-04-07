@@ -37,8 +37,8 @@ public class ListagemVM {
     // Pessoas/Curriculos
 //    private List<Curriculo> listaCurriculosCompleta = new ArrayList<>(); // cache para nao ir ao banco toda vez
 //    private List<Curriculo> listaCurriculos = new ArrayList<>(); // lista que aparece na tela
-    private List<Curriculo> listaCurriculos = new ArrayList<>(); // apenas os 11 da tela atual
-    private int tamanhoPagina = 11;
+    private List<Curriculo> listaCurriculos = new ArrayList<>(); // apenas os (tamanhoPagina) da tela atual
+    private int tamanhoPagina = 18;
     private int paginaAtual = 0;
     private long totalCurriculos = 0;
 
