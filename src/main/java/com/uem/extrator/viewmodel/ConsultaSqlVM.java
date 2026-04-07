@@ -24,10 +24,16 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class ConsultaSqlVM {
+
+    // logger instancia
+    private static final Logger logger = LoggerFactory.getLogger(ConsultaSqlVM.class);
 
     private Usuario usuarioLogado;
 
@@ -123,7 +129,7 @@ public class ConsultaSqlVM {
             Clients.showNotification("Consulta executada com sucesso. Linhas retornadas: " + linhas.size(), "info", null, null, 3000);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro ao executar query SQL: ", e);
             Clients.showNotification("Erro SQL: " + e.getMessage(), "error", null, null, 5000);
         } finally {
             if (session != null) session.close();

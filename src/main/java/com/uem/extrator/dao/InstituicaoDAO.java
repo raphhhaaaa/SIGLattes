@@ -3,12 +3,17 @@ package com.uem.extrator.dao;
 import com.uem.extrator.model.Instituicao;
 import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class InstituicaoDAO {
 
+    // logger instancia
+    private static final Logger logger = LoggerFactory.getLogger(InstituicaoDAO.class);
+    
     // Cache estático com TTL de 30 minutos
     private static List<Object[]> cacheInstituicoes = null;
     private static long ultimaAtualizacao = 0;
@@ -63,7 +68,7 @@ public class InstituicaoDAO {
             return resultados;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (InstituicaoDAO)", e);
             return new ArrayList<>();
         }
     }
@@ -79,7 +84,7 @@ public class InstituicaoDAO {
                     .setMaxResults(500)
                     .list();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (InstituicaoDAO)", e);
             return new ArrayList<>();
         }
     }

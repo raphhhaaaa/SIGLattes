@@ -5,6 +5,8 @@ import com.uem.extrator.util.ConfigManager;
 import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -12,6 +14,9 @@ import java.util.Date;
 import java.util.List;
 
 public class AuditLogService {
+
+    // logger instancias
+    private static final Logger logger = LoggerFactory.getLogger(AuditLogService.class);
 
     private static final SimpleDateFormat SDF_LOG = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -95,7 +100,7 @@ public class AuditLogService {
                     .uniqueResult();
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro ao contar currículos processados: ", e);
             return 0L;
         }
     }
@@ -143,7 +148,7 @@ public class AuditLogService {
                 tx.commit();
             } catch (Exception e) {
                 if (tx != null && tx.isActive()) tx.rollback();
-                e.printStackTrace();
+                logger.error("Erro ao apagar log: ", e);
             }
         }
     }
@@ -162,7 +167,7 @@ public class AuditLogService {
             tx.commit();
         } catch (Exception e) {
             if (tx != null) tx.rollback();
-            System.err.println("Erro crítico ao gravar log na base de dados: " + e.getMessage());
+            logger.error("Erro crítico ao gravar log no banco de dados: ", e);
         }
     }
 }

@@ -4,17 +4,22 @@ import com.uem.extrator.model.Curso;
 import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 public class CursoDAO {
 
+    // logger instancia
+    private static final Logger logger = LoggerFactory.getLogger(CursoDAO.class);
+    
     public List<Curso> listarTodos() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             // Traz todos os cursos ordenados por nome
             return session.createQuery("from Curso order by nomeCurso", Curso.class).list();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (CursoDAO)", e);
             return null;
         }
     }

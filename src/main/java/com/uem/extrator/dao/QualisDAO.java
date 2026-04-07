@@ -5,18 +5,23 @@ import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class QualisDAO {
 
+    // logger instancia
+    private static final Logger logger = LoggerFactory.getLogger(QualisDAO.class);
+    
     public long contarTodos() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             Query<Long> query = session.createQuery("SELECT COUNT(q) FROM Qualis q", Long.class);
             return query.uniqueResult() != null ? query.uniqueResult() : 0;
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (QualisDAO)", e);
             return 0;
         }
     }
@@ -35,7 +40,7 @@ public class QualisDAO {
                 tx.commit();
             } catch (Exception e) {
                 if (tx != null && tx.isActive()) tx.rollback();
-                e.printStackTrace();
+                logger.error("Erro na base de dados (QualisDAO)", e);
             }
         }
     }
@@ -90,7 +95,7 @@ public class QualisDAO {
             return resultado;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (QualisDAO)", e);
             return Collections.emptyMap();
         }
     }

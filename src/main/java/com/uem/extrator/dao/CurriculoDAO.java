@@ -5,11 +5,16 @@ import com.uem.extrator.service.AuditLogService;
 import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class CurriculoDAO {
+
+    // instancia logger
+    private static final Logger logger = LoggerFactory.getLogger(CurriculoDAO.class);
 
     private AuditLogService auditLogService = new AuditLogService();
     private CursoDAO cursoDAO = new CursoDAO();
@@ -129,7 +134,7 @@ public class CurriculoDAO {
 
                 } catch (Exception e) {
                     if (session.getTransaction().isActive()) session.getTransaction().rollback();
-                    e.printStackTrace();
+                    logger.error("Erro na base de dados (CurriculoDAO)", e);
                     throw e;
                 }
             }
@@ -145,7 +150,7 @@ public class CurriculoDAO {
             return session.createQuery(
                     "FROM Curriculo ORDER BY nomeCompleto", Curriculo.class).list();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (CurriculoDAO)", e);
             return new ArrayList<>();
         }
     }
@@ -155,7 +160,7 @@ public class CurriculoDAO {
             return session.createQuery(
                     "SELECT COUNT(c) FROM Curriculo c", Long.class).uniqueResult();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (CurriculoDAO)", e);
             return 0L;
         }
     }
@@ -164,7 +169,7 @@ public class CurriculoDAO {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.createQuery("SELECT COUNT(DISTINCT c.idLattes) FROM Atuacao a JOIN a.curriculo c JOIN a.instituicao i WHERE UPPER(i.nomeInstituicao) = 'UNIVERSIDADE ESTADUAL DE MARINGÁ'", Long.class).uniqueResult();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (CurriculoDAO)", e);
             return 0L;
         }
     }
@@ -181,7 +186,7 @@ public class CurriculoDAO {
                     "SELECT c.idLattes, c.dataAtualizacao, c.nomeCompleto FROM Curriculo c",
                     Object[].class).list();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (CurriculoDAO)", e);
             return new ArrayList<>();
         }
     }
@@ -194,7 +199,6 @@ public class CurriculoDAO {
      *   1 query para atuacoes
      *   N queries para vinculos de cada atuacao
      *   N queries para atividades de cada atuacao
-     *
      * Solução: uma query principal com JOIN FETCH para tudo que é sempre necessário
      * (formacoes), seguida de queries de inicialização por coleção em lote.
      * O DB2 processa melhor múltiplas queries simples com IN do que Cartesian Products
@@ -227,7 +231,7 @@ public class CurriculoDAO {
             }
             return c;
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (CurriculoDAO)", e);
             return null;
         }
     }
@@ -269,7 +273,7 @@ public class CurriculoDAO {
                     .uniqueResult();
             return count != null && count > 0;
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro na base de dados (CurriculoDAO)", e);
             return false;
         }
     }
@@ -282,6 +286,47 @@ public class CurriculoDAO {
             case "B3": case "B4": return "badge bg-info text-dark";
             case "C":              return "badge bg-warning text-dark";
             default:               return "badge bg-secondary";
+        }
+    }
+
+    // MÉTODOS DE PAGINAÇÃO //
+
+    public List<Curriculo> listarPaginado(int offset, int limit, String busca) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            boolean temBusca = (busca != null && !busca.trim().isEmpty());
+            String hql = temBusca
+                    ? "FROM Curriculo c WHERE lower(c.nomeCompleto) LIKE :busca OR c.idLattes LIKE :busca ORDER BY c.nomeCompleto"
+                    : "FROM Curriculo c ORDER BY c.nomeCompleto";
+
+            Query<Curriculo> query = session.createQuery(hql, Curriculo.class);
+            if (temBusca) {
+                query.setParameter("busca", "%" + busca.toLowerCase() + "%");
+            }
+            query.setFirstResult(offset); // a partir de qual registro ex: página 2 A PARTIR do registro 10)
+            query.setMaxResults(limit); // quantos registros trazer (ex: 10)
+
+            return query.list();
+        } catch (Exception e) {
+            logger.error("Erro na base de dados (CurriculoDAO)", e);
+            return new ArrayList<>();
+        }
+    }
+
+    public Long contarTotalPaginado(String busca) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            boolean temBusca = (busca != null && !busca.trim().isEmpty());
+            String hql = temBusca
+                    ? "SELECT COUNT(c) FROM Curriculo c WHERE lower(c.nomeCompleto) LIKE :busca OR c.idLattes LIKE :busca"
+                    : "SELECT COUNT(c) FROM Curriculo c";
+
+            Query<Long> query = session.createQuery(hql, Long.class);
+            if (temBusca) {
+                query.setParameter("busca", "%" + busca.toLowerCase() + "%");
+            }
+            return query.uniqueResult();
+        } catch (Exception e) {
+            logger.error("Erro na base de dados (CurriculoDAO)", e);
+            return 0L;
         }
     }
 }

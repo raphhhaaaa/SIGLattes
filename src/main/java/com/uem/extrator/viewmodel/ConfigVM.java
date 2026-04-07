@@ -21,11 +21,15 @@ import org.zkoss.zk.ui.Executions;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zk.ui.util.Clients;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static java.awt.SystemColor.desktop;
 
 public class ConfigVM {
 
+    // logger instancia
+    private static final Logger logger = LoggerFactory.getLogger(ConfigVM.class);
 
     // Usuário
     private Usuario usuarioLogado;
@@ -116,7 +120,7 @@ public class ConfigVM {
             this.dbStatusClass = "badge text-bg-success";
             this.dbStatusState = "success"; // Estado de sucesso
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro ao testar conexão do banco: ", e);
             this.dbStatus = "Falha na Conexão";
             this.dbStatusClass = "badge text-bg-danger";
             this.dbStatusState = "error"; // Estado de erro
@@ -191,7 +195,7 @@ public class ConfigVM {
 
             Clients.showNotification("Salvo com sucesso!", "info", null, null, 3000);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro ao salvar configurações: ", e);
             Clients.showNotification("Erro ao salvar: " + e.getMessage(), "error", null, null, 5000);
         }
     }
@@ -203,14 +207,14 @@ public class ConfigVM {
 
         // tenta enviar
         try {
-            System.out.println("Iniciando teste de envio de e-mail...");
+            logger.info("Iniciando teste de envio de e-mail...");
             EmailService.getInstance().enviarAlerta("Teste de Configuração - Extrator Lattes",
                     "<h1>Olá!</h1><p>Se você recebeu este e-mail, a configuração SMTP do Extrator Lattes está <strong>funcionando corretamente</strong>.</p>");
 
             Clients.showNotification("E-mail de teste enviado! Verifique sua caixa de entrada", "info", null, null, 3000);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro ao enviar e-mail: ", e);
             Clients.showNotification("Erro ao enviar :" + e.getMessage(), "error", null, null, 5000);
         }
     }
@@ -241,7 +245,7 @@ public class ConfigVM {
                 }, new Event("onNotify"));
 
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error("Erro ao verificar: ",e);
                 Executions.schedule(desktop, new EventListener<Event>() {
                     @Override
                     public void onEvent(Event event) {

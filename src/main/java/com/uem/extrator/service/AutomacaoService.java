@@ -26,8 +26,12 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.zkoss.zk.ui.util.Clients;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AutomacaoService {
+
+    private static final Logger logger = LoggerFactory.getLogger(AutomacaoService.class);
 
     private static AutomacaoService instance;
     private final ScheduledExecutorService scheduler;
@@ -53,7 +57,7 @@ public class AutomacaoService {
     }
 
     public void iniciarAgendamento() {
-        System.out.println(">>> AUTOMAÇÃO: Iniciando/Reiniciando agendamentos...");
+        logger.info(">>> AUTOMAÇÂO: Iniciando/Reiniciando agendamentos...");
         ConfigManager config = ConfigManager.getInstance();
 
         //  agendar verificação (intervalo em horas)
@@ -62,12 +66,10 @@ public class AutomacaoService {
         if (config.isVerifyEnabled()) {
             int intervaloHoras = config.getVerifyInterval();
             if (intervaloHoras < 1) {
-                System.out.println(">>> [VERIFICAÇÃO] O intervalo mínimo para verificação é de 1 hora. Definindo para 1 hora."); // minimo 1 hora
-                intervaloHoras = 1;
+                logger.info(">>> [VERIFICAÇÃO] O intervalo mínimo para verificação é de 1 hora. Definindo para 1 hora."); // minimo 1 hora
                 config.setVerifyInterval(intervaloHoras);
             }
-            System.out.println(">>> AUTOMAÇÃO: Verificação agendada a cada " + intervaloHoras + " horas.");
-
+            logger.info(">>> AUTOMAÇÂO: Verificação agendada a cada {} horas", intervaloHoras);
             // agenda para rodar a cada x horas
             tarefaVerificacao = scheduler.scheduleAtFixedRate(
                     this::rodarVerificacao,
@@ -142,8 +144,7 @@ public class AutomacaoService {
 
         enviarRelatorioSemanal(); // verifica se é necessário enviar relatório semanal
 
-        System.out.println("=== [AUTO] Iniciando ciclo de verificação... ===");
-
+        logger.info("=== [AUTO] Iniciando ciclo de verificação... ===");
         // chama o service do lattes
         LattesService service = new LattesService();
         // recebe o relatório com as listas prenchidas (desatualizados, processados, erros...)
@@ -196,7 +197,7 @@ public class AutomacaoService {
 
             if (!online) {
                 if (!notificadoQueda) {
-                    System.err.println(">>> [MONITOR] ALERTA: Conexão com CNPq caiu!");
+                    logger.error(">>> [MONITOR] ALERTA: Conexão com CNPq caiu!");
 
                     StringBuilder msg = new StringBuilder();
                     msg.append("<h3>⚠️ Alerta de Monitoramento</h3>");
@@ -226,7 +227,7 @@ public class AutomacaoService {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro ao monitorar conexão com CNPq: ", e);
         }
     }
 
@@ -255,12 +256,11 @@ public class AutomacaoService {
                     }
                 }
             } catch (Exception e) {
-                System.err.println("[Automacao] Erro ao ler controle semanal: " + e.getMessage());
+                logger.error("[AUTOMACAO] Erro ao ler controle semanal: ", e);
             }
         }
 
-        System.out.println("[Automacao] Preparando Relatório Semanal...");
-
+        logger.info("[Automacao] Preparando Relatório Semanal...");
         // coleta os dados
         CurriculoDAO curriculoDAO = new CurriculoDAO();
         ProducaoDAO producaoDAO = new ProducaoDAO();
@@ -307,12 +307,12 @@ public class AutomacaoService {
         try (FileWriter writer = new FileWriter(controle)) {
             writer.write(hoje.toString()); // salvar a data atual no arquivo
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro ao enviar Relatório Semanal de Monitoramento: ", e);
         }
     }
 
     private void rodarBackup() {
-        System.out.println("=== [AUTO] Iniciando Backup do Banco de Dados... (DB2 DOCKER) ===");
+        logger.info("=== [AUTO] Iniciando Backup do Banco de Dados... (DB2 DOCKER) ===");
         /**
          * Atenção: importante citar que este metodo é feito especificamente para o banco de dados local
          * MYSQL, quando for feita a migração para o banco da UEM (IBM DB2) essa lógica DEVERÁ ser
@@ -324,7 +324,7 @@ public class AutomacaoService {
             // (Esta pasta está segura e mapeada no seu volume db2_data no disco físico)
             String backupDirDb2 = "/database/data";
 
-            System.out.println(">>> BACKUP: Solicitando backup binário nativo ao DB2 via Docker...");
+            logger.info(">>> BACKUP: Solicitando backup binário nativo ao DB2 via Docker...");
 
             // Comando Mágico:
             // 1. Entra no docker (mydb2)
@@ -345,7 +345,7 @@ public class AutomacaoService {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    System.out.println("[DB2 BACKUP] " + line);
+                    logger.debug("[DB2 BACKUP] {}", line);
                     // O DB2 sempre devolve esta frase quando dá certo
                     if (line.contains("Backup successful")) {
                         sucesso = true;
@@ -356,15 +356,14 @@ public class AutomacaoService {
             int exitCode = process.waitFor();
 
             if (exitCode == 0 && sucesso) {
-                System.out.println(">>> BACKUP CONCLUÍDO COM SUCESSO!");
+                logger.info(">>> BACKUP CONCLUÍDO COM SUCESSO!");
                 System.out.println(">>> O arquivo de imagem (.001) foi salvo de forma segura no volume do Docker.");
             } else {
                 System.err.println(">>> ERRO AO REALIZAR BACKUP. Código de saída do Docker: " + exitCode);
             }
 
         } catch (Exception e) {
-            System.err.println(">>> FALHA CRÍTICA NO BACKUP: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Falha crítica no backup DB2", e);
         }
     }
 

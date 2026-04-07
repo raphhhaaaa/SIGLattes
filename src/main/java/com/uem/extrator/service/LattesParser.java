@@ -6,7 +6,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import javax.mail.Message;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -18,6 +19,9 @@ import java.security.MessageDigest;
 import java.math.BigInteger;
 
 public class LattesParser {
+
+    // instância logger
+    private static final Logger logger = LoggerFactory.getLogger(LattesParser.class);
 
     public Curriculo parse(String xmlConteudo, String idLattes) throws Exception {
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
@@ -99,7 +103,7 @@ public class LattesParser {
                 cv.setDataAtualizacao(new Date());
             }
         } catch (Exception e) {
-            System.err.println("Erro ao extrair dados gerais: " + e.getMessage());
+            logger.error("Erro crítico ao extrair dados gerais do Lattes ID: {}", cv.getIdLattes(), e);
             cv.setDataAtualizacao(new Date());
         }
     }
@@ -401,7 +405,7 @@ public class LattesParser {
         }
     }
 
-    // METODO MAIS IMPORTANTE: BLINDA A CONVERSÃO
+    // METODO IMPORTANTE: BLINDA A CONVERSÃO
     private Integer parseIntSafe(String valor) {
         if (valor != null && !valor.isEmpty()) {
             try {
@@ -409,6 +413,7 @@ public class LattesParser {
             } catch (NumberFormatException e) {
                 // Se der erro (ex: vier texto), apenas ignora e retorna null
                 // Isso evita que o sistema quebre.
+                logger.debug("Falha na conversão númerica ignorada. Valor recebido: '{}'", valor);
                 return null;
             }
         }

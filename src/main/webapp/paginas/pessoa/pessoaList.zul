@@ -68,8 +68,6 @@
 
                             <listbox model="@load(vm.listaCurriculos)"
                                      visible="@load(not empty vm.listaCurriculos)"
-                                     mold="paging"
-                                     pageSize="10"
                                      vflex="1"
                                      emptyMessage="Nenhum registro encontrado."
                                      width="100%"
@@ -109,6 +107,13 @@
                                     </listitem>
                                 </template>
                             </listbox>
+
+                            <paging totalSize="@load(vm.totalCurriculos)"
+                                    pageSize="@load(vm.tamanhoPagina)"
+                                    activePage="@bind(vm.paginaAtual)"
+                                    onPaging="@command('mudarPagina')"
+                                    visible="@load(not empty vm.listaCurriculos)"
+                                    style="background: transparent; border: none; padding-top: 10px;"/>
 
                         </div>
                     </div>

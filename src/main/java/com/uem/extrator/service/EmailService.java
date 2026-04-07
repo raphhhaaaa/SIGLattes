@@ -6,8 +6,13 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.io.ObjectInputFilter;
 import java.util.Properties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EmailService {
+
+    // logger instancia
+    private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
 
     private static EmailService instance;
 
@@ -38,7 +43,7 @@ public class EmailService {
         }
 
         if (remetente == null || remetente.isEmpty() || host == null || host.isEmpty()) {
-            System.out.println("[EmailService] SMTP não configurado. Ignorando envio.");
+            logger.warn("[EmailService] SMTP não configurado. Ignorando envio.");
             return;
         }
 
@@ -73,10 +78,9 @@ public class EmailService {
 
             // envio
             Transport.send(message);
-            System.out.println("[EmailService] E-mail enviado DE [" + remetente + "] PARA [" + destinatario + "] " + assunto);
+            logger.info("[EmailService] E-mail enviado DE [{}] PARA [{}]: {}", remetente, destinatario, assunto);
         } catch (MessagingException e) {
-            System.err.println("[EmailService] Falha ao enviar E-mail: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("[EmailService] Falha ao enviar E-mail: ", e);
         }
     }
 

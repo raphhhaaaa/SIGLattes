@@ -18,10 +18,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ListagemVM {
 
     private Usuario usuarioLogado;
+
+    // logger instancia
+    private static final Logger logger = LoggerFactory.getLogger(ListagemVM.class);
 
     // DAOs
     private CurriculoDAO curriculoDAO = new CurriculoDAO();
@@ -30,8 +35,12 @@ public class ListagemVM {
     private ProducaoDAO producaoDAO = new ProducaoDAO();
 
     // Pessoas/Curriculos
-    private List<Curriculo> listaCurriculosCompleta = new ArrayList<>(); // cache para nao ir ao banco toda vez
-    private List<Curriculo> listaCurriculos = new ArrayList<>(); // lista que aparece na tela
+//    private List<Curriculo> listaCurriculosCompleta = new ArrayList<>(); // cache para nao ir ao banco toda vez
+//    private List<Curriculo> listaCurriculos = new ArrayList<>(); // lista que aparece na tela
+    private List<Curriculo> listaCurriculos = new ArrayList<>(); // apenas os (tamanhoPagina) da tela atual
+    private int tamanhoPagina = 18;
+    private int paginaAtual = 0;
+    private long totalCurriculos = 0;
 
     // Cursos
     private List<Curso> listaCursos = new ArrayList<>();
@@ -65,15 +74,20 @@ public class ListagemVM {
 
     private void carregarListas() {
         // carrega tudo do banco
-        this.listaCurriculosCompleta = curriculoDAO.listarTodos();
-        this.listaCurriculos = new ArrayList<>(this.listaCurriculosCompleta);
-
         this.listainstituicoesCompleta = instituicaoDAO.listarInstituicoesConsolidadas();
         this.listaInstituicoes = new ArrayList<>(this.listainstituicoesCompleta);
 
         this.listaCursosCompleta = cursoDAO.listarTodos();
         this.listaCursos = new ArrayList<>(this.listaCursosCompleta);
 
+        carregarCurriculoPaginado();
+
+    }
+
+    private void carregarCurriculoPaginado() {
+        int offset = this.paginaAtual * this.tamanhoPagina;
+        this.totalCurriculos = curriculoDAO.contarTotalPaginado(this.termoPesquisaCurriculo);
+        this.listaCurriculos = curriculoDAO.listarPaginado(offset, this.tamanhoPagina, this.termoPesquisaCurriculo);
     }
 
     @Command
@@ -122,25 +136,14 @@ public class ListagemVM {
     @Command
     @NotifyChange("listaCurriculos")
     public void pesquisar() {
-        String texto = this.termoPesquisaCurriculo;
+        this.paginaAtual = 0; // volta para a primeira pagina ao pesquisar
+        carregarCurriculoPaginado();
+    }
 
-        if (texto == null || texto.trim().isEmpty()) {
-            // se limpar a busca, restaura a lista original
-            this.listaCurriculos = new ArrayList<>(this.listaCurriculosCompleta);
-        } else {
-            // filtra: nome ou id (Case sensitive)
-            String termo = texto.toLowerCase();
-            this.listaCurriculos.clear();
-
-            for (Curriculo c : this.listaCurriculosCompleta) {
-                boolean matchNome = c.getNomeCompleto() != null && c.getNomeCompleto().toLowerCase().contains(termo);
-                boolean matchId = c.getIdLattes() != null && c.getIdLattes().contains(termo);
-
-                if (matchNome || matchId) {
-                    this.listaCurriculos.add(c);
-                }
-            }
-        }
+    @Command
+    @NotifyChange("listaCurriculos")
+    public void mudarPagina() {
+        carregarCurriculoPaginado();
     }
 
     @Command
@@ -172,7 +175,7 @@ public class ListagemVM {
         }
 
         new Thread(() -> {
-            System.out.println(">>> [THREAD] Iniciando varredura UI...");
+            logger.debug(">>> [THREAD] Iniciando varredura UI...");
             boolean houveAtualizacao = false;
 
             for (Producao artigo : this.curriculo.getProducoes()) {
@@ -206,7 +209,7 @@ public class ListagemVM {
                         // pausa de segurança para a API
                         Thread.sleep(100);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        logger.error("Erro buscar métricas bibliométricas", e);
                     }
                 }
                 // Se não precisa atualizar (já tem no banco e é recente), não faz nada.
@@ -218,7 +221,7 @@ public class ListagemVM {
                     public void onEvent(Event event) {
                         // Força o redesenho da lista inteira
                         BindUtils.postNotifyChange(null, null, curriculo, "producoes");
-                        System.out.println(">>> [UI] Refresh Final Executado.");
+                        logger.debug(">>> [UI] Refresh Final Executado.");
                     }
                 }, new Event("refreshAll"));
             }
@@ -286,4 +289,10 @@ public class ListagemVM {
     public Usuario getUsuarioLogado() {
         return usuarioLogado;
     }
+    public int getTamanhoPagina() { return tamanhoPagina; }
+    public void setTamanhoPagina(int tamanhoPagina) {this.tamanhoPagina = tamanhoPagina; }
+    public int getPaginaAtual() {return paginaAtual; }
+    public void setPaginaAtual(int paginaAtual) { this.paginaAtual = paginaAtual; }
+    public long getTotalCurriculos() { return totalCurriculos; }
+    public void setTotalCurriculos(long totalCurriculos) { this.totalCurriculos = totalCurriculos; }
 }

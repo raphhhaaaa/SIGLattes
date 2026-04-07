@@ -2,8 +2,9 @@ package com.uem.extrator.util;
 
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-// IMPORTS NOVOS DO C3P0
 import com.mchange.v2.c3p0.C3P0Registry;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.mchange.v2.c3p0.PooledDataSource;
@@ -14,14 +15,17 @@ import java.util.Set;
 
 public class HibernateUtil {
 
+    // logger instancia
+    private static final Logger logger = LoggerFactory.getLogger(HibernateUtil.class);
+
     private static final SessionFactory sessionFactory = buildSessionFactory();
 
     private static SessionFactory buildSessionFactory() {
         try {
-            System.out.println("------ TENTANDO INICIAR HIBERNATE ------");
+            logger.info("------ TENTANDO INICIAR HIBERNATE ------");
             return new Configuration().configure().buildSessionFactory();
         } catch (Throwable ex) {
-            System.err.println("❌ FALHA CRÍTICA NO HIBERNATE: " + ex.getMessage());
+            logger.error("❌ FALHA CRÍTICA NO HIBERNATE: ", ex);
             throw new ExceptionInInitializerError(ex);
         }
     }
@@ -75,7 +79,7 @@ public class HibernateUtil {
                 return String.format("%d/%s (Ativas: %d)", totalAbertas, maximoStr, ocupadas);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro ao ler status do Pool", e);
             return "Erro: " + e.getMessage();
         }
         return "Sem Pool";

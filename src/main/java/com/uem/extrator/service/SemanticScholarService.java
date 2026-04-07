@@ -10,6 +10,8 @@ import com.uem.extrator.model.Producao;
 import com.uem.extrator.util.ConfigManager;
 
 import java.io.BufferedReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -24,6 +26,9 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.Semaphore;
 
 public class SemanticScholarService {
+
+    // logger instancia
+    private static final Logger logger = LoggerFactory.getLogger(SemanticScholarService.class);
 
     private static final String API_KEY = "rTIBDXH92K98RBMkcppjV5jetzlFfsadRR7xOfA9";
     private static final int RATE_LIMIT_DELAY_MS = ConfigManager.TEMPO_ESPERA_API_RATE_LIMIT_MS;
@@ -61,19 +66,17 @@ public class SemanticScholarService {
                 String orcid = obterOrcidSeExistir(curriculo);
                 hIndex = buscarHIndexPorNomeEOrcid(curriculo.getNomeCompleto(), orcid);
             } catch (Exception e) {
-                System.err.println("Erro na Camada 1/2 (Nome/ORCID) para " + curriculo.getNomeCompleto() + ": " + e.toString());
-                e.printStackTrace();
+                logger.error("Erro na Camada 1/2 (Nome/ORCID) para {}: ", curriculo.getNomeCompleto(), e);
             } finally {
                 dormir(RATE_LIMIT_DELAY_MS);
             }
 
             if (hIndex == null && doiAncora != null) {
-                System.out.println("-> Homónimos detetados. Iniciando Camada 3 (DOI Âncora) para: " + curriculo.getNomeCompleto());
+                logger.info("-> Homónimos detetados. Iniciando Camada 3 (DOI Âncora) para: " + curriculo.getNomeCompleto());
                 try {
                     hIndex = buscarHIndexPorAncora(doiAncora, curriculo.getNomeCompleto());
                 } catch (Exception e) {
-                    System.err.println("Erro na Camada 3 (DOI) para " + curriculo.getNomeCompleto() + ": " + e.toString());
-                    e.printStackTrace();
+                    logger.error("Erro na Camada 3 (DOI) para {}: ", curriculo.getNomeCompleto(), e);
                 } finally {
                     dormir(RATE_LIMIT_DELAY_MS);
                 }
@@ -90,8 +93,7 @@ public class SemanticScholarService {
                 try {
                     atualizarCitacoesEmLote(producoesComDoi);
                 } catch (Exception e) {
-                    System.err.println("Erro Crítico no Lote de " + curriculo.getNomeCompleto() + ": " + e.toString());
-                    e.printStackTrace();
+                    logger.error("Erro Crítico no Lote de {}: ", curriculo.getNomeCompleto(), e);
                 }
             }
         } catch (InterruptedException interruptedException)  {
@@ -286,10 +288,10 @@ public class SemanticScholarService {
                                     }
                                 }
                             } else {
-                                System.err.println("Aviso: Lote retornou formato inválido. Ignorando.");
+                                logger.warn("Aviso: Lote retornou formato inválido. Ignorando.");
                             }
                         } catch (JsonSyntaxException jse) {
-                            System.err.println("Erro ao processar JSON do Lote: " + jse.getMessage());
+                            logger.error("Erro ao processar JSON do Lote: {}", jse.getMessage());
                         }
                     }
                     break;
@@ -342,14 +344,14 @@ public class SemanticScholarService {
                 } else if (statusCode == 429) {
                     dormirComJitter(tentativa, "Busca única de Métricas");
                 } else if (statusCode == 404) {
-                    System.out.println("Artigo não encontrado no Semantic Scholar: " + doiLimpo);
+                    logger.warn("Artigo não encontrado no Semantic Scholar: {}", doiLimpo);
                     break; // sai do loop pq o artigo nao existe
                 } else {
                     break;
                 }
             }
         } catch (Exception e) {
-            System.out.println("Erro ao buscar métricas únicas para DOI: " + doi + ": " + e.getMessage());
+            logger.error("Erro ao buscar métricas únicas para DOI: {}", doi, e);
         } finally {
             pedagioApi.release();
         }
@@ -369,7 +371,7 @@ public class SemanticScholarService {
         int jitter = ThreadLocalRandom.current().nextInt(2000); // 0 a 2000ms aleatórios
         int tempoEspera = tempoBase + jitter;
 
-        System.out.println("Aviso Semantic (429): Rate Limit em [" + contexto + "]. Aplicando Jitter: " + tempoEspera + "ms (Tentativa " + tentativa + ")");
+        logger.warn("Aviso Semantic (429): Rate Limit em [{}]. Aplicando Jitter: {}ms (Tentativa {})", contexto, tempoEspera, tentativa);
         dormir(tempoEspera);
     }
 
