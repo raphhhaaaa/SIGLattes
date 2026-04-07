@@ -42,9 +42,10 @@ public class LoginVM {
         Usuario usuarioSessao = null; // Este será o usuário (Real ou Temporário)
 
         // atenção, o usuario ADMIN possui acesso LIVRE e IRRESTRITO independente do metodo de autenticacao configurado
+        boolean isContaEmergencia = "ADMIN".equalsIgnoreCase(usuario.trim());
 
-        // se o tipo de autenticação configurado é LDAP, chama o serviço e tenta autenticar
-        if ("LDAP".equalsIgnoreCase(tipoAutenticacao) && (!usuario.toUpperCase().trim().equals("ADMIN") || !senha.toUpperCase().trim().equals("ADMIN"))) {
+        // se o tipo de autenticação configurado é LDAP E NÃO foor a conta de admin, chama o serviço uem e tenta autenticar
+        if ("LDAP".equalsIgnoreCase(tipoAutenticacao) && !isContaEmergencia) {
 
             // servidor da UEM (completamente isolado do banco)
             UemLdapService ldap = new UemLdapService();
@@ -57,7 +58,7 @@ public class LoginVM {
                 usuarioSessao.setLogin(usuario);
                 usuarioSessao.setNome(usuario.split("@")[0]); // Usa o RA ou NPM como nome
                 // pode definir um perfil/nível de acesso padrão para quem vem do LDAP
-                usuarioSessao.setLogin("USUARIO_LDAP");
+                usuarioSessao.setAdmin(false);
             } else {
                 this.mensagemErro = "Utilizador ou palavra-passe institucionais inválidos.";
             }
