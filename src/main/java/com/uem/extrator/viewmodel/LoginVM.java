@@ -2,6 +2,8 @@ package com.uem.extrator.viewmodel;
 
 import com.uem.extrator.dao.UsuarioDAO;
 import com.uem.extrator.model.Usuario;
+import com.uem.extrator.util.ConfigManager;
+import com.uem.extrator.service.UemLdapService;
 import org.zkoss.bind.annotation.Command;
 import org.zkoss.bind.annotation.Init;
 import org.zkoss.bind.annotation.NotifyChange;
@@ -34,29 +36,61 @@ public class LoginVM {
             return;
         }
 
-        // busca no banco
-        Usuario userBanco = dao.buscarPorLogin(usuario);
+        // verifica qual bind de autenticação está configurada
+        String tipoAutenticacao = ConfigManager.getInstance().getAuthType();
+        boolean autenticado = false;
+        Usuario usuarioSessao = null; // Este será o usuário (Real ou Temporário)
 
-        if (userBanco == null) {
-            AuditLogService.log("LOGIN_FALHA", usuario, "Tentativa com usuário inexistente.");
-            this.mensagemErro = "Usuário não encontrado";
-            return;
+        // atenção, o usuario ADMIN possui acesso LIVRE e IRRESTRITO independente do metodo de autenticacao configurado
+
+        // se o tipo de autenticação configurado é LDAP, chama o serviço e tenta autenticar
+        if ("LDAP".equalsIgnoreCase(tipoAutenticacao) && (!usuario.toUpperCase().trim().equals("ADMIN") || !senha.toUpperCase().trim().equals("ADMIN"))) {
+
+            // servidor da UEM (completamente isolado do banco)
+            UemLdapService ldap = new UemLdapService();
+            autenticado = ldap.autenticar(usuario, senha);
+
+            if (autenticado) {
+                // cria usuário temporário na memória
+                // vive apenas na sessão do Tomcat e nunca é salvo no DB2.
+                usuarioSessao = new Usuario();
+                usuarioSessao.setLogin(usuario);
+                usuarioSessao.setNome(usuario.split("@")[0]); // Usa o RA ou NPM como nome
+                // pode definir um perfil/nível de acesso padrão para quem vem do LDAP
+                usuarioSessao.setLogin("USUARIO_LDAP");
+            } else {
+                this.mensagemErro = "Utilizador ou palavra-passe institucionais inválidos.";
+            }
+
+        } else {
+
+            // se o tipo de autenticação configurado é LOCAL, faz a verificação padrão no banco de dados (Requer cadastro prévio pelo Admin)
+            usuarioSessao = dao.buscarPorLogin(usuario);
+
+            if (usuarioSessao == null) {
+                AuditLogService.log("LOGIN_FALHA", usuario, "Tentativa com utilizador inexistente no banco local.");
+                this.mensagemErro = "Acesso negado: Utilizador não cadastrado no sistema.";
+                return;
+            }
+
+            autenticado = usuarioSessao.validarSenha(senha);
+
+            if (!autenticado) {
+                this.mensagemErro = "Palavra-passe local inválida.";
+            }
         }
 
-        // verifica se existe e se a senha bate
-        if (userBanco.validarSenha(senha)) {
-            // se existe, salva o usuario na sessão
-            Sessions.getCurrent().setAttribute("usuario_logado", userBanco);
-            // log de sucesso
-            AuditLogService.log("LOGIN_SUCESSO", userBanco.getLogin(), "Acesso realizado. IP: " + Executions.getCurrent().getRemoteAddr());
+        // auditoria
+        if (autenticado && usuarioSessao != null) {
+            // Salva o utilizador (seja o do banco ou o temporário do LDAP) na sessão
+            Sessions.getCurrent().setAttribute("usuario_logado", usuarioSessao);
 
-            // redireciona para a tela principa
+            AuditLogService.log("LOGIN_SUCESSO", usuarioSessao.getLogin(),
+                    "Acesso " + tipoAutenticacao + " realizado. IP: " + Executions.getCurrent().getRemoteAddr());
+
             Executions.sendRedirect("/index.zul");
-        } else {
-            // nao existe
-            this.mensagemErro = "Usuário ou senha incorretos.";
-            // log de senha errada
-            AuditLogService.log("LOGIN_FALHA", userBanco.getLogin(), "Senha incorreta.");
+        } else if (!autenticado && this.mensagemErro.isEmpty()) {
+            AuditLogService.log("LOGIN_FALHA", usuario, "Falha na autenticação via " + tipoAutenticacao + ".");
         }
     }
 
