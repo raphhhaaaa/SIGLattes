@@ -32,6 +32,8 @@ public class SecurityFilter implements Filter {
             "/paginas/instituicao/instituicaoList.zul",
             "/paginas/curso/cursoList.zul",
             "/paginas/relatorio/relatorioDinamico.zul",
+            "/paginas/relatorio/relatorioProdutividade.zul",
+            "/paginas/relatorio/relatorioRevistas.zul",
             "/paginas/ferramentas/verificacao.zul"
     );
 

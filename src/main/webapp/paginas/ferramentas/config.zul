@@ -260,7 +260,7 @@
                         </div>
                         <div sclass="card-body pt-3">
 
-                            <n:h6 class="font-weight-bold mb-2" style="font-size: 0.9rem; color: #495057;">Tipo de Autenticação (EM DESENVOLVIMENTO)</n:h6>
+                            <n:h6 class="font-weight-bold mb-2" style="font-size: 0.9rem; color: #495057;">Tipo de Autenticação</n:h6>
                             <div sclass="mb-4 bg-light p-2 rounded border">
                                 <radiogroup id="authGroup" selectedItem="@bind(vm.authType)">
                                     <div sclass="d-flex flex-column">

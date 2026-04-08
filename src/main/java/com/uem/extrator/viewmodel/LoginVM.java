@@ -36,13 +36,22 @@ public class LoginVM {
             return;
         }
 
+        String usuarioLimpo = usuario.trim().toUpperCase();
+
+//        // verifica se o usuário tentando acessar não é aluno; se for, barra.
+//        if (usuarioLimpo.startsWith("RA") || usuarioLimpo.startsWith("PG")) {
+//            AuditLogService.log("LOGIN_BLOQUEADO", usuario, "Tentativa de acesso por perfil de aluno.");
+//            this.mensagemErro = "Acesso restrito: Alunos não têm permissão para utilizar essa ferramenta.";
+//            return;
+//        }
+
         // verifica qual bind de autenticação está configurada
         String tipoAutenticacao = ConfigManager.getInstance().getAuthType();
         boolean autenticado = false;
         Usuario usuarioSessao = null; // Este será o usuário (Real ou Temporário)
 
         // atenção, o usuario ADMIN possui acesso LIVRE e IRRESTRITO independente do metodo de autenticacao configurado
-        boolean isContaEmergencia = "ADMIN".equalsIgnoreCase(usuario.trim());
+        boolean isContaEmergencia = "ADMIN".equals(usuarioLimpo);
 
         // se o tipo de autenticação configurado é LDAP E NÃO foor a conta de admin, chama o serviço uem e tenta autenticar
         if ("LDAP".equalsIgnoreCase(tipoAutenticacao) && !isContaEmergencia) {
