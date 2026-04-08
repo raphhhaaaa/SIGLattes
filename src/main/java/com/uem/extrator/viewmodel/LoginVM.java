@@ -38,12 +38,12 @@ public class LoginVM {
 
         String usuarioLimpo = usuario.trim().toUpperCase();
 
-//        // verifica se o usuário tentando acessar não é aluno; se for, barra.
-//        if (usuarioLimpo.startsWith("RA") || usuarioLimpo.startsWith("PG")) {
-//            AuditLogService.log("LOGIN_BLOQUEADO", usuario, "Tentativa de acesso por perfil de aluno.");
-//            this.mensagemErro = "Acesso restrito: Alunos não têm permissão para utilizar essa ferramenta.";
-//            return;
-//        }
+        // verifica se o usuário tentando acessar não é aluno; se for, barra.
+        if (usuarioLimpo.startsWith("RA") || usuarioLimpo.startsWith("PG")) {
+            AuditLogService.log("LOGIN_BLOQUEADO", usuario, "Tentativa de acesso por perfil de aluno.");
+            this.mensagemErro = "Acesso restrito: Alunos não têm permissão para utilizar essa ferramenta.";
+            return;
+        }
 
         // verifica qual bind de autenticação está configurada
         String tipoAutenticacao = ConfigManager.getInstance().getAuthType();
@@ -95,7 +95,16 @@ public class LoginVM {
             // Salva o utilizador (seja o do banco ou o temporário do LDAP) na sessão
             Sessions.getCurrent().setAttribute("usuario_logado", usuarioSessao);
 
-            AuditLogService.log("LOGIN_SUCESSO", usuarioSessao.getLogin(),
+            String usuarioPraLog = "";
+
+            // se houver domínio no usuário, remove para logar
+            if (usuarioSessao.getLogin().contains("@uem.br")) {
+                usuarioPraLog = usuarioSessao.getLogin().split("@")[0].trim();
+            } else { // se não houver, apenas pega o login
+                usuarioPraLog = usuarioSessao.getLogin().trim();
+            }
+
+            AuditLogService.log("LOGIN_SUCESSO", usuarioPraLog,
                     "Acesso " + tipoAutenticacao + " realizado. IP: " + Executions.getCurrent().getRemoteAddr());
 
             Executions.sendRedirect("/index.zul");
