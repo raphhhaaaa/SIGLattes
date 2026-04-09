@@ -313,11 +313,6 @@ public class AutomacaoService {
 
     private void rodarBackup() {
         logger.info("=== [AUTO] Iniciando Backup do Banco de Dados... (DB2 DOCKER) ===");
-        /**
-         * Atenção: importante citar que este metodo é feito especificamente para o banco de dados local
-         * MYSQL, quando for feita a migração para o banco da UEM (IBM DB2) essa lógica DEVERÁ ser
-         * totalmente reavaliada / refatorada.
-         */
 
         try {
             // A pasta onde o DB2 vai jogar o backup DENTRO do container
@@ -327,11 +322,11 @@ public class AutomacaoService {
             logger.info(">>> BACKUP: Solicitando backup binário nativo ao DB2 via Docker...");
 
             // Comando Mágico:
-            // 1. Entra no docker (mydb2)
+            // 1. Entra no docker (db2_server)
             // 2. Desconecta os usuários ativos rapidinho (force applications all) para evitar lock
             // 3. Faz o backup seguro (binary dump) para a pasta
             ProcessBuilder pb = new ProcessBuilder(
-                    "docker", "exec", "mydb2", "bash", "-c",
+                    "docker", "exec", "db2_server", "bash", "-c",
                     "su - db2inst1 -c 'db2 force applications all && sleep 5 && db2 terminate && db2 backup database LATTES to " + backupDirDb2 + "'"
             );
 

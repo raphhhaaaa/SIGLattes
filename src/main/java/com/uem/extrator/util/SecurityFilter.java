@@ -20,7 +20,7 @@ public class SecurityFilter implements Filter {
     );
 
     // rotas do usuário COMUM
-    private static final List<String> COMMOM_USER_WHITELIST  = Arrays.asList(
+    private static final List<String> COMMON_USER_WHITELIST  = Arrays.asList(
             "/index.zul",
             "/navbar.zul",
             "/header.zul",
@@ -75,7 +75,7 @@ public class SecurityFilter implements Filter {
         }
 
         // regra 4: se for usuário comum, verifica a white-list
-        boolean isPermitido = COMMOM_USER_WHITELIST.stream().anyMatch(path::equals);
+        boolean isPermitido = COMMON_USER_WHITELIST.stream().anyMatch(path::equals);
 
         if (isPermitido) {
             chain.doFilter(request, response); // esta na lista pode passar
