@@ -323,7 +323,7 @@ public class AutomacaoService {
 
             // Comando Mágico:
             // 1. Entra no docker (db2_server)
-            // 2. Desconecta os usuários ativos rapidinho (force applications all) para evitar lock
+            // 2. Desconecta os usuários ativos temporariamente (force applications all) para evitar lock
             // 3. Faz o backup seguro (binary dump) para a pasta
             ProcessBuilder pb = new ProcessBuilder(
                     "docker", "exec", "db2_server", "bash", "-c",
