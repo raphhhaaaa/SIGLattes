@@ -18,7 +18,13 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Collectors;
+import com.uem.extrator.dao.QualisDAO;
+import com.uem.extrator.model.Qualis;
 
 public class RelatorioRevistasVM {
 
@@ -43,17 +49,10 @@ public class RelatorioRevistasVM {
 
         String sql =
             "SELECT " +
-            "  COALESCE(MAX(qc.nm_revista), MAX(qh.nm_revista), MAX(p.nm_veiculo)) AS revista, " +
+            "  MAX(p.nm_veiculo) AS revista, " +
             "  p.cd_isbn_issn AS issn, " +
-            "  COALESCE(MAX(qc.estrato), MAX(qh.estrato))                           AS qualis, " +
-            "  COUNT(p.id)                                                           AS qtd " +
+            "  COUNT(p.id)       AS qtd " +
             "FROM LATTESEXTRATOR.PRODUCAO p " +
-            // JOIN 1: busca ISSN sem hífen no banco (ex: coluna armazena '12345678')
-            "LEFT JOIN LATTESEXTRATOR.QUALIS qc " +
-            "  ON REPLACE(p.cd_isbn_issn, '-', '') = qc.issn " +
-            // JOIN 2: busca ISSN com hífen no banco (ex: coluna armazena '1234-5678')
-            "LEFT JOIN LATTESEXTRATOR.QUALIS qh " +
-            "  ON p.cd_isbn_issn = qh.issn " +
             "WHERE p.tp_producao = 'ARTIGO' " +
             "  AND p.cd_isbn_issn IS NOT NULL " +
             "  AND p.cd_isbn_issn <> '' " +
@@ -64,8 +63,37 @@ public class RelatorioRevistasVM {
             NativeQuery<Object[]> query = session.createNativeQuery(sql);
             List<Object[]> resultados = query.list();
 
+            Set<String> issns = new HashSet<>();
             for (Object[] row : resultados) {
-                String revista   = row[0] != null ? row[0].toString() : "Revista Desconhecida";
+                if (row[1] != null) {
+                    issns.add(row[1].toString());
+                }
+            }
+
+            QualisDAO qualisDAO = new QualisDAO();
+            Map<String, Qualis> mapaQualis = new HashMap<>();
+            List<String> listIssns = new ArrayList<>(issns);
+            int batchSize = 500;
+            for (int i = 0; i < listIssns.size(); i += batchSize) {
+                List<String> subList = listIssns.subList(i, Math.min(listIssns.size(), i + batchSize));
+                mapaQualis.putAll(qualisDAO.buscarPorIssns(subList));
+            }
+
+            for (Object[] row : resultados) {
+                String revista = row[0] != null ? row[0].toString() : "Revista Desconhecida";
+                String issn = row[1] != null ? row[1].toString() : "-";
+                String qualis = null;
+
+                if (!issn.equals("-")) {
+                    String issnNorm = issn.replace("-", "");
+                    Qualis q = mapaQualis.get(issnNorm);
+                    if (q != null) {
+                        qualis = q.getEstrato();
+                        if (q.getNomeRevista() != null && !q.getNomeRevista().trim().isEmpty()) {
+                            revista = q.getNomeRevista();
+                        }
+                    }
+                }
 
                 // oculta links de DOIs no lugar do nome da revista
                 String revLower = revista.toLowerCase();
@@ -74,9 +102,7 @@ public class RelatorioRevistasVM {
                     revista = "[Nome não informado - Apenas Link/DOI cadastrado no Lattes]";
                 }
 
-                String issn      = row[1] != null ? row[1].toString() : "-";
-                String qualis    = row[2] != null ? row[2].toString() : null;
-                Long   qtd       = ((Number) row[3]).longValue();
+                Long qtd = ((Number) row[2]).longValue();
                 listaCompleta.add(new RelatorioRevistaDTO(revista, issn, qualis, qtd));
             }
             aplicarFiltros();
