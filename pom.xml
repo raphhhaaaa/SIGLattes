@@ -33,7 +33,22 @@
     <dependency>
       <groupId>org.hibernate</groupId>
       <artifactId>hibernate-core</artifactId>
-      <version>5.6.10.Final</version>
+      <version>5.6.15.Final</version>
+    </dependency>
+
+
+    <!-- HikariCP para administração de conexões e pools
+    <dependency>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP</artifactId>
+      <version>5.1.0</version>
+    </dependency>
+    !-->
+
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-hikaricp</artifactId>
+      <version>5.6.15.Final</version>
     </dependency>
 
     <dependency>

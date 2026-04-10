@@ -288,6 +288,26 @@
                         </div>
                     </div>
                 </div>
+
+                <div sclass="col-md-6 mb-4">
+                    <div sclass="card shadow-sm border-0 h-100">
+                        <div sclass="card-header bg-success text-white">
+                            <n:h5 class="mb-0" style="font-size: 1rem;"><n:i class="fa-solid fa-file-csv mr-2"></n:i> Upload de qualis CSV</n:h5>
+                        </div>
+                        <div sclass="card-body d-flex flex-column align-items-center justify-content-center">
+                            <n:p class="text-muted text-center mb-4">
+                                Atualize a base de dados do Qualis enviando um novo arquivo CSV.
+                            </n:p>
+                            <button label="Fazer Upload"
+                                    upload="true,maxsize=51200"
+                                    onUpload="@command('uploadQualis', media=event.media)"
+                                    sclass="btn btn-outline-success font-weight-bold"
+                                    iconSclass="z-icon-upload"
+                                    height="45px"
+                                    width="200px"/>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div sclass="row mt-3">
                 <div sclass="col-md-12 d-flex justify-content-end">

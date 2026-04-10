@@ -28,6 +28,7 @@ import org.w3c.dom.NodeList;
 import org.zkoss.zk.ui.util.Clients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.Date;
 
 public class AutomacaoService {
 
@@ -205,7 +206,7 @@ public class AutomacaoService {
                     msg.append("<p>Isso pode impedir novas extrações ou atualizações de currículos temporariamente.</p>");
                     msg.append("<hr>");
                     msg.append("<p><b>Status:</b> 🔴 SERVIÇO INDISPONÍVEL / INSTÁVEL</p>");
-                    msg.append("<p><b>Horário:</b> " + new java.util.Date() + "</p>");
+                    msg.append("<p><b>Horário:</b> " + new Date() + "</p>");
 
                     EmailService.getInstance().enviarAlerta("URGENTE: Falha na Conexão CNPq", msg.toString());
 

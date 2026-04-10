@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.Semaphore;
+import java.net.Proxy;
+import java.lang.reflect.Method;
 
 public class SemanticScholarService {
 
@@ -402,7 +404,7 @@ public class SemanticScholarService {
 
     private HttpURLConnection configurarConexao(String endpoint, String method) throws Exception {
         URL url = new URL(endpoint);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection(java.net.Proxy.NO_PROXY);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
 
         conn.setRequestMethod(method);
         if (API_KEY != null && !API_KEY.isEmpty()) {
@@ -442,7 +444,7 @@ public class SemanticScholarService {
 
     private String obterOrcidSeExistir(Curriculo curriculo) {
         try {
-            java.lang.reflect.Method metodo = curriculo.getClass().getMethod("getOrcid");
+            Method metodo = curriculo.getClass().getMethod("getOrcid");
             Object resultado = metodo.invoke(curriculo);
             return (resultado != null) ? resultado.toString() : null;
         } catch (Exception e) {

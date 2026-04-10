@@ -28,20 +28,27 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.management.Query;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import java.time.Year;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Date;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.io.ByteArrayInputStream;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipEntry;
+import java.io.ByteArrayOutputStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ExtratorVM {
 
@@ -161,7 +168,7 @@ public class ExtratorVM {
     private String gerarScriptGraficos() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             String filtroUEM = " AND (i.siglaInstituicao = 'UEM' OR i.nomeInstituicao LIKE '%Universidade Estadual de Maringá%') ";
-            int anoAtual = java.time.Year.now().getValue();
+            int anoAtual = Year.now().getValue();
             int anoLimite = anoAtual - 10;
 
             // Gráfico 1: Evolução
@@ -213,8 +220,8 @@ public class ExtratorVM {
                     return;
                 }
 
-                java.util.concurrent.atomic.AtomicInteger concluidos = new java.util.concurrent.atomic.AtomicInteger(0);
-                java.util.concurrent.atomic.AtomicInteger contador = new java.util.concurrent.atomic.AtomicInteger(0);
+                AtomicInteger concluidos = new AtomicInteger(0);
+                AtomicInteger contador = new AtomicInteger(0);
 
                 for (Object[] resumo : resumos) {
                     executor.submit(() -> {
@@ -225,7 +232,7 @@ public class ExtratorVM {
                             // Cria o "Curriculo Fantasma" levíssimo para poupar RAM
                             Curriculo curriculoLeve = new Curriculo();
                             curriculoLeve.setIdLattes((String) resumo[0]);
-                            curriculoLeve.setDataAtualizacao((java.util.Date) resumo[1]);
+                            curriculoLeve.setDataAtualizacao((Date) resumo[1]);
 
                             if (isDesatualizado(curriculoLeve)) {
                                 contador.incrementAndGet();
@@ -273,18 +280,18 @@ public class ExtratorVM {
         final org.zkoss.zk.ui.Desktop desktop = org.zkoss.zk.ui.Executions.getCurrent().getDesktop();
         if (!desktop.isServerPushEnabled()) desktop.enableServerPush(true);
 
-        java.util.concurrent.Executors.newSingleThreadExecutor().submit(() -> {
+        Executors.newSingleThreadExecutor().submit(() -> {
             try {
                 // 1. Busca no banco de dados agora acontece em background!
                 List<Object[]> resumos = curriculoDAO.listarResumoParaVerificacao();
                 final int total = resumos.size();
 
-                final java.util.concurrent.atomic.AtomicInteger concluidos = new java.util.concurrent.atomic.AtomicInteger(0);
-                final java.util.concurrent.atomic.AtomicInteger encontrados = new java.util.concurrent.atomic.AtomicInteger(0);
-                final java.util.concurrent.atomic.AtomicInteger progressoVisual = new java.util.concurrent.atomic.AtomicInteger(0);
+                final AtomicInteger concluidos = new AtomicInteger(0);
+                final AtomicInteger encontrados = new AtomicInteger(0);
+                final AtomicInteger progressoVisual = new AtomicInteger(0);
 
-                final java.util.concurrent.ConcurrentLinkedQueue<String> filaLogs = new java.util.concurrent.ConcurrentLinkedQueue<>();
-                final java.util.concurrent.ConcurrentLinkedQueue<Curriculo> filaCurriculos = new java.util.concurrent.ConcurrentLinkedQueue<>();
+                final ConcurrentLinkedQueue<String> filaLogs = new ConcurrentLinkedQueue<>();
+                final ConcurrentLinkedQueue<Curriculo> filaCurriculos = new ConcurrentLinkedQueue<>();
 
                 this.logAtualizacao = ("Processando...\n");
 
@@ -323,7 +330,7 @@ public class ExtratorVM {
                 // 3. AS 30 THREADS TRABALHADORAS
                 for (Object[] resumo : resumos) {
                     final String idLattes = (String) resumo[0];
-                    final java.util.Date dataAtualizacaoLocal = (java.util.Date) resumo[1];
+                    final Date dataAtualizacaoLocal = (Date) resumo[1];
                     final String nomeCompleto = (String) resumo[2];
 
                     executor.submit(() -> {
@@ -361,7 +368,7 @@ public class ExtratorVM {
         });
     }
 
-    private void finalizarVerificacaoSegura(org.zkoss.zk.ui.Desktop desktop, java.util.concurrent.atomic.AtomicInteger concluidos, int total, java.util.concurrent.atomic.AtomicInteger encontrados, java.util.concurrent.ConcurrentLinkedQueue<String> filaLogs) {
+    private void finalizarVerificacaoSegura(org.zkoss.zk.ui.Desktop desktop, AtomicInteger concluidos, int total, AtomicInteger encontrados, ConcurrentLinkedQueue<String> filaLogs) {
         int atual = concluidos.incrementAndGet();
 
         if (atual == total) {
@@ -407,8 +414,8 @@ public class ExtratorVM {
         final AtomicInteger erro = new AtomicInteger(0);
         final AtomicInteger progressoVisual = new AtomicInteger(0);
 
-        final java.util.concurrent.ConcurrentLinkedQueue<String> filaLogs = new java.util.concurrent.ConcurrentLinkedQueue<>();
-        final java.util.concurrent.ConcurrentLinkedQueue<Curriculo> curriculosRemover = new java.util.concurrent.ConcurrentLinkedQueue<>();
+        final ConcurrentLinkedQueue<String> filaLogs = new ConcurrentLinkedQueue<>();
+        final ConcurrentLinkedQueue<Curriculo> curriculosRemover = new ConcurrentLinkedQueue<>();
 
         // 1. A THREAD MAESTRO (Controla a UI)
         executor.submit(() -> {
@@ -473,7 +480,7 @@ public class ExtratorVM {
         }
     }
 
-    private void finalizarAtualizacaoLoteSegura(org.zkoss.zk.ui.Desktop desktop, java.util.concurrent.atomic.AtomicInteger concluidos, int total, java.util.concurrent.atomic.AtomicInteger sucesso, java.util.concurrent.atomic.AtomicInteger erro, java.util.concurrent.ConcurrentLinkedQueue<String> filaLogs) {
+    private void finalizarAtualizacaoLoteSegura(org.zkoss.zk.ui.Desktop desktop, AtomicInteger concluidos, int total, AtomicInteger sucesso, AtomicInteger erro, ConcurrentLinkedQueue<String> filaLogs) {
         int atual = concluidos.incrementAndGet();
 
         if (atual == total) {
@@ -823,17 +830,17 @@ public class ExtratorVM {
                 if (nomeArquivo.endsWith(".zip")) {
                     if (!isBinary) throw new Exception("O navegador não enviou o ZIP em formato binário.");
 
-                    java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(byteData);
-                    java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(bais);
+                    ByteArrayInputStream bais = new ByteArrayInputStream(byteData);
+                    ZipInputStream zis = new ZipInputStream(bais);
 
-                    java.util.zip.ZipEntry zipEntry = zis.getNextEntry();
+                    ZipEntry zipEntry = zis.getNextEntry();
                     if (zipEntry == null) {
                         zis.close();
                         throw new Exception("O arquivo ZIP está vazio ou num formato não suportado.");
                     }
 
                     // --- PROTEÇÃO CONTRA ZIP BOMB (Limite de 50MB) ---
-                    java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     byte[] buffer = new byte[8192];
                     int count = 0;
                     long totalBytesLidos = 0;
@@ -862,7 +869,7 @@ public class ExtratorVM {
 
                 atualizarLog(desktop, "Extraindo ID Lattes...");
                 String idLattes = "0000000000000000"; // Fallback caso não encontre
-                java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("NUMERO-IDENTIFICADOR=\"(\\d{16})\"").matcher(xmlConteudo);
+                Matcher matcher = Pattern.compile("NUMERO-IDENTIFICADOR=\"(\\d{16})\"").matcher(xmlConteudo);
                 if (matcher.find()) {
                     idLattes = matcher.group(1);
                 }

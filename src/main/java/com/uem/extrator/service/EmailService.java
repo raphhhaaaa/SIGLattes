@@ -8,6 +8,7 @@ import java.io.ObjectInputFilter;
 import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.List;
 
 public class EmailService {
 
@@ -85,7 +86,7 @@ public class EmailService {
     }
 
     // utilitario para formatar lista
-    public String formatarLista(java.util.List<String> itens) {
+    public String formatarLista(List<String> itens) {
         StringBuilder sb = new StringBuilder("<ul>");
         for (String s : itens) {
             sb.append("<li>").append(s).append("</li>");

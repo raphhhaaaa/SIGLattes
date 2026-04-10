@@ -17,6 +17,8 @@ import java.util.Date;
 import com.uem.extrator.model.Curriculo;
 import java.security.MessageDigest;
 import java.math.BigInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class LattesParser {
 
@@ -74,7 +76,7 @@ public class LattesParser {
                 String orcidBruto = dados.getAttribute("ORCID-ID");
                 if (orcidBruto != null && !orcidBruto.trim().isEmpty()) {
                     // padrão oficial do orcid, 4 blocos de 4 dígitos (o ultimo pode se X)
-                    java.util.regex.Matcher m = java.util.regex.Pattern
+                    Matcher m = Pattern
                             .compile("([0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X])")
                             .matcher(orcidBruto.toUpperCase());
 

@@ -1,11 +1,17 @@
 package com.uem.extrator.viewmodel;
 
 import com.mysql.cj.xdevapi.Client;
+import com.uem.extrator.dao.QualisDAO;
+import com.uem.extrator.model.Qualis;
 import com.uem.extrator.model.Usuario;
+import com.uem.extrator.service.AuditLogService;
 import com.uem.extrator.service.AutomacaoService;
 import com.uem.extrator.service.EmailService;
 import com.uem.extrator.util.ConfigManager;
 import com.uem.extrator.util.HibernateUtil;
+import org.hibernate.Transaction;
+import org.zkoss.bind.annotation.BindingParam;
+import org.zkoss.util.media.Media;
 import org.zkoss.zk.ui.Sessions;
 import org.zkoss.zk.ui.event.Event;
 import org.hibernate.Session;
@@ -23,6 +29,16 @@ import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zk.ui.util.Clients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zkoss.zul.Messagebox;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static java.awt.SystemColor.desktop;
 
@@ -256,6 +272,107 @@ public class ConfigVM {
             }
         }).start();
     }
+
+    @Command
+    public void uploadQualis(@BindingParam("media") Media media) {
+        if (media == null) {
+            Clients.showNotification("Nenhum arquivo selecionado.", "warning", null, null, 3000);
+            return;
+        }
+
+        if (!media.getName().toLowerCase().endsWith(".csv")) {
+            Clients.showNotification("Por favor, selecione um arquivo CSV.", "error", null, null, 3000);
+            return;
+        }
+
+        // inicia o leitor fora do try para poder injetar no BufferedReader
+        Reader baseReader;
+        try {
+            if (media.isBinary()) {
+                baseReader = new InputStreamReader(media.getStreamData(), StandardCharsets.UTF_8);
+            } else {
+                baseReader = media.getReaderData();
+            }
+        } catch (Exception e) {
+            logger.error("Erro ao obter dados do arquivo", e);
+            Clients.showNotification("Erro ao ler arquivo: " + e.getMessage(), "error", null, null, 3000);
+            return;
+        }
+
+        try (BufferedReader br = new BufferedReader(baseReader)) {
+            Map<String, Qualis> mapaQualis = new HashMap<>();
+            String linha;
+            boolean primeiraLinha = true;
+
+            while ((linha = br.readLine()) != null) {
+                if (linha.trim().isEmpty()) continue;
+                if (primeiraLinha) { primeiraLinha = false; continue; }
+
+                // Regex para split de CSV tratando aspas e aceitando vírgula ou ponto-e-vírgula
+                String[] colunas = linha.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+
+                if (colunas.length >= 4) {
+                    String issn = colunas[0].replace("\"", "").trim();
+                    String nomeRevista = colunas[1].replace("\"", "").trim();
+                    String estrato = colunas[3].replace("\"", "").trim();
+
+                    // Após extrair as variáveis da linha do CSV, faça a sanitização defensiva:
+
+                    if (issn != null && issn.length() > 20) {
+                        issn = issn.substring(0, 20);
+                    }
+
+                    if (nomeRevista != null && nomeRevista.length() > 500) {
+                        nomeRevista = nomeRevista.substring(0, 500); // Corta no limite do banco
+                    }
+
+                    if (estrato != null && estrato.length() > 5) {
+                        estrato = estrato.substring(0, 5);
+                    }
+
+                    if (!issn.isEmpty()) {
+                        Qualis qAtual = mapaQualis.get(issn);
+
+                        if (qAtual == null) {
+                            Qualis qNovo = new Qualis();
+                            qNovo.setIssn(issn);
+                            qNovo.setNomeRevista(nomeRevista);
+                            qNovo.setEstrato(estrato);
+                            mapaQualis.put(issn, qNovo);
+                        } else if (QualisDAO.pesoEstrato(estrato) > QualisDAO.pesoEstrato(qAtual.getEstrato())) {
+                            qAtual.setEstrato(estrato);
+                        }
+                    }
+                }
+            }
+
+            if (mapaQualis.isEmpty()) {
+                Clients.showNotification("O arquivo CSV parece estar vazio ou em formato inválido.", "warning", null, null, 3000);
+                return;
+            }
+
+            QualisDAO qualisDAO = new QualisDAO();
+            
+            // Limpa a base atual para evitar duplicatas e inconsistências
+            qualisDAO.limparTudo();
+            
+            // Salva em lote
+            List<Qualis> lote = new ArrayList<>(mapaQualis.values());
+            qualisDAO.salvarEmLote(lote);
+
+            Clients.showNotification("Qualis atualizado com sucesso! " + lote.size() + " registros importados.", "info", null, null, 4000);
+            logger.info(">>> Upload do Qualis processado com sucesso via interface. Total: {}", lote.size());
+
+            if (usuarioLogado != null) {
+                AuditLogService.log("QUALIS_UPLOAD", usuarioLogado.getLogin(), "Upload manual do Qualis com " + lote.size() + " revistas");
+            }
+
+        } catch (Exception e) {
+            logger.error("Erro ao processar ficheiro do Qualis", e);
+            Clients.showNotification("Erro ao processar o arquivo: " + e.getMessage(), "error", null, "middle-center", 6000);
+        }
+    }
+
 
     @Command
     @NotifyChange("*")

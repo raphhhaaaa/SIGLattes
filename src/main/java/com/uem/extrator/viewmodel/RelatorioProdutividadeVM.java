@@ -27,6 +27,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.nio.charset.StandardCharsets;
 
 public class RelatorioProdutividadeVM {
 
@@ -159,7 +160,7 @@ public class RelatorioProdutividadeVM {
         }
 
         byte[] bom = new byte[]{(byte)0xEF, (byte)0xBB, (byte)0xBF};
-        byte[] dados = csv.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] dados = csv.toString().getBytes(StandardCharsets.UTF_8);
         byte[] finalBytes = new byte[bom.length + dados.length];
         System.arraycopy(bom, 0, finalBytes, 0, bom.length);
         System.arraycopy(dados, 0, finalBytes, bom.length, dados.length);
