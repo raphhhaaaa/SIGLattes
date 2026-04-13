@@ -1,14 +1,9 @@
 package com.uem.extrator.viewmodel;
 
-import com.ibm.db2.cmx.tools.ClientTool;
 import com.uem.extrator.dao.CurriculoDAO;
 import com.uem.extrator.dao.InstituicaoDAO;
-import com.uem.extrator.dao.QualisDAO;
 import com.uem.extrator.dto.RelatorioProdutividadeDTO;
-import com.uem.extrator.dto.RelatorioRevistaDTO;
 import com.uem.extrator.model.Curriculo;
-import com.uem.extrator.model.Producao;
-import com.uem.extrator.model.Qualis;
 import com.uem.extrator.model.Usuario;
 import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
@@ -24,10 +19,9 @@ import org.zkoss.zul.Filedownload;
 import org.zkoss.zul.Window;
 
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.nio.charset.StandardCharsets;
+import java.util.stream.Collectors;
 
 public class RelatorioProdutividadeVM {
 
@@ -36,6 +30,8 @@ public class RelatorioProdutividadeVM {
     private List<String> instituicoes;
     private String instituicaoSelecionada;
     private List<RelatorioProdutividadeDTO> listaProdutividade;
+    private String filtroNome;
+    private List<RelatorioProdutividadeDTO> listaProdutividadeOriginal;
 
     // Variáveis individuais para o Pódio (Resolve o erro do ZK)
     private RelatorioProdutividadeDTO primeiroLugar;
@@ -54,6 +50,9 @@ public class RelatorioProdutividadeVM {
         InstituicaoDAO instituicaoDAO = new InstituicaoDAO();
         List<Object[]> resultados = instituicaoDAO.listarInstituicoesConsolidadas();
 
+        this.listaProdutividadeOriginal = new ArrayList<>(this.listaProdutividade);
+        this.filtroNome = "";
+
         instituicoes = new ArrayList<>();
         for (Object[] row : resultados) {
             if (row[0] != null) {
@@ -64,7 +63,7 @@ public class RelatorioProdutividadeVM {
 
     @Command
     @NotifyChange({"listaProdutividade", "primeiroLugar", "segundoLugar", "terceiroLugar"})
-    public void pesquisar() {
+    public void pesquisarInstituicao() {
         listaProdutividade.clear();
         primeiroLugar = null;
         segundoLugar = null;
@@ -107,6 +106,31 @@ public class RelatorioProdutividadeVM {
             if (listaProdutividade.size() > 0) primeiroLugar = listaProdutividade.get(0);
             if (listaProdutividade.size() > 1) segundoLugar = listaProdutividade.get(1);
             if (listaProdutividade.size() > 2) terceiroLugar = listaProdutividade.get(2);
+
+            this.listaProdutividadeOriginal = new ArrayList<>(this.listaProdutividade);
+            this.filtroNome = "";
+        }
+    }
+
+    @Command
+    @NotifyChange("listaProdutividade")
+    public void filtrar() {
+        if (listaProdutividade == null) return;
+
+        if (filtroNome == null || filtroNome.trim().isEmpty()) {
+            // se filtro estiver vazio -> lista completa
+            listaProdutividade = new ArrayList<>(listaProdutividadeOriginal);
+        } else {
+            String termo = filtroNome.toLowerCase().trim();
+            // filtra a lista original baseando-se no nome do pesquisador
+            listaProdutividade = listaProdutividadeOriginal.stream()
+                    .filter(p -> p.getNomePesquisador() != null && p.getNomePesquisador().toLowerCase().contains(termo))
+                    .collect(Collectors.toList());
+
+            if (listaProdutividade == null || listaProdutividade.isEmpty()) {
+                Clients.showNotification("Não há nenhuma correspondência com o termo pesquisado.", "error", null, null, 3000);
+                listaProdutividade = new ArrayList<>(listaProdutividadeOriginal);
+            }
         }
     }
 
@@ -115,6 +139,12 @@ public class RelatorioProdutividadeVM {
     public void limparFiltros() {
         instituicaoSelecionada = null;
         listaProdutividade.clear();
+
+        if (listaProdutividadeOriginal != null) {
+            listaProdutividadeOriginal.clear();
+        }
+        filtroNome = "";
+
         primeiroLugar = null;
         segundoLugar = null;
         terceiroLugar = null;
@@ -190,4 +220,7 @@ public class RelatorioProdutividadeVM {
     public void setCurriculo(Curriculo curriculo) { this.curriculo = curriculo; }
     public boolean isResumoExpandido() { return resumoExpandido; }
     public void setResumoExpandido(boolean resumoExpandido) { this.resumoExpandido = resumoExpandido; }
+
+    public String getFiltroNome() { return filtroNome; }
+    public void setFiltroNome(String filtroNome) { this.filtroNome = filtroNome; }
 }
