@@ -38,12 +38,12 @@ public class LoginVM {
 
         String usuarioLimpo = usuario.trim().toUpperCase();
 
-        // verifica se o usuário tentando acessar não é aluno; se for, barra.
-        if (usuarioLimpo.startsWith("RA") || usuarioLimpo.startsWith("PG")) {
-            AuditLogService.log("LOGIN_BLOQUEADO", usuario, "Tentativa de acesso por perfil de aluno.");
-            this.mensagemErro = "Acesso restrito: Alunos não têm permissão para utilizar essa ferramenta.";
-            return;
-        }
+//        // verifica se o usuário tentando acessar não é aluno; se for, barra.
+//        if (usuarioLimpo.startsWith("RA") || usuarioLimpo.startsWith("PG")) {
+//            AuditLogService.log("LOGIN_BLOQUEADO", usuario, "Tentativa de acesso por perfil de aluno.");
+//            this.mensagemErro = "Acesso restrito: Alunos não têm permissão para utilizar essa ferramenta.";
+//            return;
+//        }
 
         // verifica qual bind de autenticação está configurada
         String tipoAutenticacao = ConfigManager.getInstance().getAuthType();

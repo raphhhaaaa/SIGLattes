@@ -70,7 +70,7 @@ public class AutomacaoService {
                 logger.info(">>> [VERIFICAÇÃO] O intervalo mínimo para verificação é de 1 hora. Definindo para 1 hora."); // minimo 1 hora
                 config.setVerifyInterval(intervaloHoras);
             }
-            logger.info(">>> AUTOMAÇÂO: Verificação agendada a cada {} horas", intervaloHoras);
+            logger.info(">>> [AUTOMAÇÂO] Verificação agendada a cada {} horas", intervaloHoras);
             // agenda para rodar a cada x horas
             tarefaVerificacao = scheduler.scheduleAtFixedRate(
                     this::rodarVerificacao,
@@ -80,10 +80,14 @@ public class AutomacaoService {
             );
 
             // agenda para monitorar conexão com o CNPq
-            scheduler.scheduleAtFixedRate(this::monitorarConexao, 1, 5, TimeUnit.MINUTES);
-            System.out.println("[AUTOMAÇÃO] Monitoramento de conexão ativado (Check a cada 30min).");
+            if (config.isNotifyConnection()) {
+                scheduler.scheduleAtFixedRate(this::monitorarConexao, 1, 5, TimeUnit.MINUTES);
+                logger.info("[AUTOMAÇÃO] Monitoramento de conexão ativado (Check a cada 30min).");
+            } else {
+                logger.info("[AUTOMAÇÃO] Monitoramento de conexão desativado.");
+            }
         } else {
-            System.out.println(">>> AUTOMAÇÃO: Verificação automática DESATIVADA.");
+            logger.info(">>> [AUTOMAÇÃO] Verificação automática DESATIVADA.");
         }
 
         // agendar backup (horario fixo)
@@ -114,11 +118,11 @@ public class AutomacaoService {
             }
 
             if (delayInicialSegundos < 60) {
-                System.out.println(">>> AUTOMAÇÃO: Backup agendado para " + horaAlvo + " (em " + (delayInicialSegundos) + " segundos).");
+                logger.info(">>> AUTOMAÇÃO: Backup agendado para " + horaAlvo + " (em " + (delayInicialSegundos) + " segundos).");
             } else if ((delayInicialSegundos/60) < 60) {
-                System.out.println(">>> AUTOMAÇÃO: Backup agendado para " + horaAlvo + " (em " + (delayInicialSegundos / 60) + " minutos).");
+                logger.info(">>> AUTOMAÇÃO: Backup agendado para " + horaAlvo + " (em " + (delayInicialSegundos / 60) + " minutos).");
             } else if ((delayInicialSegundos/60) > 60) {
-                System.out.println(">>> AUTOMAÇÃO: Backup agendado para " + horaAlvo + " (em " + ((delayInicialSegundos / 60) / 60) + " horas).");
+                logger.info(">>> AUTOMAÇÃO: Backup agendado para " + horaAlvo + " (em " + ((delayInicialSegundos / 60) / 60) + " horas).");
             }
 
 
