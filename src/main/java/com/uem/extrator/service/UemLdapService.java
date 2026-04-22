@@ -68,7 +68,7 @@ public class UemLdapService {
 
             DirContext ctxAuth = new InitialDirContext(envAuth);
 
-            // Teste de Fogo final: Tentamos extrair os atributos. Se o servidor
+            // Teste de Fogo final: Tenta extrair os atributos. Se o servidor
             // "mentiu" sobre o login, ele vai atirar uma exceção agora.
             ctxAuth.getAttributes(userDN);
             ctxAuth.close();

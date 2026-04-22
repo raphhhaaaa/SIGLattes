@@ -335,6 +335,15 @@ public class AutomacaoService {
                     "su - db2inst1 -c 'db2 force applications all && sleep 5 && db2 terminate && db2 backup database LATTES to " + backupDirDb2 + "'"
             );
 
+            /***
+             *  O backup é salvo no diretório remoto do docker: /database/data/ LATTES....
+             *
+             *  para puxar ele para a maquina local, no terminal, rode o seguinte comando:
+             *
+             *  docker cp db2_server:/database/data/ IDENTIFICADOR DO TIMESTAMP.001 /sua/pasta/onde/quer/salvar
+             *
+             */
+
             // Junta a saída normal e os erros num fluxo só para lermos no console do Java
             pb.redirectErrorStream(true);
             Process process = pb.start();
