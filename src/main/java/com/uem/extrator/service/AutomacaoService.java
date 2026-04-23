@@ -326,13 +326,10 @@ public class AutomacaoService {
 
             logger.info(">>> BACKUP: Solicitando backup binário nativo ao DB2 via Docker...");
 
-            // Comando Mágico:
-            // 1. Entra no docker (db2_server)
-            // 2. Desconecta os usuários ativos temporariamente (force applications all) para evitar lock
-            // 3. Faz o backup seguro (binary dump) para a pasta
+            // entra no docker e executa o backup a quente (online)
             ProcessBuilder pb = new ProcessBuilder(
                     "docker", "exec", "db2_server", "bash", "-c",
-                    "su - db2inst1 -c 'db2 force applications all && sleep 5 && db2 terminate && db2 backup database LATTES to " + backupDirDb2 + "'"
+                    "su - db2inst1 -c 'db2 backup database LATTES online to " + backupDirDb2 + " include logs'"
             );
 
             /***
