@@ -364,8 +364,15 @@ public class AutomacaoService {
             if (exitCode == 0 && sucesso) {
                 logger.info(">>> BACKUP CONCLUÍDO COM SUCESSO!");
                 System.out.println(">>> O arquivo de imagem (.001) foi salvo de forma segura no volume do Docker.");
+
+                EmailService stmp = EmailService.getInstance();
+                stmp.enviarAlerta("BACKUP CONCLUÍDO COM SUCESSO", "<h4> O backup diário agendado foi realizado com sucesso. </h4> <br> <p>Salvo no diretório remoto do docker: /database/data/ LATTES.... </p>");
             } else {
                 System.err.println(">>> ERRO AO REALIZAR BACKUP. Código de saída do Docker: " + exitCode);
+
+                EmailService stmp = EmailService.getInstance();
+                stmp.enviarAlerta("BACKUP AGENDADO FALHOU", "O backup diário agendado NÃO foi realizado.\n Erro: " + exitCode);
+
             }
 
         } catch (Exception e) {
