@@ -146,14 +146,50 @@ A página inicial é o coração do sistema. Assim que o usuário entra, ele pod
 ### 3. Verificar Atualizações
 Nesta página o usuário pode buscar por currículos desatualizados e atualiza-los. De forma individual ou geral.
 
+---
 
-### * CADASTROS * 
+# **_Guia de Páginas_**
 
-### 👤 Pessoas
-Tabela que guarda o registro de todos os currículos cadastrados no banco de dados do sistema. Através dela é possível clicar no botão de ação "Ver detalhes" que abrirŕa um modal detalhado com uma versão compactada do currículo Lattes daquela pessoa.
+## CADASTROS:
 
+### 👤 _Pessoas_
+Tabela que guarda o registro de todos os currículos cadastrados no banco de dados do sistema. Através dela é possível clicar no botão de ação "Ver detalhes" que abrirá um modal detalhado com uma versão compactada do currículo Lattes daquela pessoa.
+
+### 🏫 _Instituições_
+Tabela que guarda o registro de todas as instituições colhidas na extração dos currículos. Exibe também o número de ocorrências que cada instituição registrou ao total.
+
+### 📖 _Cursos_ 
+Tabela que guarda o registro de todos os cursos colhidos na extração dos currículos.
+
+
+## RELATÓRIOS:
+
+### 📊 _Relatório Dinâmico_
+...
+
+### 🌐 _Relatório de Revistas_
+...
+
+### 🏆 _Relatório de Produtividade_
+...
+
+### 💻 Consulta SQL Livre (admin only)
+...
+
+
+## SISTEMA:
+
+### 🧑🏻‍💻 _Utilizadores_
+...
+
+### ⚙️ _Configurações_
+...
+
+### ⓘ _Logs_
+...
 
 ---
+
 ## ⚙️ Funcionalidades de Automação (AutomacaoService)
 O sistema possui um módulo autonômo (Background Task) que garante a estabilidade e a atualização dos dados sem necessidade de intervenção manual:
 
