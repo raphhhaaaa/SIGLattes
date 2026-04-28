@@ -6,26 +6,12 @@ import java.time.LocalDate;
 import java.util.Scanner;
 import com.uem.extrator.dao.CurriculoDAO;
 import com.uem.extrator.dao.ProducaoDAO;;
-import com.uem.extrator.model.Usuario;
 import com.uem.extrator.util.ConfigManager;
-import com.uem.extrator.service.LattesService;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Properties;
 import java.util.concurrent.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.zkoss.zk.ui.util.Clients;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.Date;
@@ -161,7 +147,9 @@ public class AutomacaoService {
             msg.append("<h3>Sincronização automática</h3>");
             msg.append("<p>O sistema detectou e baixou atualizações recentes para os seguintes currículos de pesquisadores/docentes: </p>");
             msg.append(EmailService.getInstance().formatarLista(relatorio.atualizados));
-            msg.append("<br><p>O banco de dados local agora está sincronizado com o CNPq.</p>");
+            msg.append("<<p>O banco de dados local agora está sincronizado com o CNPq.</p>");
+            msg.append("<hr>");
+            msg.append(getStatusConexao());
             EmailService.getInstance().enviarAlerta("Relatório de Atualização", msg.toString());
         }
 
@@ -209,7 +197,7 @@ public class AutomacaoService {
                     msg.append("<p>O sistema detectou uma falha de comunicação com o webservice do <b>CNPq</b>.</p>");
                     msg.append("<p>Isso pode impedir novas extrações ou atualizações de currículos temporariamente.</p>");
                     msg.append("<hr>");
-                    msg.append("<p><b>Status:</b> 🔴 SERVIÇO INDISPONÍVEL / INSTÁVEL</p>");
+                    msg.append(getStatusConexao());
                     msg.append("<p><b>Horário:</b> " + new Date() + "</p>");
 
                     EmailService.getInstance().enviarAlerta("URGENTE: Falha na Conexão CNPq", msg.toString());
@@ -366,9 +354,19 @@ public class AutomacaoService {
                 System.out.println(">>> O arquivo de imagem (.001) foi salvo de forma segura no volume do Docker.");
 
                 EmailService stmp = EmailService.getInstance();
-                stmp.enviarAlerta("BACKUP CONCLUÍDO COM SUCESSO", "<h4> O backup diário agendado foi realizado com sucesso. </h4> <br> <p>Salvo no diretório remoto do docker: /database/data/ LATTES.... </p>");
+                LattesService service = new LattesService();
+
+
+                StringBuilder msg = new StringBuilder();
+                msg.append("<h4>Backup Concluído com Sucesso</h4>");
+                msg.append("<p>Salvo no diretório remoto do docker: <i>/database/data/LATTES....</i> </p>");
+                msg.append("<hr>");
+                msg.append(getStatusConexao());
+                msg.append("<p><b>Horário:</b> " + new Date() + "</p>");
+
+                stmp.enviarAlerta("Backup Concluído com Sucesso", msg.toString());
             } else {
-                System.err.println(">>> ERRO AO REALIZAR BACKUP. Código de saída do Docker: " + exitCode);
+                System.err.println(">>> Erro ao Realizar Backup. Código de saída do Docker: " + exitCode);
 
                 EmailService stmp = EmailService.getInstance();
                 stmp.enviarAlerta("BACKUP AGENDADO FALHOU", "O backup diário agendado NÃO foi realizado.\n Erro: " + exitCode);
@@ -378,6 +376,20 @@ public class AutomacaoService {
         } catch (Exception e) {
             logger.error("Falha crítica no backup DB2", e);
         }
+    }
+
+    public String getStatusConexao() {
+        LattesService service = new LattesService();
+
+        boolean online = service.testarConexaoCNPq();
+        String texto = "";
+
+        if (!online) {
+            texto = "<p><b>Status:</b> 🔴 SERVIÇO INDISPONÍVEL / INSTÁVEL</p>";
+        } else {
+            texto = "<p><b>Status:</b> ✅ SERVIÇO ONLINE / ESTÁVEL</p>";
+        }
+        return texto;
     }
 
     // debug
