@@ -140,7 +140,8 @@ A página inicial é o coração do sistema. Assim que o usuário entra, ele pod
 
  - O Extrator de Currículos Lattes (Por ID Lattes, Por CPF, Extração em Lote, Upload de XML (apenas admin) );
  - Gráficos de Produção Científica da UEM;
- - Dashboard das métricas do sistema (Status de conexão com o CNPq, quantidade de currículos cadastrados no banco, quantidade de currículos desatualizados no momento e currículos processados no dia.);
+ - Dashboard das métricas do sistema (Status de conexão com o CNPq, quantidade de currículos cadastrados no banco, quantidade
+ - de currículos desatualizados no momento e currículos processados no dia.);
  - Menu Lateral.
 
 ### 3. Verificar Atualizações
@@ -153,10 +154,12 @@ Nesta página o usuário pode buscar por currículos desatualizados e atualiza-l
 ## CADASTROS:
 
 ### 👤 _Pessoas_
-Tabela que guarda o registro de todos os currículos cadastrados no banco de dados do sistema. Através dela é possível clicar no botão de ação "Ver detalhes" que abrirá um modal detalhado com uma versão compactada do currículo Lattes daquela pessoa.
+Tabela que guarda o registro de todos os currículos cadastrados no banco de dados do sistema. Através dela é possível clicar
+no botão de ação "Ver detalhes" que abrirá um modal detalhado com uma versão compactada do currículo Lattes daquela pessoa.
 
 ### 🏫 _Instituições_
-Tabela que guarda o registro de todas as instituições colhidas na extração dos currículos. Exibe também o número de ocorrências que cada instituição registrou ao total.
+Tabela que guarda o registro de todas as instituições colhidas na extração dos currículos. Exibe também o número de ocorrências
+que cada instituição registrou ao total.
 
 ### 📖 _Cursos_ 
 Tabela que guarda o registro de todos os cursos colhidos na extração dos currículos.
@@ -165,28 +168,45 @@ Tabela que guarda o registro de todos os cursos colhidos na extração dos curr�
 ## RELATÓRIOS:
 
 ### 📊 _Relatório Dinâmico_
-...
+Ferramenta de busca avançada que permite cruzar filtros (como tipo de produção, instituição vinculada) sobre os dados
+pessoais e de formação dos currículos. Através dela, a gestão ganha total flexibilidade para mapear a produtividade da instituição sob
+demanda, facilitando a formação de comitês e o atendimento a editais de fomento.
 
 ### 🌐 _Relatório de Revistas_
-...
+Lista que agrupa e contabiliza os veículos de publicação científica extraídos da produção bibliográfica dos pesquisadores.
+Exibe o nome das revistas, o ISSN, a nota Qualis CAPES e o volume de publicações registradas no banco de dados, permitindo ranquear e mensurar o
+fator de impacto, qualidade e o alcance da ciência produzida. É possível filtrar por nome ou nota CAPES (A1, A2, B3, C...).
 
 ### 🏆 _Relatório de Produtividade_
-...
+Painel que quantifica as entregas acadêmicas e o impacto bibliométrico (artigos, índice H, n° de citações) geradas por pesquisadores em uma tabela
+de classificação geral. Gera também um pódio com o Top 3 pesquisadores da instituição selecionada. Funciona como o principal
+termômetro de desempenho quantitativo da universidade, gerando
+os dados vitais para embasar a distribuição de bolsas e progressões de carreira.
 
 ### 💻 Consulta SQL Livre (admin only)
-...
+Interface de terminal restrita exclusivamente a administradores que permite a execução direta de scripts SQL no banco de
+dados (apenas comandos de LEITURA são permitidos). Acessa todas as tabelas e relacionamentos do esquema DB2 de forma bruta,
+sem filtros pré-definidos da interface gráfica. Gera valor ao oferecer poder total para extrações emergenciais ou a criação
+de relatórios complexos sob medida que ainda não possuem um módulo visual dedicado no sistema.
 
 
 ## SISTEMA:
 
 ### 🧑🏻‍💻 _Utilizadores_
-...
+Gestão centralizada de contas e níveis de acesso (Administrador ou Utilizador Comum) do sistema. Permite a criação de novos
+perfis e a edição de permissões, garantindo o controle rigoroso de quem pode interagir com as funcionalidades de extração e
+outras.
 
 ### ⚙️ _Configurações_
-...
+Painel de controle dinâmico que permite ajustar parâmetros operacionais do sistema em tempo real sem a necessidade de reiniciar
+o servidor. Através desta tela, o administrador configura intervalos de backup, agendamentos de sincronização, credenciais
+de e-mail e outras propriedades do `ConfigManager` que ditam o comportamento da automação. É possível também nessa tela alterar
+o endpoint do webservice utilizado e fazer upload manual do arquivo .csv do Qualis CAPES.
 
-### ⓘ _Logs_
-...
+### 📜 _Logs_
+Repositório de eventos que regista toda a atividade técnica e operacional da plataforma. Exibe o histórico de execução das
+tarefas de fundo, o status das extrações com o WebService do CNPq, histórico de acessos/tentativas de login e eventuais erros
+operacionais, servindo como a ferramenta primária para auditoria e depuração de infraestrutura por parte dos administradores.
 
 ---
 
@@ -195,7 +215,7 @@ O sistema possui um módulo autonômo (Background Task) que garante a estabilida
 
 * **Backup:** Realiza cópias de segurança binárias nativas do Docker (`.001`) utilizando *Archive Logging*, sem derrubar as conexões dos utilizadores ou causar lentidão. Os backups ficam salvos de forma segura no volume persistente do Docker (/database/data).
 * **Sincronização Agendada:** Varredura automática por todos os registros para identificar currículos desatualizados na base local e baixar versões mais recentes do repositório do CNPq.
-* **Serviço SMTP (Envio de E-mails Automáticos):** Exige um E-mail do Sistema e um E-mail Administrador. Manda e-mails automáticos para o  admin a respeito sobre informações do sistema: notifica quedas de conexão com o CNPq, sincronizações de curriculos desatualizados, relatórios semanais com métricas de produção, etc...
+* **Serviço SMTP (Envio de E-mails Automáticos):** Exige um E-mail do Sistema e um E-mail Administrador. Manda e-mails automáticos para o  admin a respeito de informações do sistema. Notifica quedas de conexão com o CNPq, sincronizações automáticas de curriculos desatualizados, relatórios semanais com métricas de produção, etc...
 
 > **Nota:** Os intervalos de tempo e chaves de ativação destes serviços são controlados dinamicamente, permitindo ajustes de perfomance para o servidor de produção.
 
