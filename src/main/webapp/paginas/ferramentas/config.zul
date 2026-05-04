@@ -192,16 +192,33 @@
                                             <textbox value="@bind(vm.adminEmail)" sclass="form-control form-control-sm" placeholder="seu.email@pessoal.com // Este receberá os alertas"/>
                                         </div>
                                     </div>
-                                    <!-- BOTÃO DE TESTE EMAIL
-                                    <div sclass="form-group row">
-                                        <div sclass="col-sm-12 text-right">
-                                            <button label="Enviar E-mail de Teste"
-                                                    onClick="@command('testarEnvioEmail')"
-                                                    iconSclass="z-icon-paper-plane"
-                                                    sclass="btn btn-sm btn-outline-dark"/>
-                                        </div>
-                                    </div>
-                                    -->
+
+<!--                                    &lt;!&ndash; BOTÃO DE TESTE EMAIL &ndash;&gt;-->
+<!--                                    <zk if="${sessionScope.usuario_logado.admin}">-->
+<!--                                        <div sclass="form-group row">-->
+<!--                                            <div sclass="col-sm-12 text-right">-->
+<!--                                                <button label="Enviar E-mail de Teste"-->
+<!--                                                        onClick="@command('testarEnvioEmail')"-->
+<!--                                                        iconSclass="z-icon-paper-plane"-->
+<!--                                                        sclass="btn btn-sm btn-outline-dark"/>-->
+<!--                                            </div>-->
+<!--                                        </div>-->
+<!--                                    </zk>-->
+
+<!--                                    <n:br/>-->
+
+<!--                                    &lt;!&ndash; BOTÃO DE FORÇAR VERIFICAÇÃO &ndash;&gt;-->
+<!--                                    <zk if="${sessionScope.usuario_logado.admin}">-->
+<!--                                        <div sclass="form-group row">-->
+<!--                                            <div sclass="col-sm-12 text-right">-->
+<!--                                                <button label="Forçar verificação de curriculos"-->
+<!--                                                        onClick="@command('forcarVerificacao')"-->
+<!--                                                        iconSclass="fa fa-refresh"-->
+<!--                                                        sclass="btn btn-sm btn-outline-danger"/>-->
+<!--                                            </div>-->
+<!--                                        </div>-->
+<!--                                    </zk>-->
+
                                 </div>
 
                                 <div sclass="col-md-6 pl-4">

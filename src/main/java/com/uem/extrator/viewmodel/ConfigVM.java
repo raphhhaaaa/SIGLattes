@@ -1,6 +1,5 @@
 package com.uem.extrator.viewmodel;
 
-import com.mysql.cj.xdevapi.Client;
 import com.uem.extrator.dao.QualisDAO;
 import com.uem.extrator.model.Qualis;
 import com.uem.extrator.model.Usuario;

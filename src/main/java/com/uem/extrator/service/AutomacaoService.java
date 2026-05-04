@@ -5,7 +5,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.Scanner;
 import com.uem.extrator.dao.CurriculoDAO;
-import com.uem.extrator.dao.ProducaoDAO;;
+import com.uem.extrator.dao.ProducaoDAO;
 import com.uem.extrator.util.ConfigManager;
 
 import java.time.Duration;
@@ -147,9 +147,10 @@ public class AutomacaoService {
             msg.append("<h3>Sincronização automática</h3>");
             msg.append("<p>O sistema detectou e baixou atualizações recentes para os seguintes currículos de pesquisadores/docentes: </p>");
             msg.append(EmailService.getInstance().formatarLista(relatorio.atualizados));
-            msg.append("<<p>O banco de dados local agora está sincronizado com o CNPq.</p>");
+            msg.append("<p>O banco de dados local agora está sincronizado com o CNPq.</p>");
             msg.append("<hr>");
             msg.append(getStatusConexao());
+            msg.append("<p><b>Horário:</b> " + new Date() + "</p>");
             EmailService.getInstance().enviarAlerta("Relatório de Atualização", msg.toString());
         }
 

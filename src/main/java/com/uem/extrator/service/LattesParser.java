@@ -13,6 +13,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.StringReader;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.Date;
 import com.uem.extrator.model.Curriculo;
 import java.security.MessageDigest;
@@ -401,7 +402,10 @@ public class LattesParser {
                 }
             }
 
-            Atuacao atuacaoPai = encontrarOuCriarAtuacao(cv, "PROJETOS (" + tipo + ")", 2025, true);
+            Integer anoProjeto = atv.getAnoInicio() != null ? atv.getAnoInicio() : LocalDate.now().getYear();
+            Atuacao atuacaoPai = encontrarOuCriarAtuacao(cv, "PROJETOS (" + tipo + ")", anoProjeto, true);
+
+//            Atuacao atuacaoPai = encontrarOuCriarAtuacao(cv, "PROJETOS (" + tipo + ")", 2025, true);
             atv.setAtuacao(atuacaoPai);
             atuacaoPai.getAtividades().add(atv);
         }
@@ -604,16 +608,15 @@ public class LattesParser {
 
     private String gerarHash(String texto) {
         if (texto == null || texto.isEmpty()) return null;
+
         try {
+
             String limpo = texto.toLowerCase().replaceAll("\\s+", "");
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             byte[] messageDigest = md.digest(limpo.getBytes());
-            BigInteger no = new BigInteger(1, messageDigest);
-            String hashText = no.toString(16);
-            while (hashText.length() < 64) {
-                hashText = "0" + hashText;
-            }
-            return hashText;
+
+            return String.format("%064x", new BigInteger(1, messageDigest));
+
         } catch (Exception e) {
             return null;
         }

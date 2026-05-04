@@ -388,7 +388,7 @@ public class ExtratorVM {
     @Command
     public void cancelarProcessamentoAtualizacao() {
         this.cancelarAtualizacao = true;
-        Clients.showNotification("Cancelando operação... Aguardando conclusão do item atual.", "warning", null, "middle-center", 3000);
+        Clients.showNotification("Cancelando operação... Aguardando conclusão do item atual.", "warning", null, null, 3000);
     }
 
     @Command

@@ -1,6 +1,5 @@
 package com.uem.extrator.service;
 
-import com.sun.jdi.event.ExceptionEvent;
 import com.uem.extrator.dao.CurriculoDAO;
 import com.uem.extrator.model.Curriculo;
 import com.uem.extrator.model.Producao;
@@ -265,6 +264,7 @@ public class LattesService {
                     }
                 } catch (Exception e) {
                     logger.error("Erro ao verificar atualizações para {}", nome, e);
+                    relatorio.erros.add(nome + " (" + idLattes + ")");
                 } finally {
                     int p = processados.incrementAndGet();
                     // Log de progresso a cada 100 currículos para não poluir o console
@@ -287,7 +287,7 @@ public class LattesService {
         }
 
         // limpeza final forçada
-        System.gc();
+//        System.gc();
 
         logger.info(">>> AUTOMAÇÃO: Varredura concluída. Atualizados: {}, Erros: {}", relatorio.atualizados.size(), relatorio.erros.size());
         if (relatorio.atualizados.size() == 0 && relatorio.erros.size() == 0) {

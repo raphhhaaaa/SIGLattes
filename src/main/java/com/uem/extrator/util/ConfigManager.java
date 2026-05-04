@@ -146,7 +146,7 @@ public class ConfigManager {
 
     public int getVerifyInterval() {
         try { return Integer.parseInt(properties.getProperty("verify_interval", DEFAULT_VERIFY_INTERVAL)); }
-        catch (Exception e) { return 24; }
+        catch (NumberFormatException e) { return 24; }
     }
     public void setVerifyInterval(int h) { properties.setProperty("verify_interval", String.valueOf(h)); }
 

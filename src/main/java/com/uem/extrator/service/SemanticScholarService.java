@@ -334,9 +334,9 @@ public class SemanticScholarService {
                         }
 
                         String[] acesso = new String[]{"N/A", "secondary"};
-                            if (paper.has("isOpenAcess") && !paper.get("isOpenAcess").isJsonNull()) {
-                                boolean isOpen = paper.get("isOpenAcess").getAsBoolean();
-                                acesso = isOpen ? new String[]{"ABERTO", "sucess"} : new String[]{"FECHADO", "danger"};
+                            if (paper.has("isOpenAccess") && !paper.get("isOpenAccess").isJsonNull()) {
+                                boolean isOpen = paper.get("isOpenAccess").getAsBoolean();
+                                acesso = isOpen ? new String[]{"ABERTO", "success"} : new String[]{"FECHADO", "danger"};
                             }
 
                             resultado[0] = citacoes;

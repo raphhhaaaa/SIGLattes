@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.zkoss.zk.ui.Sessions;
 import com.uem.extrator.model.Usuario;
 import com.uem.extrator.service.AuditLogService;
-import com.mysql.cj.xdevapi.Client;
 import com.uem.extrator.model.Usuario;
 import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
@@ -17,13 +16,10 @@ import org.zkoss.zk.ui.Sessions;
 import org.zkoss.zk.ui.util.Clients;
 import org.zkoss.zul.Filedownload;
 import java.nio.charset.StandardCharsets;
+import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,7 +108,17 @@ public class ConsultaSqlVM {
                             List<Object> linha = new ArrayList<>();
                             for (int i = 1; i <= columnCount; i++) {
                                 Object valor = rs.getObject(i);
-                                linha.add(valor != null ? valor.toString() : "NULL");
+
+                                if (valor == null) {
+                                    linha.add("NULL");
+                                } else if (valor instanceof Clob) { // verificação para checar se é o campo ds_resumo (Clob)
+                                    Clob clob = (Clob) valor;
+                                    // versão truncada do ds_resumo
+                                    String texto = clob.getSubString(1, (int) Math.min(clob.length(), 200));
+                                    linha.add(texto + "...");
+                                } else {
+                                    linha.add(valor.toString());
+                                }
                             }
                             linhas.add(linha);
                             count++;

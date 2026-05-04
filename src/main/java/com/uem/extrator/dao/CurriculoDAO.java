@@ -1,5 +1,6 @@
 package com.uem.extrator.dao;
 
+import com.uem.extrator.dto.RelatorioRevistaDTO;
 import com.uem.extrator.model.*;
 import com.uem.extrator.service.AuditLogService;
 import com.uem.extrator.util.HibernateUtil;
@@ -281,11 +282,10 @@ public class CurriculoDAO {
     private String resolverCor(String nota) {
         if (nota == null) return "badge bg-secondary";
         switch (nota.toUpperCase().trim()) {
-            case "A1": case "A2": return "badge bg-success";
-            case "B1": case "B2": return "badge bg-primary";
-            case "B3": case "B4": return "badge bg-info text-dark";
-            case "C":              return "badge bg-warning text-dark";
-            default:               return "badge bg-secondary";
+            case "A1": case "A2": case "A3": case "A4": return "badge bg-success";
+            case "B1": case "B2": case "B3": case "B4": return "badge bg-warning";
+            case "C": return "badge bg-danger";
+            default: return "badge bg-secondary";
         }
     }
 
