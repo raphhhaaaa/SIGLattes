@@ -306,19 +306,18 @@ public class AutomacaoService {
     }
 
     private void rodarBackup() {
-        logger.info("=== [AUTO] Iniciando Backup do Banco de Dados... (DB2 DOCKER) ===");
+        ConfigManager config = ConfigManager.getInstance();
+        logger.info("=== [AUTO] Iniciando Backup do Banco de Dados... ===");
 
         try {
-            // A pasta onde o DB2 vai jogar o backup DENTRO do container
-            // (Esta pasta está segura e mapeada no seu volume db2_data no disco físico)
-            String backupDirDb2 = "/database/data";
+            String containerName = config.getBackupContainer();
+            String backupCommand = config.getBackupCommand();
 
-            logger.info(">>> BACKUP: Solicitando backup binário nativo ao DB2 via Docker...");
+            logger.info(">>> BACKUP: Solicitando backup binário nativo ao DB2 via Docker [Container: {}]...", containerName);
 
             // entra no docker e executa o backup a quente (online)
             ProcessBuilder pb = new ProcessBuilder(
-                    "docker", "exec", "db2_server", "bash", "-c",
-                    "su - db2inst1 -c 'db2 backup database LATTES online to " + backupDirDb2 + " include logs'"
+                    "docker", "exec", containerName, "bash", "-c", backupCommand
             );
 
             /***

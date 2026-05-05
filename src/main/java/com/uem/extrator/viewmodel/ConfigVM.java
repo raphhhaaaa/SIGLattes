@@ -70,8 +70,10 @@ public class ConfigVM {
     // Notificações (SMTP)
     private String smtpHost;
     private String smtpPort;
+    private String smtpPassword;
     private String systemEmail;
     private String adminEmail;
+    private String semanticScholarApiKey;
     private boolean notifyOutdated;
     private boolean notifyWeekly;
     private boolean notifyConnection;
@@ -103,8 +105,10 @@ public class ConfigVM {
         // carrega notificações
         this.smtpHost = config.getSmtpHost();
         this.smtpPort = config.getSmtpPort();
+        this.smtpPassword = config.getSmtpPassword();
         this.systemEmail = config.getSystemEmail();
         this.adminEmail = config.getAdminEmail();
+        this.semanticScholarApiKey = config.getSemanticScholarApiKey();
         this.notifyOutdated = config.isNotifyOutdated();
         this.notifyWeekly = config.isNotifyWeekly();
         this.notifyConnection = config.isNotifyConnection();
@@ -192,8 +196,10 @@ public class ConfigVM {
             // salva notificações
             config.setSmtpHost(this.smtpHost);
             config.setSmtpPort(this.smtpPort);
+            config.setSmtpPassword(this.smtpPassword);
             config.setSystemEmail(this.systemEmail);
             config.setAdminEmail(this.adminEmail);
+            config.setSemanticScholarApiKey(this.semanticScholarApiKey);
             config.setNotifyOutdated(this.notifyOutdated);
             config.setNotifyWeekly(this.notifyWeekly);
             config.setNotifyConnection(this.notifyConnection);
@@ -385,8 +391,10 @@ public class ConfigVM {
         this.backupTime = "02:00";
         this.smtpHost = "smtp.gmail.com";
         this.smtpPort = "587";
+        this.smtpPassword = "";
         this.systemEmail = "";
         this.adminEmail = "";
+        this.semanticScholarApiKey = "";
         this.notifyOutdated = false;
         this.notifyWeekly = false;
         this.notifyConnection = true;
@@ -426,10 +434,14 @@ public class ConfigVM {
     public void setSmtpHost(String smtpHost) { this.smtpHost = smtpHost; }
     public String getSmtpPort() { return smtpPort; }
     public void setSmtpPort(String smtpPort) { this.smtpPort = smtpPort; }
+    public String getSmtpPassword() { return smtpPassword; }
+    public void setSmtpPassword(String smtpPassword) { this.smtpPassword = smtpPassword; }
     public String getSystemEmail() { return systemEmail; }
     public void setSystemEmail(String systemEmail) { this.systemEmail = systemEmail; }
     public String getAdminEmail() { return adminEmail; }
     public void setAdminEmail(String adminEmail) { this.adminEmail = adminEmail; }
+    public String getSemanticScholarApiKey() { return semanticScholarApiKey; }
+    public void setSemanticScholarApiKey(String semanticScholarApiKey) { this.semanticScholarApiKey = semanticScholarApiKey; }
     public boolean isNotifyOutdated() { return notifyOutdated; }
     public void setNotifyOutdated(boolean notifyOutdated) { this.notifyOutdated = notifyOutdated; }
     public boolean isNotifyWeekly() { return notifyWeekly; }

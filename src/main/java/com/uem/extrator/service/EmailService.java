@@ -56,7 +56,7 @@ public class EmailService {
         props.put("mail.smtp.port", port);
         props.put("mail.smtp.ssl.trust", host);
 
-        final String password = "wlveoqqztznlmupc";
+        final String password = config.getSmtpPassword();
 
         Session session = Session.getInstance(props, new Authenticator() {
             @Override
