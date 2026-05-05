@@ -67,7 +67,7 @@
         <zk if="${sessionScope.usuario_logado.admin}">
         <label value="SISTEMA" sclass="sidebar-section-title"/>
 
-        <a label="Utilizadores" iconSclass="fas fa-user-shield"
+        <a label="Usuários" iconSclass="fas fa-user-shield"
            sclass="${desktop.requestPath.contains('usuarioList') ? 'sidebar-item active' : 'sidebar-item'}"
            href="/paginas/sistema/usuarioList.zul" tooltiptext="Gestão de Utilizadores"/>
 

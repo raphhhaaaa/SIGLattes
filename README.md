@@ -192,7 +192,7 @@ de relatórios complexos sob medida que ainda não possuem um módulo visual ded
 
 ## SISTEMA:
 
-### 🧑🏻‍💻 _Utilizadores_
+### 🧑🏻‍💻 _Usuários_
 Gestão centralizada de contas e níveis de acesso (Administrador ou Utilizador Comum) do sistema. Permite a criação de novos
 perfis e a edição de permissões, garantindo o controle rigoroso de quem pode interagir com as funcionalidades de extração e
 outras.
