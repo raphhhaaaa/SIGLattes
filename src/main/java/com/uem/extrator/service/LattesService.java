@@ -33,7 +33,21 @@ public class LattesService {
     private static final String NAMESPACE = "http://ws.servico.repositorio.cnpq.br/";
     private static final String SERVICE_NAME = "WSCurriculo";
 
+    private static Service cachedService = null;
+    private static String lastWsdlUrl = null;
+
     private CurriculoDAO curriculoDAO = new CurriculoDAO();
+
+    private synchronized Service getService(String wsdlUrl) throws Exception {
+        if (cachedService == null || !wsdlUrl.equals(lastWsdlUrl)) {
+            logger.info("Inicializando/Atualizando cache do Serviço Lattes (WSDL: {})", wsdlUrl);
+            URL url = new URL(wsdlUrl);
+            QName qname = new QName(NAMESPACE, SERVICE_NAME);
+            cachedService = Service.create(url, qname);
+            lastWsdlUrl = wsdlUrl;
+        }
+        return cachedService;
+    }
 
     // classe interna para transportar resultados/informações
     public static class RelatorioProcessamento {
@@ -45,13 +59,11 @@ public class LattesService {
     private ILattesSOAP criarCliente() throws Exception {
         // busca URL dinâmica do configmanager
         ConfigManager config = ConfigManager.getInstance();
-        String urlConfigurada = ConfigManager.getInstance().getWsdlUrl();
+        String urlConfigurada = config.getWsdlUrl();
         int timeoutMs = config.getTimeout() * 1000; // converte segundos para ms
 
         try {
-            URL url = new URL(urlConfigurada);
-            QName qname = new QName(NAMESPACE, SERVICE_NAME);
-            Service service = Service.create(url, qname);
+            Service service = getService(urlConfigurada);
             ILattesSOAP port = service.getPort(ILattesSOAP.class);
 
             BindingProvider bp = (BindingProvider) port;
@@ -106,9 +118,14 @@ public class LattesService {
                 LattesParser parser = new LattesParser();
                 Curriculo curriculo = parser.parse(xmlConteudo, idLimpo);
 
-                Date dataRealCNPq = obterDataAtualizacaoRemota(idLimpo);
-                if (dataRealCNPq != null) {
-                    curriculo.setDataAtualizacao(dataRealCNPq);
+                // A data do XML (ddMMyyyy) é suficiente para a maioria dos casos.
+                // A chamada SOAP extra abaixo (obterDataAtualizacaoRemota) é lenta e redundante
+                // se já baixamos o XML. Vamos usar a data do XML se disponível.
+                if (curriculo.getDataAtualizacao() == null) {
+                    Date dataRealCNPq = obterDataAtualizacaoRemota(idLimpo);
+                    if (dataRealCNPq != null) {
+                        curriculo.setDataAtualizacao(dataRealCNPq);
+                    }
                 }
 
                 List<Producao> producoes = curriculo.getProducoes();
@@ -359,4 +376,7 @@ public class LattesService {
             return false;
         }
     }
+
+    public LattesService getService() { return new LattesService(); }
+
 }

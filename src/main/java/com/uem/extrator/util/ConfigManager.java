@@ -26,8 +26,8 @@ public class ConfigManager {
 
     // Motor de Concorrência e Rate Limiting
     public static final int MAX_THREADS_EXTRACAO = 30;       // Quantidade de threads simultâneas (Lattes)
-    public static final int SEMAFORO_SEMANTIC_SCHOLAR = 4;   // Conexões simultâneas permitidas (Rate Limit)
-    public static final int TEMPO_ESPERA_API_RATE_LIMIT_MS = 2000; // Espera em caso de HTTP 429
+    public static final int SEMAFORO_SEMANTIC_SCHOLAR = 1;   // Conexões simultâneas permitidas (Rate Limit 1 RPS)
+    public static final int TEMPO_ESPERA_API_RATE_LIMIT_MS = 1000; // Espera para respeitar 1 req/s
 
     // Throttling de Interface (Maestro UI)
     public static final int TEMPO_ATUALIZACAO_UI_MS = 1500;  // Ritmo de atualização da barra (1.5s)

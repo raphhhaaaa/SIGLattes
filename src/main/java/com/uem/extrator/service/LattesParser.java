@@ -121,6 +121,16 @@ public class LattesParser {
                 if (node.getNodeType() == Node.ELEMENT_NODE) {
                     Element elementoFormacao = (Element) node;
                     String tagName = elementoFormacao.getTagName();
+
+
+                    // FILTRO: IGNORA LIXO PREENCHIDO ERRADO NO LATTES (ex: se colocarem algo que não é um curso em tags relacionadas ao curso)
+                    if (!isNivelAcademicoValido(tagName)) {
+                        String lixoIgnorado = elementoFormacao.getAttribute("NOME-CURSO");
+                        System.out.println("[FILTRO CURSO] Bloqueando entrada inválida. Tag: " + tagName + " | Titulo: " + lixoIgnorado);
+
+                        continue;
+                    }
+
                     Formacao formacao = new Formacao();
                     formacao.setTipoFormacao(tagName);
                     String nomeCursoStr = elementoFormacao.getAttribute("NOME-CURSO");
@@ -604,6 +614,16 @@ public class LattesParser {
         nova.getVinculos().add(v);
         cv.getAtuacoes().add(nova);
         return nova;
+    }
+
+    private boolean isNivelAcademicoValido(String tagName) {
+
+        return tagName.equals("GRADUACAO") ||
+                tagName.equals("MESTRADO") ||
+                tagName.equals("DOUTORADO") ||
+                tagName.equals("POS-DOUTORADO") ||
+                tagName.equals("ESPECIALIZACAO");
+
     }
 
     private String gerarHash(String texto) {
