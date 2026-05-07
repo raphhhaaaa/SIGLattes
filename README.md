@@ -20,9 +20,11 @@
     acesso a esse IP, optei por utilizar uma técnica chamada de Tunelamento por SSH, que consiste em basicamente redirecionar o fluxo de requisições, criando uma porta local
     na máquina de desenvolvimento, encapsulando todo tráfego enviado para o localhost:8888 e entregando diretamente ao servidor do CNPq na porta 80. 
     Por esse motivo: 
+    [Infraestrutura de rede (Túnel via SSH)](#infraestrutura-de-rede-(tunel-via-ssh))
 
     3. Em ambiente de desenvolvimento, este projeto usa containerização. O banco de dados DB2 utilizado é acessado através de uma imagem pública do Docker. 
     Informações adicionais em: 
+    [Guia de Configuração Docker DB2 (dev)](#guia-de-configuracao-docker-db2-(dev))
 
 ---
 
@@ -130,6 +132,8 @@ Para ter acesso, existem dois caminhos:
 2. Servidor LDAP UEM: Através da autenticação pelo servidor LDAP da UEM o usuário poderá colocar suas credenciais instituicionais, que serão validadas e, caso autorizado, liberadadas
 para acesso, com uma conta temporária.
 
+<img width="2566" height="1319" alt="Captura de tela de 2026-05-07 09-16-23" src="https://github.com/user-attachments/assets/ebba6add-d4fe-47e0-a327-d285a871dfff" />
+
 > **Nota 1:** A autenticação por LDAP UEM se restringe apenas à docentes/funcionários vinculados à UEM. Alunos, por padrão, são impedidos de entrar no sistema.
 
 > **Nota 2:** Existem dois níveis de acesso: **Administrador** e **Usuário Comum**. O administrador possui acesso integral a todas as funcionalidades do sistema, incluindo configurações. Já o 
@@ -144,8 +148,12 @@ A página inicial é o coração do sistema. Assim que o usuário entra, ele pod
  - de currículos desatualizados no momento e currículos processados no dia.);
  - Menu Lateral.
 
+<img width="2566" height="1319" alt="Captura de tela de 2026-05-07 09-17-01" src="https://github.com/user-attachments/assets/976bc652-c78f-4843-9f96-230f8ba94eab" />
+
 ### 3. Verificar Atualizações
 Nesta página o usuário pode buscar por currículos desatualizados e atualiza-los. De forma individual ou geral.
+
+<img width="2566" height="1319" alt="Captura de tela de 2026-05-07 09-15-58" src="https://github.com/user-attachments/assets/944f1296-939b-4171-9bdc-9ecf081dc26d" />
 
 ---
 
@@ -157,13 +165,18 @@ Nesta página o usuário pode buscar por currículos desatualizados e atualiza-l
 Tabela que guarda o registro de todos os currículos cadastrados no banco de dados do sistema. Através dela é possível clicar
 no botão de ação "Ver detalhes" que abrirá um modal detalhado com uma versão compactada do currículo Lattes daquela pessoa.
 
+<img width="2566" height="1319" alt="Captura de tela de 2026-05-07 09-19-04" src="https://github.com/user-attachments/assets/c089d0fe-663d-47de-bd18-9772a97b7a68" />
+
 ### 🏫 _Instituições_
 Tabela que guarda o registro de todas as instituições colhidas na extração dos currículos. Exibe também o número de ocorrências
 que cada instituição registrou ao total.
 
+<img width="2566" height="1319" alt="Captura de tela de 2026-05-07 09-19-24" src="https://github.com/user-attachments/assets/875e7bc0-8645-4896-9ba9-517b0b4f716a" />
+
 ### 📖 _Cursos_ 
 Tabela que guarda o registro de todos os cursos colhidos na extração dos currículos.
 
+<img width="2566" height="1319" alt="Captura de tela de 2026-05-07 09-21-21" src="https://github.com/user-attachments/assets/ae2209f1-920f-4db9-b94d-4829e40a554a" />
 
 ## RELATÓRIOS:
 
@@ -172,10 +185,14 @@ Ferramenta de busca avançada que permite cruzar filtros (como tipo de produçã
 pessoais e de formação dos currículos. Através dela, a gestão ganha total flexibilidade para mapear a produtividade da instituição sob
 demanda, facilitando a formação de comitês e o atendimento a editais de fomento.
 
+<img width="2566" height="1319" alt="Captura de tela de 2026-05-07 09-25-12" src="https://github.com/user-attachments/assets/bf5299a4-7890-49a4-886a-28976b63c97b" />
+
 ### 🌐 _Relatório de Revistas_
 Lista que agrupa e contabiliza os veículos de publicação científica extraídos da produção bibliográfica dos pesquisadores.
 Exibe o nome das revistas, o ISSN, a nota Qualis CAPES e o volume de publicações registradas no banco de dados, permitindo ranquear e mensurar o
 fator de impacto, qualidade e o alcance da ciência produzida. É possível filtrar por nome ou nota CAPES (A1, A2, B3, C...).
+
+<img width="2566" height="1319" alt="Captura de tela de 2026-05-07 09-25-40" src="https://github.com/user-attachments/assets/a26c8ddc-95cb-4b6e-8681-398c94121ef7" />
 
 ### 🏆 _Relatório de Produtividade_
 Painel que quantifica as entregas acadêmicas e o impacto bibliométrico (artigos, índice H, n° de citações) geradas por pesquisadores em uma tabela
@@ -183,12 +200,15 @@ de classificação geral. Gera também um pódio com o Top 3 pesquisadores da in
 termômetro de desempenho quantitativo da universidade, gerando
 os dados vitais para embasar a distribuição de bolsas e progressões de carreira.
 
+<img width="2566" height="1319" alt="Captura de tela de 2026-05-07 09-26-19" src="https://github.com/user-attachments/assets/d977740f-db47-4598-ba42-ad4248062ea8" />
+
 ### 💻 Consulta SQL Livre (admin only)
 Interface de terminal restrita exclusivamente a administradores que permite a execução direta de scripts SQL no banco de
 dados (apenas comandos de LEITURA são permitidos). Acessa todas as tabelas e relacionamentos do esquema DB2 de forma bruta,
 sem filtros pré-definidos da interface gráfica. Gera valor ao oferecer poder total para extrações emergenciais ou a criação
 de relatórios complexos sob medida que ainda não possuem um módulo visual dedicado no sistema.
 
+<img width="2566" height="1319" alt="Captura de tela de 2026-05-07 09-26-38" src="https://github.com/user-attachments/assets/7f926820-744c-4a05-8197-25ea41322822" />
 
 ## SISTEMA:
 
@@ -197,20 +217,27 @@ Gestão centralizada de contas e níveis de acesso (Administrador ou Utilizador 
 perfis e a edição de permissões, garantindo o controle rigoroso de quem pode interagir com as funcionalidades de extração e
 outras.
 
+<img width="2566" height="1319" alt="Captura de tela de 2026-05-07 09-27-12" src="https://github.com/user-attachments/assets/6a9864e9-09b2-4e34-b358-1426caec3daa" />
+
 ### ⚙️ _Configurações_
 Painel de controle dinâmico que permite ajustar parâmetros operacionais do sistema em tempo real sem a necessidade de reiniciar
 o servidor. Através desta tela, o administrador configura intervalos de backup, agendamentos de sincronização, credenciais
 de e-mail e outras propriedades do `ConfigManager` que ditam o comportamento da automação. É possível também nessa tela alterar
 o endpoint do webservice utilizado e fazer upload manual do arquivo .csv do Qualis CAPES.
 
+<img width="2566" height="1319" alt="Captura de tela de 2026-05-07 09-27-50" src="https://github.com/user-attachments/assets/0b18e3df-aca3-430e-a224-a134217ff1df" />
+
 ### 📜 _Logs_
 Repositório de eventos que regista toda a atividade técnica e operacional da plataforma. Exibe o histórico de execução das
 tarefas de fundo, o status das extrações com o WebService do CNPq, histórico de acessos/tentativas de login e eventuais erros
 operacionais, servindo como a ferramenta primária para auditoria e depuração de infraestrutura por parte dos administradores.
 
+<img width="2459" height="641" alt="Captura de tela de 2026-05-07 09-28-57" src="https://github.com/user-attachments/assets/af489e34-d089-45d1-bbbb-9e8451fa76c4" />
+
 ---
 
 ## ⚙️ Funcionalidades de Automação (AutomacaoService)
+
 O sistema possui um módulo autonômo (Background Task) que garante a estabilidade e a atualização dos dados sem necessidade de intervenção manual:
 
 * **Backup:** Realiza cópias de segurança binárias nativas do Docker (`.001`) utilizando *Archive Logging*, sem derrubar as conexões dos utilizadores ou causar lentidão. Os backups ficam salvos de forma segura no volume persistente do Docker (/database/data).
