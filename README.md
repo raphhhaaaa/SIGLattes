@@ -12,21 +12,27 @@
 ---
 
 ## ** Considerações Iniciais Importantes ** ## 
-    1. Este projeto está sendo desenvolvido em contexto interno da Universidade Estadual de Maringá, e não é de domínio público. Suas respectivas licenças e
-    direitos estão reservados À Pró-Reitoria de Planejamento e Desenvolvimento Institucional (PLD) - Divisão de Informações e Planos (LNI). Qualquer uso indevido
-    ou não autorizado de todo e qualquer código ou informação armazenada nesse repositório, poderá acarretar em medidas administrativas cabíveis.
 
-    2. Por causa de cláusulas contratuais, o acesso ao WebService do CNPq pela UEM é restrito a apenas um IP específico da instituição. Dado que, no momento, não possuo
-    acesso a esse IP, optei por utilizar uma técnica chamada de Tunelamento por SSH, que consiste em basicamente redirecionar o fluxo de requisições, criando uma porta local
-    na máquina de desenvolvimento, encapsulando todo tráfego enviado para o localhost:8888 e entregando diretamente ao servidor do CNPq na porta 80. 
-    Por esse motivo: 
-    [Infraestrutura de rede (Túnel via SSH)](#infraestrutura-de-rede-(tunel-via-ssh))
+1. Este projeto está sendo desenvolvido em contexto interno da Universidade Estadual de Maringá, e não é de domínio público. Suas respectivas licenças e
+   direitos estão reservados À Pró-Reitoria de Planejamento e Desenvolvimento Institucional (PLD) - Divisão de Informações e Planos (LNI). Qualquer uso indevido
+   ou não autorizado de todo e qualquer código ou informação armazenada nesse repositório, poderá acarretar em medidas administrativas cabíveis.
 
-    3. Em ambiente de desenvolvimento, este projeto usa containerização. O banco de dados DB2 utilizado é acessado através de uma imagem pública do Docker. 
-    Informações adicionais em: 
-    [Guia de Configuração Docker DB2 (dev)](#guia-de-configuracao-docker-db2-(dev))
+2. Por causa de cláusulas contratuais, o acesso ao WebService do CNPq pela UEM é restrito a apenas um IP específico da instituição. Dado que, no momento, não possuo
+   acesso a esse IP, optei por utilizar uma técnica chamada de Tunelamento por SSH, que consiste em basicamente redirecionar o fluxo de requisições, criando uma porta local
+   na máquina de desenvolvimento, encapsulando todo tráfego enviado para o localhost:8888 e entregando diretamente ao servidor do CNPq na porta 80.
+
+   Por esse motivo:
+
+   [🛜 Configuração de rede (Tunel via SSH)](#-infraestrutura-de-rede-tunel-via-ssh)
+
+4. Em ambiente de desenvolvimento, este projeto usa containerização. O banco de dados DB2 utilizado é acessado através de uma imagem pública do Docker.
+
+   Informações adicionais em:
+
+   [🚀 Guia de Configuração Docker DB2 (dev)](#-guia-de-configuracao-docker-db2-dev)
 
 ---
+
 
 ## 📖 Sobre o Projeto
 
@@ -59,7 +65,7 @@ O projeto segue uma arquitetura MVC (Model-View-ViewModel) utilizando:
 
 ---
 
-## 🚀 Guia de Configuração Docker DB2 (dev)
+## 🚀 Guia de Configuracao Docker DB2 dev
 
 ### 1. Banco de Dados (Docker)
 Utilizamos uma imagem oficial da IBM. O volume `lattes_db_data` garante que os dados persistam mesmo após a remoção do contentor.
@@ -86,7 +92,7 @@ mvn clean install && mvn clean package
 
 ---
 
-## 🛜 Infraestrutura de rede (Túnel via SSH)
+## 🛜 Infraestrutura de rede Tunel via SSH
 
 Antes de iniciar a aplicação, é obrigatório estabelecer o túnel para "enganar" o Java e acessar o CNPq como se fosse local.
 
