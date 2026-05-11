@@ -11,7 +11,7 @@
 
 ---
 
-## ** Considerações Iniciais Importantes ** ## 
+## Considerações Iniciais Importantes ## 
 
 1. Este projeto está sendo desenvolvido em contexto interno da Universidade Estadual de Maringá, e não é de domínio público. Suas respectivas licenças e
    direitos estão reservados À Pró-Reitoria de Planejamento e Desenvolvimento Institucional (PLD) - Divisão de Informações e Planos (LNI). Qualquer uso indevido
