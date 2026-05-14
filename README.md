@@ -55,7 +55,7 @@ Este sistema automatiza a recuperação de dados acadêmicos da Plataforma Latte
 
 ## 🛠️ Tech Stack & Arquitetura
 
-O projeto segue uma arquitetura MVC (Model-View-ViewModel) utilizando:
+O projeto segue uma arquitetura MVVM (Model-View-ViewModel) utilizando:
 
 * **Backend:** Java 11 (Lógica de Negócio e Parsers DOM).
 * **ORM:** Hibernate / JPA (Mapeamento Objeto-Relacional).
