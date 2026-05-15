@@ -240,7 +240,13 @@ public class RelatorioDinamicoVM {
             }
 
             StringBuilder sb = new StringBuilder();
-            sb.append("Titulo;Ano;Pesquisador;Veículo;Citações;Acesso;DOI\n");
+            boolean temFiltroInstituicao = !"TODAS".equals(instituicaoSelecionada);
+            
+            if (temFiltroInstituicao) {
+                sb.append("Titulo;Ano;Pesquisador;Veículo;Citações;Acesso;DOI;Instituição\n");
+            } else {
+                sb.append("Titulo;Ano;Pesquisador;Veículo;Citações;Acesso;DOI\n");
+            }
 
             for (Object obj : listaDetalhada) {
                 if (obj instanceof Producao) {
@@ -251,7 +257,12 @@ public class RelatorioDinamicoVM {
                     sb.append(limparCsv(p.getNomeVeiculo())).append(";");
                     sb.append(p.getCitacoes() == null ? "0" : p.getCitacoes()).append(";");
                     sb.append(p.getStatusAcesso() == null ? "-" : p.getStatusAcesso()).append(";");
-                    sb.append(p.getDoi() == null ? "" : p.getDoi()).append("\n");
+                    sb.append(p.getDoi() == null ? "" : p.getDoi());
+                    
+                    if (temFiltroInstituicao) {
+                        sb.append(";").append(limparCsv(instituicaoSelecionada));
+                    }
+                    sb.append("\n");
                 }
             }
 
