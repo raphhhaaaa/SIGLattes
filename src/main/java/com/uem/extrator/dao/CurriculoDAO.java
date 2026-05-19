@@ -110,6 +110,9 @@ public class CurriculoDAO {
 
                     // Resolução de cursos: busca em lote para evitar N+1
                     Map<String, Curso> cursosProcessadosNestaTransacao = new HashMap<>();
+                    Map<String, Instituicao> instituicoesProcessadasNestaTransacao = new HashMap<>();
+                    InstituicaoDAO instituicaoDAO = new InstituicaoDAO();
+                    
                     if (curriculo.getFormacoes() != null) {
                         for (Formacao formacao : curriculo.getFormacoes()) {
                             Curso cursoCandidato = formacao.getNomeCurso();
@@ -124,6 +127,44 @@ public class CurriculoDAO {
                                         cursosProcessadosNestaTransacao.put(nomeNormalizado, cursoNoBanco);
                                     } else {
                                         cursosProcessadosNestaTransacao.put(nomeNormalizado, cursoCandidato);
+                                    }
+                                }
+                            }
+                            
+                            // Reaproveitamento de Instituicao na Formacao
+                            Instituicao instCandidata = formacao.getNomeInstituicao();
+                            if (instCandidata != null && instCandidata.getNomeInstituicao() != null) {
+                                String nomeInstNormalizado = instCandidata.getNomeInstituicao().trim().toUpperCase();
+                                if (instituicoesProcessadasNestaTransacao.containsKey(nomeInstNormalizado)) {
+                                    formacao.setNomeInstituicao(instituicoesProcessadasNestaTransacao.get(nomeInstNormalizado));
+                                } else {
+                                    Instituicao instNoBanco = instituicaoDAO.buscarPorNome(session, instCandidata.getNomeInstituicao());
+                                    if (instNoBanco != null) {
+                                        formacao.setNomeInstituicao(instNoBanco);
+                                        instituicoesProcessadasNestaTransacao.put(nomeInstNormalizado, instNoBanco);
+                                    } else {
+                                        instituicoesProcessadasNestaTransacao.put(nomeInstNormalizado, instCandidata);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Reaproveitamento de Instituicao na Atuacao
+                    if (curriculo.getAtuacoes() != null) {
+                        for (Atuacao atuacao : curriculo.getAtuacoes()) {
+                            Instituicao instCandidata = atuacao.getInstituicao();
+                            if (instCandidata != null && instCandidata.getNomeInstituicao() != null) {
+                                String nomeInstNormalizado = instCandidata.getNomeInstituicao().trim().toUpperCase();
+                                if (instituicoesProcessadasNestaTransacao.containsKey(nomeInstNormalizado)) {
+                                    atuacao.setInstituicao(instituicoesProcessadasNestaTransacao.get(nomeInstNormalizado));
+                                } else {
+                                    Instituicao instNoBanco = instituicaoDAO.buscarPorNome(session, instCandidata.getNomeInstituicao());
+                                    if (instNoBanco != null) {
+                                        atuacao.setInstituicao(instNoBanco);
+                                        instituicoesProcessadasNestaTransacao.put(nomeInstNormalizado, instNoBanco);
+                                    } else {
+                                        instituicoesProcessadasNestaTransacao.put(nomeInstNormalizado, instCandidata);
                                     }
                                 }
                             }

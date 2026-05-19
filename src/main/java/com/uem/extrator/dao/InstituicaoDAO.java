@@ -88,4 +88,16 @@ public class InstituicaoDAO {
             return new ArrayList<>();
         }
     }
+
+    public Instituicao buscarPorNome(Session session, String nomeInstituicaoStr) {
+        if (nomeInstituicaoStr == null || nomeInstituicaoStr.trim().isEmpty()) return null;
+
+        String hql = "FROM Instituicao WHERE upper(trim(nomeInstituicao)) = :nome";
+
+        org.hibernate.query.Query<Instituicao> query = session.createQuery(hql, Instituicao.class);
+        query.setParameter("nome", nomeInstituicaoStr.trim().toUpperCase());
+        query.setMaxResults(1);
+
+        return query.uniqueResult();
+    }
 }
