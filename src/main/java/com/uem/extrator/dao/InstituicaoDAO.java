@@ -49,16 +49,21 @@ public class InstituicaoDAO {
              * mas em native query usamos diretamente.
              */
             String sql =
-                "SELECT nm_instituicao, COUNT(*) AS qtd " +
-                "FROM LATTESEXTRATOR.INSTITUICAO " +
-                "WHERE nm_instituicao IS NOT NULL " +
+                "SELECT i.nm_instituicao, COUNT(DISTINCT combined.cd_cnpq) AS qtd " +
+                "FROM LATTESEXTRATOR.INSTITUICAO i " +
+                "LEFT JOIN (" +
+                "   SELECT cd_instituicao, cd_cnpq FROM LATTESEXTRATOR.FORMACAO " +
+                "   UNION ALL " +
+                "   SELECT cd_instituicao, cd_cnpq FROM LATTESEXTRATOR.ATUACAO " +
+                ") AS combined ON i.cd_instituicao = combined.cd_instituicao " +
+                "WHERE i.nm_instituicao IS NOT NULL " +
                 "AND (" +
-                "   LOCATE('UNIVERSIDADE', UPPER(nm_instituicao)) = 1 " +
-                "   OR LOCATE('INSTITUTO',    UPPER(nm_instituicao)) = 1 " +
-                "   OR LOCATE('FACULDADE',    UPPER(nm_instituicao)) = 1 " +
-                "   OR LOCATE('CENTRO',       UPPER(nm_instituicao)) = 1 " +
+                "   LOCATE('UNIVERSIDADE', UPPER(i.nm_instituicao)) = 1 " +
+                "   OR LOCATE('INSTITUTO',    UPPER(i.nm_instituicao)) = 1 " +
+                "   OR LOCATE('FACULDADE',    UPPER(i.nm_instituicao)) = 1 " +
+                "   OR LOCATE('CENTRO',       UPPER(i.nm_instituicao)) = 1 " +
                 ") " +
-                "GROUP BY nm_instituicao " +
+                "GROUP BY i.nm_instituicao " +
                 "ORDER BY qtd DESC " +
                 "FETCH FIRST 500 ROWS ONLY";
 
