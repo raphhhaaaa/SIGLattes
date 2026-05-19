@@ -177,7 +177,8 @@ no botão de ação "Ver detalhes" que abrirá um modal detalhado com uma versã
 Tabela que guarda o registro de todas as instituições colhidas na extração dos currículos. Exibe também o número de ocorrências
 que cada instituição registrou ao total.
 
-<img width="2566" height="1319" alt="Captura de tela de 2026-05-07 09-19-24" src="https://github.com/user-attachments/assets/875e7bc0-8645-4896-9ba9-517b0b4f716a" />
+<img width="2564" height="1324" alt="Captura de tela de 2026-05-19 10-15-13" src="https://github.com/user-attachments/assets/75750426-0975-4be1-99f9-2ab6a5ff354b" />
+
 
 ### 📖 _Cursos_ 
 Tabela que guarda o registro de todos os cursos colhidos na extração dos currículos.
