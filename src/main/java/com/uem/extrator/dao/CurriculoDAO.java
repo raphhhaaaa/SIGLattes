@@ -138,7 +138,7 @@ public class CurriculoDAO {
                                 if (instituicoesProcessadasNestaTransacao.containsKey(nomeInstNormalizado)) {
                                     formacao.setNomeInstituicao(instituicoesProcessadasNestaTransacao.get(nomeInstNormalizado));
                                 } else {
-                                    Instituicao instNoBanco = instituicaoDAO.buscarPorNome(session, instCandidata.getNomeInstituicao());
+                                    Instituicao instNoBanco = instituicaoDAO.buscarPorSimilaridade(session, instCandidata.getNomeInstituicao());
                                     if (instNoBanco != null) {
                                         formacao.setNomeInstituicao(instNoBanco);
                                         instituicoesProcessadasNestaTransacao.put(nomeInstNormalizado, instNoBanco);
@@ -159,11 +159,12 @@ public class CurriculoDAO {
                                 if (instituicoesProcessadasNestaTransacao.containsKey(nomeInstNormalizado)) {
                                     atuacao.setInstituicao(instituicoesProcessadasNestaTransacao.get(nomeInstNormalizado));
                                 } else {
-                                    Instituicao instNoBanco = instituicaoDAO.buscarPorNome(session, instCandidata.getNomeInstituicao());
+                                    Instituicao instNoBanco = instituicaoDAO.buscarPorSimilaridade(session, instCandidata.getNomeInstituicao());
                                     if (instNoBanco != null) {
                                         atuacao.setInstituicao(instNoBanco);
                                         instituicoesProcessadasNestaTransacao.put(nomeInstNormalizado, instNoBanco);
                                     } else {
+                                        atuacao.setInstituicao(instCandidata);
                                         instituicoesProcessadasNestaTransacao.put(nomeInstNormalizado, instCandidata);
                                     }
                                 }

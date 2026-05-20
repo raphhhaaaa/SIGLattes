@@ -1,6 +1,7 @@
 package com.uem.extrator.dao;
 
 import com.uem.extrator.model.Instituicao;
+import com.uem.extrator.util.FiltroSimilaridade;
 import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
 import org.slf4j.Logger;
@@ -80,6 +81,7 @@ public class InstituicaoDAO {
 
     public static void limparCache() {
         cacheInstituicoes = null;
+        cacheTodas = null;
     }
 
     public List<Instituicao> listarTodas() {
@@ -92,6 +94,32 @@ public class InstituicaoDAO {
             logger.error("Erro na base de dados (InstituicaoDAO)", e);
             return new ArrayList<>();
         }
+    }
+
+    private static List<Instituicao> cacheTodas = null;
+    private static long ultimaAtualizacaoTodas = 0;
+
+    public Instituicao buscarPorSimilaridade(Session session, String nomeCandidato) {
+        if (nomeCandidato == null || nomeCandidato.trim().isEmpty()) return null;
+
+        // 1. Busca exata (rápida via índice)
+        Instituicao exata = buscarPorNome(session, nomeCandidato);
+        if (exata != null) return exata;
+
+        // 2. Busca por similaridade semântica
+        // Carrega todas as instituições em cache se necessário (ou se expirou)
+        if (cacheTodas == null || (System.currentTimeMillis() - ultimaAtualizacaoTodas) > TEMPO_CACHE) {
+            cacheTodas = session.createQuery("FROM Instituicao", Instituicao.class).list();
+            ultimaAtualizacaoTodas = System.currentTimeMillis();
+        }
+
+        for (Instituicao inst : cacheTodas) {
+            if (FiltroSimilaridade.isMesmaInstituicao(nomeCandidato, inst.getNomeInstituicao())) {
+                return inst;
+            }
+        }
+
+        return null;
     }
 
     public Instituicao buscarPorNome(Session session, String nomeInstituicaoStr) {
