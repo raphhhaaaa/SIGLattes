@@ -64,3 +64,6 @@ ehthumbs.db
 # Ficheiros com senhas da Base de Dados
 src/main/resources/hibernate.cfg.xml
 target/classes/hibernate.cfg.xml
+
+# Testes
+src/test/
