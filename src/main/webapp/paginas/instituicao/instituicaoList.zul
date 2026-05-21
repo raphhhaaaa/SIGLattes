@@ -27,72 +27,85 @@
         <center border="none" sclass="main-content-wrapper">
             <vlayout vflex="1" spacing="0">
 
-        <div sclass="container-fluid" vflex="1" style="padding: 20px; overflow-y: auto; overflow-x: hidden;">
+                <div sclass="container-fluid" vflex="1" style="padding: 20px; overflow-y: auto; overflow-x: hidden;">
+                    <div sclass="row h-100">
+                        <div sclass="col-md-12 h-100">
 
-            <div sclass="row">
-                <div sclass="col-md-12">
-                    <div sclass="card">
+                            <div sclass="card shadow-sm h-100">
 
-                        <div sclass="card-header bg-warning text-white d-flex justify-content-between align-items-center">
-                            <n:h4 class="mb-0"><n:i class="fa fa-university"></n:i> Instituições Citadas</n:h4>
+                                <div sclass="card-header bg-warning text-white d-flex justify-content-between align-items-center">
+                                    <n:h4 class="mb-0"><n:i class="fa fa-university"></n:i> Instituições Citadas</n:h4>
 
-                            <div sclass="d-flex align-items-center">
-                                <div sclass="input-group input-group-sm mr-3" style="width: 250px;">
-                                    <textbox placeholder="Pesquisar Nome..."
-                                             value="@bind(vm.termoPesquisaInstituicao)"
-                                             instant="true"
-                                             onChange="@command('pesquisarInstituicao')"
-                                             sclass="form-control"
-                                             style="border-radius: 4px 0 0 4px; border: none; left: -50px;"/>
-                                    <div sclass="input-group-append">
-                                        <button onClick="@command('pesquisarInstituicao')"
-                                                iconSclass="fa-solid fa-search text-warning"
-                                                sclass="btn btn-light btn-sm text-secondary font-weight-bold"
-                                                style="height: 38px; left: -51px"/>
+                                    <div sclass="d-flex align-items-center">
+                                        <div sclass="input-group input-group-sm mr-3" style="width: 250px;">
+                                            <textbox placeholder="Pesquisar Nome..."
+                                                     value="@bind(vm.termoPesquisaInstituicao)"
+                                                     instant="true"
+                                                     onChange="@command('pesquisarInstituicao')"
+                                                     sclass="form-control"
+                                                     style="border-radius: 4px 0 0 4px; border: none; left: -50px;"/>
+                                            <div sclass="input-group-append">
+                                                <button onClick="@command('pesquisarInstituicao')"
+                                                        iconSclass="fa-solid fa-search text-warning"
+                                                        sclass="btn btn-light btn-sm text-secondary font-weight-bold"
+                                                        style="height: 38px; left: -51px"/>
+                                            </div>
+                                        </div>
+
+                                        <button label="Atualizar Lista"
+                                                onClick="@command('atualizar')"
+                                                iconSclass="z-icon-refresh"
+                                                sclass="btn btn-light btn-sm text-warning font-weight-bold"/>
                                     </div>
                                 </div>
 
-                                <button label="Atualizar Lista"
-                                        onClick="@command('atualizar')"
-                                        iconSclass="z-icon-refresh"
-                                        sclass="btn btn-light btn-sm text-warning font-weight-bold"/>
+                                <div sclass="card-body d-flex flex-column" style="overflow: hidden;">
+
+                                    <paging id="pgInst"
+                                            pageSize="21"
+                                            totalSize="@load(vm.listaInstituicoes.size())"
+                                            visible="@load(not empty vm.listaInstituicoes)"
+                                            style="order: 3; background: transparent; border: none; padding-top: 10px;"/>
+
+                                    <div visible="@load(empty vm.listaInstituicoes)" sclass="alert alert-warning text-center" style="order: 1;">
+                                        <n:i class="fa fa-exclamation-triangle"></n:i> <label value="Nenhuma instituição encontrada."/>
+                                    </div>
+
+                                    <listbox model="@load(vm.listaInstituicoes)"
+                                             visible="@load(not empty vm.listaInstituicoes)"
+                                             vflex="1"
+                                             mold="paging"
+                                             paginal="${pgInst}"
+                                             width="100%"
+                                             emptyMessage="Nenhum registro encontrado."
+                                             sclass="table-striped"
+                                             style="order: 2; border: none;">
+
+                                        <listhead>
+                                            <listheader label="Nome da Instituição" hflex="1" sort="auto(0)" style="font-weight:bold"/>
+                                            <listheader label="Ocorrências" width="150px" align="center" sort="auto(1)" style="font-weight:bold"/>
+                                        </listhead>
+
+                                        <template name="model">
+                                            <listitem>
+                                                <listcell>
+                                                    <label value="@load(each[0])" style="font-weight: bold; font-size: 14px; color: #333;"/>
+                                                </listcell>
+
+                                                <listcell>
+                                                    <span sclass="badge badge-warning" style="font-size: 14px; padding: 8.5px 10px;">
+                                                        <label value="@load(each[1])" style="color:black;"/>
+                                                    </span>
+                                                </listcell>
+                                            </listitem>
+                                        </template>
+                                    </listbox>
+
+                                </div>
                             </div>
-                        </div>
-
-                        <div sclass="card-body">
-
-                            <div visible="@load(empty vm.listaInstituicoes)" sclass="alert alert-warning text-center">
-                                <label value="Nenhuma instituição encontrada."/>
-                            </div>
-
-                            <listbox model="@load(vm.listaInstituicoes)" visible="@load(not empty vm.listaInstituicoes)"
-                                     mold="paging" pageSize="13" width="100%">
-
-                                <listhead>
-                                    <listheader label="Nome da Instituição" sort="auto(0)"/>
-                                    <listheader label="Ocorrências" width="150px" align="center" sort="auto(1)"/>
-                                </listhead>
-
-                                <template name="model">
-                                    <listitem>
-                                        <listcell>
-                                            <label value="@load(each[0])" style="font-weight: bold; color: #555;"/>
-                                        </listcell>
-
-                                        <listcell>
-                                            <span sclass="badge badge-warning" style="font-size: 14px; padding: 5px 10px;">
-                                                <label value="@load(each[1])" style="color:black;"/>
-                                            </span>
-                                        </listcell>
-                                    </listitem>
-                                </template>
-                            </listbox>
-
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
             </vlayout>
         </center>
 
