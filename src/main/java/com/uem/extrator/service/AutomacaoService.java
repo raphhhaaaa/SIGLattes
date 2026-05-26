@@ -5,29 +5,16 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.Scanner;
 import com.uem.extrator.dao.CurriculoDAO;
-import com.uem.extrator.dao.ProducaoDAO;;
-import com.uem.extrator.model.Usuario;
+import com.uem.extrator.dao.ProducaoDAO;
 import com.uem.extrator.util.ConfigManager;
-import com.uem.extrator.service.LattesService;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Properties;
 import java.util.concurrent.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.zkoss.zk.ui.util.Clients;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.Date;
 
 public class AutomacaoService {
 
@@ -69,7 +56,7 @@ public class AutomacaoService {
                 logger.info(">>> [VERIFICAÇÃO] O intervalo mínimo para verificação é de 1 hora. Definindo para 1 hora."); // minimo 1 hora
                 config.setVerifyInterval(intervaloHoras);
             }
-            logger.info(">>> AUTOMAÇÂO: Verificação agendada a cada {} horas", intervaloHoras);
+            logger.info(">>> [AUTOMAÇÂO] Verificação agendada a cada {} horas", intervaloHoras);
             // agenda para rodar a cada x horas
             tarefaVerificacao = scheduler.scheduleAtFixedRate(
                     this::rodarVerificacao,
@@ -79,10 +66,14 @@ public class AutomacaoService {
             );
 
             // agenda para monitorar conexão com o CNPq
-            scheduler.scheduleAtFixedRate(this::monitorarConexao, 1, 5, TimeUnit.MINUTES);
-            System.out.println("[AUTOMAÇÃO] Monitoramento de conexão ativado (Check a cada 30min).");
+            if (config.isNotifyConnection()) {
+                scheduler.scheduleAtFixedRate(this::monitorarConexao, 1, 5, TimeUnit.MINUTES);
+                logger.info("[AUTOMAÇÃO] Monitoramento de conexão ativado (Check a cada 30min).");
+            } else {
+                logger.info("[AUTOMAÇÃO] Monitoramento de conexão desativado.");
+            }
         } else {
-            System.out.println(">>> AUTOMAÇÃO: Verificação automática DESATIVADA.");
+            logger.info(">>> [AUTOMAÇÃO] Verificação automática DESATIVADA.");
         }
 
         // agendar backup (horario fixo)
@@ -113,11 +104,11 @@ public class AutomacaoService {
             }
 
             if (delayInicialSegundos < 60) {
-                System.out.println(">>> AUTOMAÇÃO: Backup agendado para " + horaAlvo + " (em " + (delayInicialSegundos) + " segundos).");
+                logger.info(">>> AUTOMAÇÃO: Backup agendado para " + horaAlvo + " (em " + (delayInicialSegundos) + " segundos).");
             } else if ((delayInicialSegundos/60) < 60) {
-                System.out.println(">>> AUTOMAÇÃO: Backup agendado para " + horaAlvo + " (em " + (delayInicialSegundos / 60) + " minutos).");
+                logger.info(">>> AUTOMAÇÃO: Backup agendado para " + horaAlvo + " (em " + (delayInicialSegundos / 60) + " minutos).");
             } else if ((delayInicialSegundos/60) > 60) {
-                System.out.println(">>> AUTOMAÇÃO: Backup agendado para " + horaAlvo + " (em " + ((delayInicialSegundos / 60) / 60) + " horas).");
+                logger.info(">>> AUTOMAÇÃO: Backup agendado para " + horaAlvo + " (em " + ((delayInicialSegundos / 60) / 60) + " horas).");
             }
 
 
@@ -156,7 +147,10 @@ public class AutomacaoService {
             msg.append("<h3>Sincronização automática</h3>");
             msg.append("<p>O sistema detectou e baixou atualizações recentes para os seguintes currículos de pesquisadores/docentes: </p>");
             msg.append(EmailService.getInstance().formatarLista(relatorio.atualizados));
-            msg.append("<br><p>O banco de dados local agora está sincronizado com o CNPq.</p>");
+            msg.append("<p>O banco de dados local agora está sincronizado com o CNPq.</p>");
+            msg.append("<hr>");
+            msg.append(getStatusConexao());
+            msg.append("<p><b>Horário:</b> " + new Date() + "</p>");
             EmailService.getInstance().enviarAlerta("Relatório de Atualização", msg.toString());
         }
 
@@ -204,8 +198,8 @@ public class AutomacaoService {
                     msg.append("<p>O sistema detectou uma falha de comunicação com o webservice do <b>CNPq</b>.</p>");
                     msg.append("<p>Isso pode impedir novas extrações ou atualizações de currículos temporariamente.</p>");
                     msg.append("<hr>");
-                    msg.append("<p><b>Status:</b> 🔴 SERVIÇO INDISPONÍVEL / INSTÁVEL</p>");
-                    msg.append("<p><b>Horário:</b> " + new java.util.Date() + "</p>");
+                    msg.append(getStatusConexao());
+                    msg.append("<p><b>Horário:</b> " + new Date() + "</p>");
 
                     EmailService.getInstance().enviarAlerta("URGENTE: Falha na Conexão CNPq", msg.toString());
 
@@ -312,28 +306,28 @@ public class AutomacaoService {
     }
 
     private void rodarBackup() {
-        logger.info("=== [AUTO] Iniciando Backup do Banco de Dados... (DB2 DOCKER) ===");
-        /**
-         * Atenção: importante citar que este metodo é feito especificamente para o banco de dados local
-         * MYSQL, quando for feita a migração para o banco da UEM (IBM DB2) essa lógica DEVERÁ ser
-         * totalmente reavaliada / refatorada.
-         */
+        ConfigManager config = ConfigManager.getInstance();
+        logger.info("=== [AUTO] Iniciando Backup do Banco de Dados... ===");
 
         try {
-            // A pasta onde o DB2 vai jogar o backup DENTRO do container
-            // (Esta pasta está segura e mapeada no seu volume db2_data no disco físico)
-            String backupDirDb2 = "/database/data";
+            String containerName = config.getBackupContainer();
+            String backupCommand = config.getBackupCommand();
 
-            logger.info(">>> BACKUP: Solicitando backup binário nativo ao DB2 via Docker...");
+            logger.info(">>> BACKUP: Solicitando backup binário nativo ao DB2 via Docker [Container: {}]...", containerName);
 
-            // Comando Mágico:
-            // 1. Entra no docker (mydb2)
-            // 2. Desconecta os usuários ativos rapidinho (force applications all) para evitar lock
-            // 3. Faz o backup seguro (binary dump) para a pasta
+            // entra no docker e executa o backup a quente (online)
             ProcessBuilder pb = new ProcessBuilder(
-                    "docker", "exec", "mydb2", "bash", "-c",
-                    "su - db2inst1 -c 'db2 force applications all && sleep 5 && db2 terminate && db2 backup database LATTES to " + backupDirDb2 + "'"
+                    "docker", "exec", containerName, "bash", "-c", backupCommand
             );
+
+            /***
+             *  O backup é salvo no diretório remoto do docker: /database/data/ LATTES....
+             *
+             *  para puxar ele para a maquina local, no terminal, rode o seguinte comando:
+             *
+             *  docker cp db2_server:/database/data/ IDENTIFICADOR DO TIMESTAMP.001 /sua/pasta/onde/quer/salvar
+             *
+             */
 
             // Junta a saída normal e os erros num fluxo só para lermos no console do Java
             pb.redirectErrorStream(true);
@@ -358,13 +352,44 @@ public class AutomacaoService {
             if (exitCode == 0 && sucesso) {
                 logger.info(">>> BACKUP CONCLUÍDO COM SUCESSO!");
                 System.out.println(">>> O arquivo de imagem (.001) foi salvo de forma segura no volume do Docker.");
+
+                EmailService stmp = EmailService.getInstance();
+                LattesService service = new LattesService();
+
+
+                StringBuilder msg = new StringBuilder();
+                msg.append("<h4>Backup Concluído com Sucesso</h4>");
+                msg.append("<p>Salvo no diretório remoto do docker: <i>/database/data/LATTES....</i> </p>");
+                msg.append("<hr>");
+                msg.append(getStatusConexao());
+                msg.append("<p><b>Horário:</b> " + new Date() + "</p>");
+
+                stmp.enviarAlerta("Backup Concluído com Sucesso", msg.toString());
             } else {
-                System.err.println(">>> ERRO AO REALIZAR BACKUP. Código de saída do Docker: " + exitCode);
+                System.err.println(">>> Erro ao Realizar Backup. Código de saída do Docker: " + exitCode);
+
+                EmailService stmp = EmailService.getInstance();
+                stmp.enviarAlerta("BACKUP AGENDADO FALHOU", "O backup diário agendado NÃO foi realizado.\n Erro: " + exitCode);
+
             }
 
         } catch (Exception e) {
             logger.error("Falha crítica no backup DB2", e);
         }
+    }
+
+    public String getStatusConexao() {
+        LattesService service = new LattesService();
+
+        boolean online = service.testarConexaoCNPq();
+        String texto = "";
+
+        if (!online) {
+            texto = "<p><b>Status:</b> 🔴 SERVIÇO INDISPONÍVEL / INSTÁVEL</p>";
+        } else {
+            texto = "<p><b>Status:</b> ✅ SERVIÇO ONLINE / ESTÁVEL</p>";
+        }
+        return texto;
     }
 
     // debug

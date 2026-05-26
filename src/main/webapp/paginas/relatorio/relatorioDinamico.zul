@@ -150,7 +150,7 @@
                                                   sclass="form-control-sm"/>
                                     </div>
 
-                                    <div style="position: relative; right: -1250px" sclass="">
+                                    <div style="position: relative; right: -1540px" sclass="">
                                         <button label="Extrair CSV (Resumo)"
                                                 onClick="@command('exportarCsvSimples')"
                                                 iconSclass="z-icon-download"

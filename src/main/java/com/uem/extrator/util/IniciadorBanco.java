@@ -70,7 +70,7 @@ public class IniciadorBanco implements ServletContextListener {
     }
 
     private void inicializarQualis() {
-        com.uem.extrator.dao.QualisDAO qualisDAO = new com.uem.extrator.dao.QualisDAO();
+        QualisDAO qualisDAO = new QualisDAO();
 
         if (qualisDAO.contarTodos() > 0) {
             logger.info(">>> [QUALIS] Base já populada. Ignorando importação.");
@@ -78,10 +78,10 @@ public class IniciadorBanco implements ServletContextListener {
         }
 
         logger.info(">>> [QUALIS] Iniciando a leitura do ficheiro CAPES...");
-        java.util.Map<String, com.uem.extrator.model.Qualis> mapaQualis = new java.util.HashMap<>();
+        Map<String, Qualis> mapaQualis = new HashMap<>();
 
-        try (java.io.InputStream is = getClass().getClassLoader().getResourceAsStream("qualis.csv");
-             java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(is, java.nio.charset.StandardCharsets.UTF_8))) {
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream("qualis.csv");
+             BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
 
             if (is == null) return;
 
@@ -98,26 +98,31 @@ public class IniciadorBanco implements ServletContextListener {
                     String nota = colunas[3].replace("\"", "").trim();
                     String nomeRevista = colunas[1].replace("\"", "").trim();
 
+                    // Sanitização Defensiva para o Banco de Dados (DB2)
+                    if (issn != null && issn.length() > 20) issn = issn.substring(0, 20);
+                    if (nomeRevista != null && nomeRevista.length() > 500) nomeRevista = nomeRevista.substring(0, 500);
+                    if (nota != null && nota.length() > 5) nota = nota.substring(0, 5);
+
                     if (!issn.isEmpty()) {
-                        com.uem.extrator.model.Qualis qAtual = mapaQualis.get(issn);
+                        Qualis qAtual = mapaQualis.get(issn);
 
                         // Se não existe no Map, adiciona
                         if (qAtual == null) {
-                            com.uem.extrator.model.Qualis qNovo = new com.uem.extrator.model.Qualis();
+                            Qualis qNovo = new Qualis();
                             qNovo.setIssn(issn);
                             qNovo.setEstrato(nota);
                             qNovo.setNomeRevista(nomeRevista);
                             mapaQualis.put(issn, qNovo);
                         }
                         // Se já existe, substitui apenas se a NOVA nota for MAIOR que a antiga
-                        else if (pesoNota(nota) > pesoNota(qAtual.getEstrato())) {
+                        else if (QualisDAO.pesoEstrato(nota) > QualisDAO.pesoEstrato(qAtual.getEstrato())) {
                             qAtual.setEstrato(nota);
                         }
                     }
                 }
             }
 
-            java.util.List<com.uem.extrator.model.Qualis> lote = new java.util.ArrayList<>(mapaQualis.values());
+            List<Qualis> lote = new ArrayList<>(mapaQualis.values());
             logger.info(">>> [QUALIS] Inserindo {} revistas...", lote.size());
             qualisDAO.salvarEmLote(lote);
             logger.info(">>> [QUALIS] Importação concluída com sucesso!");
@@ -127,30 +132,4 @@ public class IniciadorBanco implements ServletContextListener {
         }
     }
 
-    // Metodo auxiliar para saber qual nota vale mais
-    private int pesoNota(String nota) {
-        if (nota == null) return 0;
-        switch (nota.toUpperCase()) {
-            case "A1":
-                return 8;
-            case "A2":
-                return 7;
-            case "A3":
-                return 6;
-            case "A4":
-                return 5;
-            case "B1":
-                return 4;
-            case "B2":
-                return 3;
-            case "B3":
-                return 2;
-            case "B4":
-                return 1;
-            case "C":
-                return 0;
-            default:
-                return -1;
-        }
-    }
 }

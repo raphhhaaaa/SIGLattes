@@ -113,6 +113,9 @@ public class RelatorioDAO {
 
     public List<?> listarDadosDetalhados(String tipoRelatorio, String nomeInstituicao) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            // Limpa o cache da sessão para garantir que pegue dados novos do banco
+            // (Citações e Acesso são atualizados em background por outras threads)
+            session.clear();
 
             String termoBusca = resolverTermoBusca(tipoRelatorio);
             if (termoBusca == null) return new ArrayList<>();
@@ -124,7 +127,8 @@ public class RelatorioDAO {
 
             if (isFormacao) {
                 if (filtrarInstituicao) {
-                    hql.append("SELECT DISTINCT f FROM Formacao f ")
+                    hql.append("SELECT f FROM Formacao f ")
+                       .append("JOIN FETCH f.curriculo ")
                        .append("WHERE f.tipoFormacao = :termo ")
                        .append("AND EXISTS (")
                        .append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i ")
@@ -134,6 +138,7 @@ public class RelatorioDAO {
                        .append("ORDER BY f.anoConclusao DESC");
                 } else {
                     hql.append("SELECT f FROM Formacao f ")
+                       .append("JOIN FETCH f.curriculo ")
                        .append("WHERE f.tipoFormacao = :termo ")
                        .append("ORDER BY f.anoConclusao DESC");
                 }
@@ -142,9 +147,10 @@ public class RelatorioDAO {
                     /*
                      * OTIMIZAÇÃO: JOIN FETCH no curriculo evita query N+1 ao acessar
                      * p.getCurriculo().getNomeCompleto() no ExportCSV do ViewModel.
-                     * O EXISTS mantém a busca de instituição eficiente.
+                     * O EXISTS mantém a busca de instituição eficiente e evita duplicates
+                     * dispensando o uso de DISTINCT
                      */
-                    hql.append("SELECT DISTINCT p FROM Producao p ")
+                    hql.append("SELECT p FROM Producao p ")
                        .append("JOIN FETCH p.curriculo c ")
                        .append("WHERE p.tipo = :termo ")
                        .append("AND EXISTS (")
@@ -152,21 +158,22 @@ public class RelatorioDAO {
                        .append("  WHERE a.curriculo = c ")
                        .append("  AND UPPER(i.nomeInstituicao) = :nomeInst")
                        .append(") ")
-                       .append("ORDER BY p.citacoes DESC, p.ano DESC");
+                       .append("ORDER BY p.citacoes DESC NULLS LAST, p.ano DESC");
                 } else {
                     hql.append("SELECT p FROM Producao p ")
                        .append("JOIN FETCH p.curriculo ")
                        .append("WHERE p.tipo = :termo ")
-                       .append("ORDER BY p.citacoes DESC, p.ano DESC");
+                       .append("ORDER BY p.citacoes DESC NULLS LAST, p.ano DESC");
                 }
             }
 
             Query<?> query = session.createQuery(hql.toString());
+            query.setCacheable(false); // Garante que não use cache de consulta
             query.setParameter("termo", termoBusca);
             if (filtrarInstituicao) {
                 query.setParameter("nomeInst", nomeInstituicao.toUpperCase());
             }
-            query.setMaxResults(100);
+            query.setMaxResults(5000); // Aumentado para 5000 para o CSV Detalhado
 
             return query.list();
 

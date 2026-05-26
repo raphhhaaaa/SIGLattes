@@ -22,14 +22,14 @@ public class Formacao {
     @Column(name = "tp_formacao", length = 100)
     private String tipoFormacao;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "cd_curso")
     private Curso nomeCurso;
 
     // @Column(name = "nm_curso", length = 300)
     // private String nomeCurso;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "cd_instituicao")
     private Instituicao nomeInstituicao;
 

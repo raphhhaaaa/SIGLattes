@@ -29,9 +29,9 @@
 
         <div sclass="container-fluid" vflex="1" style="padding: 20px; overflow-y: auto; overflow-x: hidden;">
 
-            <div sclass="row">
-                <div sclass="col-md-12">
-                    <div sclass="card">
+            <div sclass="row h-100">
+                <div sclass="col-md-12 h-100">
+                    <div sclass="card shadow-sm h-100">
 
                         <div sclass="card-header bg-success text-white d-flex justify-content-between align-items-center">
                             <n:h4 class="mb-0"><n:i class="fa fa-graduation-cap"></n:i> Cursos Cadastrados</n:h4>
@@ -59,25 +59,38 @@
                             </div>
                         </div>
 
-                        <div sclass="card-body">
+                        <div sclass="card-body d-flex flex-column" style="overflow: hidden;">
 
-                            <div visible="@load(empty vm.listaCursos)" sclass="alert alert-warning text-center">
-                                <label value="Nenhum curso encontrado."/>
+                            <paging id="pgCurso"
+                                    pageSize="20"
+                                    totalSize="@load(vm.listaCursos.size())"
+                                    visible="@load(not empty vm.listaCursos)"
+                                    style="order: 3; background: transparent; border: none; padding-top: 10px;"/>
+
+                            <div visible="@load(empty vm.listaCursos)" sclass="alert alert-warning text-center" style="order: 1;">
+                                <n:i class="fa fa-exclamation-triangle"></n:i> <label value="Nenhum curso encontrado."/>
                             </div>
 
-                            <listbox model="@load(vm.listaCursos)" visible="@load(not empty vm.listaCursos)"
-                                     mold="paging" pageSize="12" emptyMessage="Nenhum registro.">
+                            <listbox model="@load(vm.listaCursos)"
+                                     visible="@load(not empty vm.listaCursos)"
+                                     vflex="1"
+                                     mold="paging"
+                                     paginal="${pgCurso}"
+                                     width="100%"
+                                     emptyMessage="Nenhum registro encontrado."
+                                     sclass="table-striped"
+                                     style="order: 2; border: none;">
 
                                 <listhead>
-                                    <listheader label="Nome do Curso" sort="auto(nomeCurso)"/>
-                                    <listheader label="Grande Área" width="200px" sort="auto(nomeGrandeArea)"/>
-                                    <listheader label="Área / Sub-área" width="300px"/>
+                                    <listheader label="Nome do Curso" hflex="1" sort="auto(nomeCurso)" style="font-weight:bold"/>
+                                    <listheader label="Grande Área" width="200px" sort="auto(nomeGrandeArea)" style="font-weight:bold"/>
+                                    <listheader label="Área / Sub-área" width="300px" style="font-weight:bold"/>
                                 </listhead>
 
                                 <template name="model">
                                     <listitem>
-                                        <listcell label="@load(each.nomeCurso)" sclass="font-weight-bold"/>
-                                        <listcell label="@load(each.nomeGrandeArea)"/>
+                                        <listcell label="@load(each.nomeCurso)" style="padding: 6.5px 7px; color: #333; font-weight: bold"/>
+                                        <listcell label="@load(each.nomeGrandeArea)" style="padding: 6.5px 7px;"/>
                                         <listcell>
                                             <vlayout spacing="0">
                                                 <label value="@load(each.nomeArea)" style="font-size: 12px; font-weight: bold;"/>

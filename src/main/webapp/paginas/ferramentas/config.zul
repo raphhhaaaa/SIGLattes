@@ -146,6 +146,15 @@
                                 * Os serviços automáticos rodam em background no servidor.
                             </n:small>
 
+                            <separator bar="true" sclass="my-3"/>
+
+                            <div sclass="form-group row mb-0">
+                                <label value="Semantic Scholar API Key:" sclass="col-sm-2.5 col-form-label font-weight-bold"/>
+                                <div sclass="col-sm-8">
+                                    <textbox value="@bind(vm.semanticScholarApiKey)" sclass="form-control form-control-sm" placeholder="Insira sua API Key"/>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -179,6 +188,13 @@
                                         </div>
                                     </div>
 
+                                    <div sclass="form-group row">
+                                        <label value="Senha SMTP:" sclass="col-sm-4 col-form-label font-weight-bold"/>
+                                        <div sclass="col-sm-8">
+                                            <textbox value="@bind(vm.smtpPassword)" type="password" sclass="form-control form-control-sm" placeholder="Senha ou App Password" style="height: 35px;"/>
+                                        </div>
+                                    </div>
+
                                     <div sclass="form-group row mb-0">
                                         <label value="Email do Sistema:" sclass="col-sm-4 col-form-label font-weight-bold"/>
                                         <div sclass="col-sm-8">
@@ -186,22 +202,39 @@
                                         </div>
                                     </div>
 
-                                    <div sclass="form-group row mb-3">
+                                    <div sclass="form-group row mb-0">
                                         <label value="Email Administrador:" sclass="col-sm-4 col-form-label font-weight-bold"/>
                                         <div sclass="col-sm-8">
                                             <textbox value="@bind(vm.adminEmail)" sclass="form-control form-control-sm" placeholder="seu.email@pessoal.com // Este receberá os alertas"/>
                                         </div>
                                     </div>
-                                    <!-- BOTÃO DE TESTE EMAIL
-                                    <div sclass="form-group row">
-                                        <div sclass="col-sm-12 text-right">
-                                            <button label="Enviar E-mail de Teste"
-                                                    onClick="@command('testarEnvioEmail')"
-                                                    iconSclass="z-icon-paper-plane"
-                                                    sclass="btn btn-sm btn-outline-dark"/>
-                                        </div>
-                                    </div>
-                                    -->
+
+<!--                                    &lt;!&ndash; BOTÃO DE TESTE EMAIL &ndash;&gt;-->
+<!--                                    <zk if="${sessionScope.usuario_logado.admin}">-->
+<!--                                        <div sclass="form-group row">-->
+<!--                                            <div sclass="col-sm-12 text-right">-->
+<!--                                                <button label="Enviar E-mail de Teste"-->
+<!--                                                        onClick="@command('testarEnvioEmail')"-->
+<!--                                                        iconSclass="z-icon-paper-plane"-->
+<!--                                                        sclass="btn btn-sm btn-outline-dark"/>-->
+<!--                                            </div>-->
+<!--                                        </div>-->
+<!--                                    </zk>-->
+
+<!--                                    <n:br/>-->
+
+<!--                                    &lt;!&ndash; BOTÃO DE FORÇAR VERIFICAÇÃO &ndash;&gt;-->
+<!--                                    <zk if="${sessionScope.usuario_logado.admin}">-->
+<!--                                        <div sclass="form-group row">-->
+<!--                                            <div sclass="col-sm-12 text-right">-->
+<!--                                                <button label="Forçar verificação de curriculos"-->
+<!--                                                        onClick="@command('forcarVerificacao')"-->
+<!--                                                        iconSclass="fa fa-refresh"-->
+<!--                                                        sclass="btn btn-sm btn-outline-danger"/>-->
+<!--                                            </div>-->
+<!--                                        </div>-->
+<!--                                    </zk>-->
+
                                 </div>
 
                                 <div sclass="col-md-6 pl-4">
@@ -260,7 +293,7 @@
                         </div>
                         <div sclass="card-body pt-3">
 
-                            <n:h6 class="font-weight-bold mb-2" style="font-size: 0.9rem; color: #495057;">Tipo de Autenticação (EM DESENVOLVIMENTO)</n:h6>
+                            <n:h6 class="font-weight-bold mb-2" style="font-size: 0.9rem; color: #495057;">Tipo de Autenticação</n:h6>
                             <div sclass="mb-4 bg-light p-2 rounded border">
                                 <radiogroup id="authGroup" selectedItem="@bind(vm.authType)">
                                     <div sclass="d-flex flex-column">
@@ -285,6 +318,26 @@
                                     <checkbox checked="@bind(vm.auditAdminActions)" label="Log detalhado de ações administrativas" sclass="text-dark"/>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div sclass="col-md-6 mb-4">
+                    <div sclass="card shadow-sm border-0 h-100">
+                        <div sclass="card-header bg-success text-white">
+                            <n:h5 class="mb-0" style="font-size: 1rem;"><n:i class="fa-solid fa-file-csv mr-2"></n:i> Upload de qualis CSV</n:h5>
+                        </div>
+                        <div sclass="card-body d-flex flex-column align-items-center justify-content-center">
+                            <n:p class="text-muted text-center mb-4">
+                                Atualize a base de dados do Qualis enviando um novo arquivo CSV.
+                            </n:p>
+                            <button label="Fazer Upload"
+                                    upload="true,maxsize=51200"
+                                    onUpload="@command('uploadQualis', media=event.media)"
+                                    sclass="btn btn-outline-success font-weight-bold"
+                                    iconSclass="z-icon-upload"
+                                    height="45px"
+                                    width="200px"/>
                         </div>
                     </div>
                 </div>

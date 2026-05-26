@@ -45,6 +45,19 @@ public class QualisDAO {
         }
     }
 
+    public void limparTudo() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction tx = session.beginTransaction();
+            try {
+                session.createNativeQuery("DELETE FROM QUALIS").executeUpdate();
+                tx.commit();
+            } catch (Exception e) {
+                if (tx != null && tx.isActive()) tx.rollback();
+                logger.error("Erro ao limpar tabela QUALIS: ", e);
+            }
+        }
+    }
+
     /**
      * OTIMIZAÇÃO DB2: A versão anterior usava REPLACE(q.issn, '-', '') diretamente
      * na cláusula WHERE/JOIN, impedindo o uso do índice na coluna issn.
@@ -100,7 +113,7 @@ public class QualisDAO {
         }
     }
 
-    private int pesoEstrato(String estrato) {
+    public static int pesoEstrato(String estrato) {
         if (estrato == null) return -1;
         switch (estrato.toUpperCase().trim()) {
             case "A1": return 8;

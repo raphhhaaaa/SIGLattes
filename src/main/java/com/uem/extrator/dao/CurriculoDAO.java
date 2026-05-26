@@ -1,5 +1,6 @@
 package com.uem.extrator.dao;
 
+import com.uem.extrator.dto.RelatorioRevistaDTO;
 import com.uem.extrator.model.*;
 import com.uem.extrator.service.AuditLogService;
 import com.uem.extrator.util.HibernateUtil;
@@ -109,6 +110,9 @@ public class CurriculoDAO {
 
                     // Resolução de cursos: busca em lote para evitar N+1
                     Map<String, Curso> cursosProcessadosNestaTransacao = new HashMap<>();
+                    Map<String, Instituicao> instituicoesProcessadasNestaTransacao = new HashMap<>();
+                    InstituicaoDAO instituicaoDAO = new InstituicaoDAO();
+                    
                     if (curriculo.getFormacoes() != null) {
                         for (Formacao formacao : curriculo.getFormacoes()) {
                             Curso cursoCandidato = formacao.getNomeCurso();
@@ -123,6 +127,45 @@ public class CurriculoDAO {
                                         cursosProcessadosNestaTransacao.put(nomeNormalizado, cursoNoBanco);
                                     } else {
                                         cursosProcessadosNestaTransacao.put(nomeNormalizado, cursoCandidato);
+                                    }
+                                }
+                            }
+                            
+                            // Reaproveitamento de Instituicao na Formacao
+                            Instituicao instCandidata = formacao.getNomeInstituicao();
+                            if (instCandidata != null && instCandidata.getNomeInstituicao() != null) {
+                                String nomeInstNormalizado = instCandidata.getNomeInstituicao().trim().toUpperCase();
+                                if (instituicoesProcessadasNestaTransacao.containsKey(nomeInstNormalizado)) {
+                                    formacao.setNomeInstituicao(instituicoesProcessadasNestaTransacao.get(nomeInstNormalizado));
+                                } else {
+                                    Instituicao instNoBanco = instituicaoDAO.buscarPorSimilaridade(session, instCandidata.getNomeInstituicao());
+                                    if (instNoBanco != null) {
+                                        formacao.setNomeInstituicao(instNoBanco);
+                                        instituicoesProcessadasNestaTransacao.put(nomeInstNormalizado, instNoBanco);
+                                    } else {
+                                        instituicoesProcessadasNestaTransacao.put(nomeInstNormalizado, instCandidata);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Reaproveitamento de Instituicao na Atuacao
+                    if (curriculo.getAtuacoes() != null) {
+                        for (Atuacao atuacao : curriculo.getAtuacoes()) {
+                            Instituicao instCandidata = atuacao.getInstituicao();
+                            if (instCandidata != null && instCandidata.getNomeInstituicao() != null) {
+                                String nomeInstNormalizado = instCandidata.getNomeInstituicao().trim().toUpperCase();
+                                if (instituicoesProcessadasNestaTransacao.containsKey(nomeInstNormalizado)) {
+                                    atuacao.setInstituicao(instituicoesProcessadasNestaTransacao.get(nomeInstNormalizado));
+                                } else {
+                                    Instituicao instNoBanco = instituicaoDAO.buscarPorSimilaridade(session, instCandidata.getNomeInstituicao());
+                                    if (instNoBanco != null) {
+                                        atuacao.setInstituicao(instNoBanco);
+                                        instituicoesProcessadasNestaTransacao.put(nomeInstNormalizado, instNoBanco);
+                                    } else {
+                                        atuacao.setInstituicao(instCandidata);
+                                        instituicoesProcessadasNestaTransacao.put(nomeInstNormalizado, instCandidata);
                                     }
                                 }
                             }
@@ -281,11 +324,10 @@ public class CurriculoDAO {
     private String resolverCor(String nota) {
         if (nota == null) return "badge bg-secondary";
         switch (nota.toUpperCase().trim()) {
-            case "A1": case "A2": return "badge bg-success";
-            case "B1": case "B2": return "badge bg-primary";
-            case "B3": case "B4": return "badge bg-info text-dark";
-            case "C":              return "badge bg-warning text-dark";
-            default:               return "badge bg-secondary";
+            case "A1": case "A2": case "A3": case "A4": return "badge bg-success";
+            case "B1": case "B2": case "B3": case "B4": return "badge bg-warning";
+            case "C": return "badge bg-danger";
+            default: return "badge bg-secondary";
         }
     }
 

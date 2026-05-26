@@ -1018,3 +1018,29 @@ body {
 
 /* Evita barra de rolagem horizontal desnecessária na animação do ZK */
 .z-west-body { overflow: hidden !important; }
+
+/* 4. FOOTER DA SIDEBAR (LOGOS) */
+.sidebar-footer {
+    padding: 20px;
+    border-top: 1px solid #f1f5f9;
+    text-align: center;
+    background-color: #ffffff;
+    margin-top: auto;
+}
+
+.sidebar-footer-logo {
+    max-width: 100%;
+    height: auto;
+    filter: grayscale(1);
+    opacity: 0.6;
+    transition: all 0.3s ease;
+}
+
+.sidebar-footer-logo:hover {
+    filter: grayscale(0);
+    opacity: 1;
+}
+
+.sidebar-mini .sidebar-footer {
+    padding: 15px 5px;
+}

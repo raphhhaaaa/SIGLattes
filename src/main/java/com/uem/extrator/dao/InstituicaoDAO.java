@@ -1,6 +1,7 @@
 package com.uem.extrator.dao;
 
 import com.uem.extrator.model.Instituicao;
+import com.uem.extrator.util.FiltroSimilaridade;
 import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
 import org.slf4j.Logger;
@@ -49,16 +50,21 @@ public class InstituicaoDAO {
              * mas em native query usamos diretamente.
              */
             String sql =
-                "SELECT nm_instituicao, COUNT(*) AS qtd " +
-                "FROM LATTESEXTRATOR.INSTITUICAO " +
-                "WHERE nm_instituicao IS NOT NULL " +
+                "SELECT i.nm_instituicao, COUNT(DISTINCT combined.cd_cnpq) AS qtd " +
+                "FROM LATTESEXTRATOR.INSTITUICAO i " +
+                "LEFT JOIN (" +
+                "   SELECT cd_instituicao, cd_cnpq FROM LATTESEXTRATOR.FORMACAO " +
+                "   UNION ALL " +
+                "   SELECT cd_instituicao, cd_cnpq FROM LATTESEXTRATOR.ATUACAO " +
+                ") AS combined ON i.cd_instituicao = combined.cd_instituicao " +
+                "WHERE i.nm_instituicao IS NOT NULL " +
                 "AND (" +
-                "   LOCATE('UNIVERSIDADE', UPPER(nm_instituicao)) = 1 " +
-                "   OR LOCATE('INSTITUTO',    UPPER(nm_instituicao)) = 1 " +
-                "   OR LOCATE('FACULDADE',    UPPER(nm_instituicao)) = 1 " +
-                "   OR LOCATE('CENTRO',       UPPER(nm_instituicao)) = 1 " +
+                "   LOCATE('UNIVERSIDADE', UPPER(i.nm_instituicao)) = 1 " +
+                "   OR LOCATE('INSTITUTO',    UPPER(i.nm_instituicao)) = 1 " +
+                "   OR LOCATE('FACULDADE',    UPPER(i.nm_instituicao)) = 1 " +
+                "   OR LOCATE('CENTRO',       UPPER(i.nm_instituicao)) = 1 " +
                 ") " +
-                "GROUP BY nm_instituicao " +
+                "GROUP BY i.nm_instituicao " +
                 "ORDER BY qtd DESC " +
                 "FETCH FIRST 500 ROWS ONLY";
 
@@ -75,6 +81,7 @@ public class InstituicaoDAO {
 
     public static void limparCache() {
         cacheInstituicoes = null;
+        cacheTodas = null;
     }
 
     public List<Instituicao> listarTodas() {
@@ -87,5 +94,43 @@ public class InstituicaoDAO {
             logger.error("Erro na base de dados (InstituicaoDAO)", e);
             return new ArrayList<>();
         }
+    }
+
+    private static List<Instituicao> cacheTodas = null;
+    private static long ultimaAtualizacaoTodas = 0;
+
+    public Instituicao buscarPorSimilaridade(Session session, String nomeCandidato) {
+        if (nomeCandidato == null || nomeCandidato.trim().isEmpty()) return null;
+
+        // 1. Busca exata (rápida via índice)
+        Instituicao exata = buscarPorNome(session, nomeCandidato);
+        if (exata != null) return exata;
+
+        // 2. Busca por similaridade semântica
+        // Carrega todas as instituições em cache se necessário (ou se expirou)
+        if (cacheTodas == null || (System.currentTimeMillis() - ultimaAtualizacaoTodas) > TEMPO_CACHE) {
+            cacheTodas = session.createQuery("FROM Instituicao", Instituicao.class).list();
+            ultimaAtualizacaoTodas = System.currentTimeMillis();
+        }
+
+        for (Instituicao inst : cacheTodas) {
+            if (FiltroSimilaridade.isMesmaInstituicao(nomeCandidato, inst.getNomeInstituicao())) {
+                return inst;
+            }
+        }
+
+        return null;
+    }
+
+    public Instituicao buscarPorNome(Session session, String nomeInstituicaoStr) {
+        if (nomeInstituicaoStr == null || nomeInstituicaoStr.trim().isEmpty()) return null;
+
+        String hql = "FROM Instituicao WHERE upper(trim(nomeInstituicao)) = :nome";
+
+        org.hibernate.query.Query<Instituicao> query = session.createQuery(hql, Instituicao.class);
+        query.setParameter("nome", nomeInstituicaoStr.trim().toUpperCase());
+        query.setMaxResults(1);
+
+        return query.uniqueResult();
     }
 }

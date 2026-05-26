@@ -67,7 +67,7 @@
                                        border-radius:4px; color:#e74a3b; font-weight:bold;">
                                 SELECT
                             </n:code>.
-                            Máximo de 10000 registros.
+                            Máximo de 1000 registros.
                         </div>
 
                         <!-- EDITOR SQL -->

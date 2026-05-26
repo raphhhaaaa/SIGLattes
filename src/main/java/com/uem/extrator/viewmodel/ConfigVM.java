@@ -1,11 +1,16 @@
 package com.uem.extrator.viewmodel;
 
-import com.mysql.cj.xdevapi.Client;
+import com.uem.extrator.dao.QualisDAO;
+import com.uem.extrator.model.Qualis;
 import com.uem.extrator.model.Usuario;
+import com.uem.extrator.service.AuditLogService;
 import com.uem.extrator.service.AutomacaoService;
 import com.uem.extrator.service.EmailService;
 import com.uem.extrator.util.ConfigManager;
 import com.uem.extrator.util.HibernateUtil;
+import org.hibernate.Transaction;
+import org.zkoss.bind.annotation.BindingParam;
+import org.zkoss.util.media.Media;
 import org.zkoss.zk.ui.Sessions;
 import org.zkoss.zk.ui.event.Event;
 import org.hibernate.Session;
@@ -23,6 +28,16 @@ import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zk.ui.util.Clients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zkoss.zul.Messagebox;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static java.awt.SystemColor.desktop;
 
@@ -55,8 +70,10 @@ public class ConfigVM {
     // Notificações (SMTP)
     private String smtpHost;
     private String smtpPort;
+    private String smtpPassword;
     private String systemEmail;
     private String adminEmail;
+    private String semanticScholarApiKey;
     private boolean notifyOutdated;
     private boolean notifyWeekly;
     private boolean notifyConnection;
@@ -88,8 +105,10 @@ public class ConfigVM {
         // carrega notificações
         this.smtpHost = config.getSmtpHost();
         this.smtpPort = config.getSmtpPort();
+        this.smtpPassword = config.getSmtpPassword();
         this.systemEmail = config.getSystemEmail();
         this.adminEmail = config.getAdminEmail();
+        this.semanticScholarApiKey = config.getSemanticScholarApiKey();
         this.notifyOutdated = config.isNotifyOutdated();
         this.notifyWeekly = config.isNotifyWeekly();
         this.notifyConnection = config.isNotifyConnection();
@@ -177,8 +196,10 @@ public class ConfigVM {
             // salva notificações
             config.setSmtpHost(this.smtpHost);
             config.setSmtpPort(this.smtpPort);
+            config.setSmtpPassword(this.smtpPassword);
             config.setSystemEmail(this.systemEmail);
             config.setAdminEmail(this.adminEmail);
+            config.setSemanticScholarApiKey(this.semanticScholarApiKey);
             config.setNotifyOutdated(this.notifyOutdated);
             config.setNotifyWeekly(this.notifyWeekly);
             config.setNotifyConnection(this.notifyConnection);
@@ -258,6 +279,107 @@ public class ConfigVM {
     }
 
     @Command
+    public void uploadQualis(@BindingParam("media") Media media) {
+        if (media == null) {
+            Clients.showNotification("Nenhum arquivo selecionado.", "warning", null, null, 3000);
+            return;
+        }
+
+        if (!media.getName().toLowerCase().endsWith(".csv")) {
+            Clients.showNotification("Por favor, selecione um arquivo CSV.", "error", null, null, 3000);
+            return;
+        }
+
+        // inicia o leitor fora do try para poder injetar no BufferedReader
+        Reader baseReader;
+        try {
+            if (media.isBinary()) {
+                baseReader = new InputStreamReader(media.getStreamData(), StandardCharsets.UTF_8);
+            } else {
+                baseReader = media.getReaderData();
+            }
+        } catch (Exception e) {
+            logger.error("Erro ao obter dados do arquivo", e);
+            Clients.showNotification("Erro ao ler arquivo: " + e.getMessage(), "error", null, null, 3000);
+            return;
+        }
+
+        try (BufferedReader br = new BufferedReader(baseReader)) {
+            Map<String, Qualis> mapaQualis = new HashMap<>();
+            String linha;
+            boolean primeiraLinha = true;
+
+            while ((linha = br.readLine()) != null) {
+                if (linha.trim().isEmpty()) continue;
+                if (primeiraLinha) { primeiraLinha = false; continue; }
+
+                // Regex para split de CSV tratando aspas e aceitando vírgula ou ponto-e-vírgula
+                String[] colunas = linha.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+
+                if (colunas.length >= 4) {
+                    String issn = colunas[0].replace("\"", "").trim();
+                    String nomeRevista = colunas[1].replace("\"", "").trim();
+                    String estrato = colunas[3].replace("\"", "").trim();
+
+                    // Após extrair as variáveis da linha do CSV, faça a sanitização defensiva:
+
+                    if (issn != null && issn.length() > 20) {
+                        issn = issn.substring(0, 20);
+                    }
+
+                    if (nomeRevista != null && nomeRevista.length() > 500) {
+                        nomeRevista = nomeRevista.substring(0, 500); // Corta no limite do banco
+                    }
+
+                    if (estrato != null && estrato.length() > 5) {
+                        estrato = estrato.substring(0, 5);
+                    }
+
+                    if (!issn.isEmpty()) {
+                        Qualis qAtual = mapaQualis.get(issn);
+
+                        if (qAtual == null) {
+                            Qualis qNovo = new Qualis();
+                            qNovo.setIssn(issn);
+                            qNovo.setNomeRevista(nomeRevista);
+                            qNovo.setEstrato(estrato);
+                            mapaQualis.put(issn, qNovo);
+                        } else if (QualisDAO.pesoEstrato(estrato) > QualisDAO.pesoEstrato(qAtual.getEstrato())) {
+                            qAtual.setEstrato(estrato);
+                        }
+                    }
+                }
+            }
+
+            if (mapaQualis.isEmpty()) {
+                Clients.showNotification("O arquivo CSV parece estar vazio ou em formato inválido.", "warning", null, null, 3000);
+                return;
+            }
+
+            QualisDAO qualisDAO = new QualisDAO();
+            
+            // Limpa a base atual para evitar duplicatas e inconsistências
+            qualisDAO.limparTudo();
+            
+            // Salva em lote
+            List<Qualis> lote = new ArrayList<>(mapaQualis.values());
+            qualisDAO.salvarEmLote(lote);
+
+            Clients.showNotification("Qualis atualizado com sucesso! " + lote.size() + " registros importados.", "info", null, null, 4000);
+            logger.info(">>> Upload do Qualis processado com sucesso via interface. Total: {}", lote.size());
+
+            if (usuarioLogado != null) {
+                AuditLogService.log("QUALIS_UPLOAD", usuarioLogado.getLogin(), "Upload manual do Qualis com " + lote.size() + " revistas");
+            }
+
+        } catch (Exception e) {
+            logger.error("Erro ao processar ficheiro do Qualis", e);
+            Clients.showNotification("Erro ao processar o arquivo: " + e.getMessage(), "error", null, "middle-center", 6000);
+        }
+    }
+
+
+    @Command
     @NotifyChange("*")
     public void restaurarPadrao() {
         this.wsdlUrl = "http://localhost:8888/srvcurriculo/WSCurriculo?wsdl";
@@ -269,8 +391,10 @@ public class ConfigVM {
         this.backupTime = "02:00";
         this.smtpHost = "smtp.gmail.com";
         this.smtpPort = "587";
+        this.smtpPassword = "";
         this.systemEmail = "";
         this.adminEmail = "";
+        this.semanticScholarApiKey = "";
         this.notifyOutdated = false;
         this.notifyWeekly = false;
         this.notifyConnection = true;
@@ -310,10 +434,14 @@ public class ConfigVM {
     public void setSmtpHost(String smtpHost) { this.smtpHost = smtpHost; }
     public String getSmtpPort() { return smtpPort; }
     public void setSmtpPort(String smtpPort) { this.smtpPort = smtpPort; }
+    public String getSmtpPassword() { return smtpPassword; }
+    public void setSmtpPassword(String smtpPassword) { this.smtpPassword = smtpPassword; }
     public String getSystemEmail() { return systemEmail; }
     public void setSystemEmail(String systemEmail) { this.systemEmail = systemEmail; }
     public String getAdminEmail() { return adminEmail; }
     public void setAdminEmail(String adminEmail) { this.adminEmail = adminEmail; }
+    public String getSemanticScholarApiKey() { return semanticScholarApiKey; }
+    public void setSemanticScholarApiKey(String semanticScholarApiKey) { this.semanticScholarApiKey = semanticScholarApiKey; }
     public boolean isNotifyOutdated() { return notifyOutdated; }
     public void setNotifyOutdated(boolean notifyOutdated) { this.notifyOutdated = notifyOutdated; }
     public boolean isNotifyWeekly() { return notifyWeekly; }

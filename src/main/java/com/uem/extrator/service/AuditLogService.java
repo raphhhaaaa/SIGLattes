@@ -12,6 +12,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Calendar;
 
 public class AuditLogService {
 
@@ -79,14 +80,14 @@ public class AuditLogService {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
 
             // Calcula o intervalo do dia atual no lado Java (sem funções no SQL)
-            java.util.Calendar cal = java.util.Calendar.getInstance();
-            cal.set(java.util.Calendar.HOUR_OF_DAY, 0);
-            cal.set(java.util.Calendar.MINUTE, 0);
-            cal.set(java.util.Calendar.SECOND, 0);
-            cal.set(java.util.Calendar.MILLISECOND, 0);
+            Calendar cal = Calendar.getInstance();
+            cal.set(Calendar.HOUR_OF_DAY, 0);
+            cal.set(Calendar.MINUTE, 0);
+            cal.set(Calendar.SECOND, 0);
+            cal.set(Calendar.MILLISECOND, 0);
             Date inicioHoje = cal.getTime();
 
-            cal.add(java.util.Calendar.DAY_OF_MONTH, 1);
+            cal.add(Calendar.DAY_OF_MONTH, 1);
             Date inicioAmanha = cal.getTime();
 
             return session.createQuery(

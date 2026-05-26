@@ -24,18 +24,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.Semaphore;
+import java.net.Proxy;
+import java.lang.reflect.Method;
 
 public class SemanticScholarService {
 
     // logger instancia
     private static final Logger logger = LoggerFactory.getLogger(SemanticScholarService.class);
 
-    private static final String API_KEY = "rTIBDXH92K98RBMkcppjV5jetzlFfsadRR7xOfA9";
     private static final int RATE_LIMIT_DELAY_MS = ConfigManager.TEMPO_ESPERA_API_RATE_LIMIT_MS;
     private static final int MAX_RETRIES = 5;
     private static final Gson gson = new Gson();
     // semaphore
     private static final Semaphore pedagioApi = new Semaphore(ConfigManager.SEMAFORO_SEMANTIC_SCHOLAR);
+
+    private String getApiKey() {
+        return ConfigManager.getInstance().getSemanticScholarApiKey();
+    }
 
     public void enriquecerDadosBibliometricos(Curriculo curriculo, List<Producao> producoes) {
         if (curriculo == null || producoes == null) return;
@@ -332,9 +337,9 @@ public class SemanticScholarService {
                         }
 
                         String[] acesso = new String[]{"N/A", "secondary"};
-                            if (paper.has("isOpenAcess") && !paper.get("isOpenAcess").isJsonNull()) {
-                                boolean isOpen = paper.get("isOpenAcess").getAsBoolean();
-                                acesso = isOpen ? new String[]{"ABERTO", "sucess"} : new String[]{"FECHADO", "danger"};
+                            if (paper.has("isOpenAccess") && !paper.get("isOpenAccess").isJsonNull()) {
+                                boolean isOpen = paper.get("isOpenAccess").getAsBoolean();
+                                acesso = isOpen ? new String[]{"ABERTO", "success"} : new String[]{"FECHADO", "danger"};
                             }
 
                             resultado[0] = citacoes;
@@ -402,11 +407,12 @@ public class SemanticScholarService {
 
     private HttpURLConnection configurarConexao(String endpoint, String method) throws Exception {
         URL url = new URL(endpoint);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection(java.net.Proxy.NO_PROXY);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
 
         conn.setRequestMethod(method);
-        if (API_KEY != null && !API_KEY.isEmpty()) {
-            conn.setRequestProperty("x-api-key", API_KEY);
+        String apiKey = getApiKey();
+        if (apiKey != null && !apiKey.isEmpty()) {
+            conn.setRequestProperty("x-api-key", apiKey);
         }
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setRequestProperty("Accept", "application/json");
@@ -442,7 +448,7 @@ public class SemanticScholarService {
 
     private String obterOrcidSeExistir(Curriculo curriculo) {
         try {
-            java.lang.reflect.Method metodo = curriculo.getClass().getMethod("getOrcid");
+            Method metodo = curriculo.getClass().getMethod("getOrcid");
             Object resultado = metodo.invoke(curriculo);
             return (resultado != null) ? resultado.toString() : null;
         } catch (Exception e) {

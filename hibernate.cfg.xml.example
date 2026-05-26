@@ -12,15 +12,20 @@
         <property name="hibernate.c3p0.max_statements">50</property>
         <property name="hibernate.c3p0.idle_test_period">1800</property>
 
+        <!-- CONFIGURAÇÃO IBM DB2 (PADRÃO UEM) -->
+        <property name="connection.driver_class">com.ibm.db2.jcc.DB2Driver</property>
+        <property name="connection.url">jdbc:db2://localhost:50000/LATTES</property>
+        <property name="connection.username">db2inst1</property>
+        <property name="connection.password">sua_senha</property>
+        <property name="dialect">org.hibernate.dialect.DB2Dialect</property>
+
+        <!-- CONFIGURAÇÃO MYSQL (OPCIONAL)
         <property name="connection.driver_class">com.mysql.cj.jdbc.Driver</property>
-
         <property name="connection.url">jdbc:mysql://localhost:3306/LATTESEXTRATOR?useTimezone=true&amp;serverTimezone=UTC&amp;allowPublicKeyRetrieval=true&amp;useSSL=false</property>
-
-        <!-- credenciais -->
         <property name="connection.username">root</property>
         <property name="connection.password">sua_senha_aqui</property>
-
         <property name="dialect">org.hibernate.dialect.MySQL8Dialect</property>
+        -->
 
         <property name="hbm2ddl.auto">update</property>
 
@@ -37,6 +42,8 @@
         <mapping class="com.uem.extrator.model.Atividade"/>
         <mapping class="com.uem.extrator.model.AtividadeItem"/>
         <mapping class="com.uem.extrator.model.Usuario"/>
+        <mapping class="com.uem.extrator.model.Qualis"/>
+        <mapping class="com.uem.extrator.model.LogAuditoria"/>
 
     </session-factory>
 </hibernate-configuration>

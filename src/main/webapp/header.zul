@@ -26,8 +26,8 @@
                         <image src="/images/header_logo.png" style="height:70px"/>
                     </div>
                     <div class="ml-2 text-truncate">
-                        Extrator Lattes - UEM
-                        <n:small class="text-body-secondary text-truncate">Sistema de Gestão de Currículos Lattes</n:small>
+                        SIGLattes
+                        <n:small class="text-body-secondary text-truncate">Sistema de Gestão e Indicadores do currículo Lattes</n:small>
                     </div>
                 </div>
             </n:a>

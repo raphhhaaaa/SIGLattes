@@ -99,7 +99,7 @@
 
                 <div sclass="card-body p-0">
                     <listbox model="@load(vm.listaRelatorio)" emptyMessage="Nenhuma revista atende aos filtros atuais."
-                             sclass="table table-striped table-hover mb-0" mold="paging" pageSize="14"
+                             sclass="table-striped" mold="paging" pageSize="14"
                              style="border: none;">
 
                         <listhead sclass="bg-light">

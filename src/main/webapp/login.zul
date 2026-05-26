@@ -1,3 +1,4 @@
+<?taglib uri="http://www.zkoss.org/dsp/web/core" prefix="c"?>
 <?page title="Login - Extrator Lattes UEM" contentType="text/html;charset=UTF-8"?>
 <?link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico"?>
 <?link rel="stylesheet" type="text/css" href="/css/bootstrap.css"?>
@@ -7,38 +8,66 @@
 <zk>
     <style>
         body {
-        background-color: #f0f2f5;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+        .plano-de-fundo {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        .plano-de-fundo::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url(${c:encodeURL('/images/bg-uem.png')});
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: cover;
+            filter: blur(3px);
+            transform: scale(1.1);
+            z-index: -1;
         }
         .login-card {
-        width: 400px;
-        padding: 30px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        background: white;
+            width: 400px;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            background: rgba(255, 255, 255, 0.9);
+            position: relative;
+            z-index: 1;
         }
         .login-header {
-        text-align: center;
-        margin-bottom: 25px;
+            text-align: center;
+            margin-bottom: 25px;
         }
         .login-btn {
-        width: 100%;
-        margin-top: 15px;
-        font-weight: bold;
+            width: 100%;
+            margin-top: 15px;
+            font-weight: bold;
         }
     </style>
 
-    <div viewModel="@id('vm') @init('com.uem.extrator.viewmodel.LoginVM')"
-         style="height: 100%; display:flex; justify-content:center; align-items:center;">
+    <div sclass="plano-de-fundo" viewModel="@id('vm') @init('com.uem.extrator.viewmodel.LoginVM')">
 
         <vlayout sclass="login-card">
             <div sclass="login-header">
                 <image src="/images/uem.png" height="80px" />
                 <separator height="10px"/>
-                <label value="Extrator Lattes" sclass="h4" style="color:#005a9c; font-weight:bold;"/>
+                <label value="SIGLattes" sclass="h4" style="color:#005a9c; font-weight:bold;"/>
                 <div style="color:#666; font-size:12px;">// EM DESENVOLVIMENTO //</div>
             </div>
 
@@ -59,8 +88,8 @@
             <label value="@load(vm.mensagemErro)" style="color:red; font-size:12px; text-align:center; display:block;"/>
         </vlayout>
 
-        <div style="position:absolute; bottom:10px; text-align:center; width:100%; color:black; font-size:11px;">
-            © 2026 Universidade Estadual de Maringá - Pró-Reitoria de Planejamento e Desenvolvimento Institucional - Extrator Lattes v1.0
+        <div style="position:absolute; bottom:10px; text-align:center; width:100%; color:black; font-size:16px;">
+            © 2026 Universidade Estadual de Maringá - Pró-Reitoria de Planejamento e Desenvolvimento Institucional - SIGLattes v1.0
         </div>
     </div>
 </zk>

@@ -26,8 +26,8 @@ public class ConfigManager {
 
     // Motor de Concorrência e Rate Limiting
     public static final int MAX_THREADS_EXTRACAO = 30;       // Quantidade de threads simultâneas (Lattes)
-    public static final int SEMAFORO_SEMANTIC_SCHOLAR = 4;   // Conexões simultâneas permitidas (Rate Limit)
-    public static final int TEMPO_ESPERA_API_RATE_LIMIT_MS = 2000; // Espera em caso de HTTP 429
+    public static final int SEMAFORO_SEMANTIC_SCHOLAR = 1;   // Conexões simultâneas permitidas (Rate Limit 1 RPS)
+    public static final int TEMPO_ESPERA_API_RATE_LIMIT_MS = 1000; // Espera para respeitar 1 req/s
 
     // Throttling de Interface (Maestro UI)
     public static final int TEMPO_ATUALIZACAO_UI_MS = 1500;  // Ritmo de atualização da barra (1.5s)
@@ -42,12 +42,16 @@ public class ConfigManager {
     private static final String DEFAULT_VERIFY_INTERVAL = "24"; // horas
     private static final String DEFAULT_BACKUP_ENABLED = "false";
     private static final String DEFAULT_BACKUP_TIME = "02:00"; // horário de backup
+    private static final String DEFAULT_BACKUP_CONTAINER = "db2_server";
+    private static final String DEFAULT_BACKUP_COMMAND = "su - db2inst1 -c 'db2 backup database LATTES online to /database/data include logs'";
 
     // SMPT
     private static final String DEFAULT_SMTP_HOST = "smtp.gmail.com";
     private static final String DEFAULT_SMTP_PORT = "587";
+    private static final String DEFAULT_SMTP_PASSWORD = "";
     private static final String DEFAULT_SYSTEM_EMAIL = "";
     private static final String DEFAULT_ADMIN_EMAIL = "";
+    private static final String DEFAULT_SEMANTIC_SCHOLAR_API_KEY = "";
     private static final String DEFAULT_NOTIFY_OUTDATED = "false";
     private static final String DEFAULT_NOTIFY_WEEKLY = "false";
     private static final String DEFAULT_NOTIFY_CONNECTION = "true";
@@ -92,9 +96,14 @@ public class ConfigManager {
             properties.setProperty("verify_interval", DEFAULT_VERIFY_INTERVAL);
             properties.setProperty("backup_enabled", DEFAULT_BACKUP_ENABLED);
             properties.setProperty("backup_time", DEFAULT_BACKUP_TIME);
+            properties.setProperty("backup_container", DEFAULT_BACKUP_CONTAINER);
+            properties.setProperty("backup_command", DEFAULT_BACKUP_COMMAND);
             properties.setProperty("smtp_host", DEFAULT_SMTP_HOST);
             properties.setProperty("smtp_port", DEFAULT_SMTP_PORT);
+            properties.setProperty("smtp_password", DEFAULT_SMTP_PASSWORD);
             properties.setProperty("system_email", DEFAULT_SYSTEM_EMAIL);
+            properties.setProperty("admin_email", DEFAULT_ADMIN_EMAIL);
+            properties.setProperty("semantic_scholar_api_key", DEFAULT_SEMANTIC_SCHOLAR_API_KEY);
             properties.setProperty("notify_outdated", DEFAULT_NOTIFY_OUTDATED);
             properties.setProperty("notify_weekly", DEFAULT_NOTIFY_WEEKLY);
             properties.setProperty("notify_connection", DEFAULT_NOTIFY_CONNECTION);
@@ -146,7 +155,7 @@ public class ConfigManager {
 
     public int getVerifyInterval() {
         try { return Integer.parseInt(properties.getProperty("verify_interval", DEFAULT_VERIFY_INTERVAL)); }
-        catch (Exception e) { return 24; }
+        catch (NumberFormatException e) { return 24; }
     }
     public void setVerifyInterval(int h) { properties.setProperty("verify_interval", String.valueOf(h)); }
 
@@ -156,6 +165,12 @@ public class ConfigManager {
 
     public String getBackupTime() { return properties.getProperty("backup_time", DEFAULT_BACKUP_TIME); }
     public void setBackupTime(String t) { properties.setProperty("backup_time", t); }
+
+    public String getBackupContainer() { return properties.getProperty("backup_container", DEFAULT_BACKUP_CONTAINER); }
+    public void setBackupContainer(String c) { properties.setProperty("backup_container", c); }
+
+    public String getBackupCommand() { return properties.getProperty("backup_command", DEFAULT_BACKUP_COMMAND); }
+    public void setBackupCommand(String c) { properties.setProperty("backup_command", c); }
 
     public String getConfigPath() {
         return this.configPath;
@@ -168,11 +183,17 @@ public class ConfigManager {
     public String getSmtpPort() { return properties.getProperty("smtp_port", DEFAULT_SMTP_PORT); }
     public void setSmtpPort(String v) { properties.setProperty("smtp_port", v); }
 
+    public String getSmtpPassword() { return properties.getProperty("smtp_password", DEFAULT_SMTP_PASSWORD); }
+    public void setSmtpPassword(String v) { properties.setProperty("smtp_password", v); }
+
     public String getSystemEmail() { return properties.getProperty("system_email", DEFAULT_SYSTEM_EMAIL); }
     public void setSystemEmail(String v) { properties.setProperty("system_email", v); }
 
     public String getAdminEmail() { return properties.getProperty("admin_email", DEFAULT_ADMIN_EMAIL); }
     public void setAdminEmail(String v) { properties.setProperty("admin_email", v); }
+
+    public String getSemanticScholarApiKey() { return properties.getProperty("semantic_scholar_api_key", DEFAULT_SEMANTIC_SCHOLAR_API_KEY); }
+    public void setSemanticScholarApiKey(String v) { properties.setProperty("semantic_scholar_api_key", v); }
 
     public boolean isNotifyOutdated() { return Boolean.parseBoolean(properties.getProperty("notify_outdated", DEFAULT_NOTIFY_OUTDATED)); }
     public void setNotifyOutdated(boolean v) { properties.setProperty("notify_outdated", String.valueOf(v)); }
