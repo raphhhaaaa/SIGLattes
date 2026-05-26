@@ -232,7 +232,7 @@ o servidor. Através desta tela, o administrador configura intervalos de backup,
 de e-mail e outras propriedades do `ConfigManager` que ditam o comportamento da automação. É possível também nessa tela alterar
 o endpoint do webservice utilizado e fazer upload manual do arquivo .csv do Qualis CAPES.
 
-<img width="2566" height="1319" alt="Captura de tela de 2026-05-07 09-27-50" src="https://github.com/user-attachments/assets/0b18e3df-aca3-430e-a224-a134217ff1df" />
+<img width="2549" height="1229" alt="Captura de tela de 2026-05-26 08-58-01" src="https://github.com/user-attachments/assets/16ed01d3-9404-42f5-b66c-5122ebf6e748" />
 
 ### 📜 _Logs_
 Repositório de eventos que regista toda a atividade técnica e operacional da plataforma. Exibe o histórico de execução das
