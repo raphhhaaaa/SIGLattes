@@ -3,16 +3,16 @@ package com.uem.extrator.model;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "ATIVIDADE_ITEM", schema = "LATTESEXTRATOR")
+@Table(name = "ATIVIDADE_ITEM")
 public class AtividadeItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "cd_atividade_item")
+    @Column(name = "id_atividade_item")
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "cd_atividade", nullable = false)
+    @JoinColumn(name = "id_atividade", nullable = false)
     private Atividade atividade;
 
     @Column(name = "tp_item", length = 100)

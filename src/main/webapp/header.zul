@@ -14,20 +14,19 @@
         }
     </style>
 
-    <n:nav class="navbar pt-0 pl-0 pb-2" style="background-color: white; background-image:url(${c:encodeURL('/images/header_background.png')  }); background-repeat: repeat-x; background-position: bottom;">
-
+    <n:nav style="background-image:url(${c:encodeURL('/images/header_background.png')  }); background-repeat: no-repeat; background-position: center -20px; background-size: 100% 120%; min-height: 110px; padding: 0 !important; margin: 0 !important; display: flex; align-items: center; border: none;">
         <div class="container-fluid p-0 d-flex w-100 flex-nowrap justify-content-between align-items-center"
              apply="org.zkoss.bind.BindComposer"
              viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ExtratorVM')">
 
             <n:a href="/ExtratorLattes" style="text-decoration: none" class="text-truncate">
-                <div class="d-flex align-items-center m-0 h4 text-truncate">
+                <div class="d-flex align-items-center m-0 text-truncate">
                     <div>
-                        <image src="/images/header_logo.png" style="height:70px"/>
+                        <image src="/images/header_logo.png" style="height:90px"/>
                     </div>
-                    <div class="ml-2 text-truncate">
-                        SIGLattes
-                        <n:small class="text-body-secondary text-truncate">Sistema de Gestão e Indicadores do currículo Lattes</n:small>
+                    <div class="ml-3 text-truncate">
+                        <n:h2 class="mb-0 font-weight-bold" style="color: #0d6efd;">SIGLattes</n:h2>
+                        <n:h6 class="text-body-secondary text-truncate mb-0">Sistema de Gestão e Indicadores do currículo Lattes</n:h6>
                     </div>
                 </div>
             </n:a>

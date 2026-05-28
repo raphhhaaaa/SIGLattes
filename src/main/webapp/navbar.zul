@@ -35,11 +35,15 @@
            sclass="${desktop.requestPath.contains('cursoList') ? 'sidebar-item active' : 'sidebar-item'}"
            href="/paginas/curso/cursoList.zul" tooltiptext="Cursos Detectados"/>
 
-        <label value="ESTATÍSTICAS" sclass="sidebar-section-title"/>
+        <label value="RELATÓRIOS" sclass="sidebar-section-title"/>
 
-        <a label="Periódicos / Revistas" iconSclass="fas fa-book-open"
+        <a label="Dinâmico" iconSclass="fa-solid fa-chart-pie"
+           sclass="${desktop.requestPath.contains('relatorioDinamico') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/paginas/relatorio/relatorioDinamico.zul" tooltiptext="Análise de Periódicos"/>
+
+        <a label="Revistas" iconSclass="fas fa-book-open"
            sclass="${desktop.requestPath.contains('relatorioRevistas') ? 'sidebar-item active' : 'sidebar-item'}"
-           href="/paginas/relatorio/relatorioRevistas.zul" tooltiptext="Análise de Periódicos"/>
+           href="/paginas/relatorio/relatorioRevistas.zul" tooltiptext="Revistas"/>
 
         <a label="Produtividade" iconSclass="fas fa-chart-line"
            sclass="${desktop.requestPath.contains('relatorioProdutividade') ? 'sidebar-item active' : 'sidebar-item'}"
@@ -70,7 +74,7 @@
     </vlayout>
 
     <div sclass="sidebar-footer"
-         style="padding: 15px 10px; background-color: #ffffff; text-align: center; width: 100%;">
+         style="padding: 15px 10px; background-color: #ffffff; text-align: center; width: 100%; border-top: 0px;">
 
 
         <image src="/images/governopr2.png"

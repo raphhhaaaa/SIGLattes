@@ -4,28 +4,29 @@ import javax.persistence.*;
 import java.util.Date;
 
 @Entity
-@Table(name = "AUDITORIA_LOG", schema = "LATTESEXTRATOR")
+@Table(name = "AUDITORIA_LOG")
 public class LogAuditoria {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_log")
     private Long id;
 
-    @Column(name = "data_hora", nullable = false)
+    @Column(name = "dt_hora", nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date dataHora;
 
-    @Column(length = 50)
+    @Column(name = "tp_log", length = 50)
     private String tipo;
 
-    @Column(length = 50)
+    @Column(name = "nm_usuario", length = 50)
     private String usuario;
 
-    @Column(length = 100)
+    @Column(name = "cd_identificador", length = 100)
     private String identificador;
 
     @Lob
-    @Column(length = 32000)
+    @Column(name = "mg_log", length = 32000)
     private String mensagem;
 
     public LogAuditoria() {}

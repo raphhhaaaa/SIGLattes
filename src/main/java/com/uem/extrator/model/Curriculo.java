@@ -8,15 +8,15 @@ import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
 @Entity
-@Table(name = "CURRICULO", schema = "LATTESEXTRATOR", indexes = {
+@Table(name = "CURRICULO", indexes = {
         @Index(name = "idx_curr_nome", columnList = "nm_completo"), // Acelera ordenação alfabética
-        @Index(name = "idx_curr_lattes", columnList = "cd_cnpq")
+        @Index(name = "idx_curr_lattes", columnList = "id_cnpq")
 })
 public class Curriculo {
 
     @Id
-    @Column(name = "cd_cnpq", length = 16, nullable = false)
-    private String idLattes; // cd_cnpq no banco
+    @Column(name = "id_cnpq", length = 16, nullable = false)
+    private String idLattes; // id_cnpq no banco
 
     @Temporal(TemporalType.DATE)
     @Column(name = "dt_atualizacao")
@@ -28,14 +28,14 @@ public class Curriculo {
     @Column(name = "nm_citacao", length = 2000)
     private String nomeCitacao;
 
-    @Column(name = "indice_h")
+    @Column(name = "nu_indice_h")
     private Integer indiceH;
 
-    @Column(name = "ds_orcid", length = 100)
+    @Column(name = "cd_orcid", length = 100)
     private String orcid;
 
     @Lob
-    @Column(name = "ds_resumo", length = 32000)
+    @Column(name = "de_resumo", length = 32000)
     private String resumo;
 
     // Relacionamento com Formação

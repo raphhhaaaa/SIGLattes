@@ -7,26 +7,26 @@ import org.hibernate.annotations.Fetch;       // <--- IMPORTANTE
 import org.hibernate.annotations.FetchMode;
 
 @Entity
-@Table(name = "ATUACAO", schema = "LATTESEXTRATOR", indexes = {
-        @Index(name = "idx_atu_curr", columnList = "cd_cnpq"),
-        @Index(name = "idx_atu_inst", columnList = "cd_instituicao")
+@Table(name = "ATUACAO", indexes = {
+        @Index(name = "idx_atu_curr", columnList = "id_cnpq"),
+        @Index(name = "idx_atu_inst", columnList = "id_instituicao")
 })
 public class Atuacao {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "cd_atuacao")
+    @Column(name = "id_atuacao")
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "cd_cnpq", nullable = false)
+    @JoinColumn(name = "id_cnpq", nullable = false)
     private Curriculo curriculo;
 
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinColumn(name = "cd_instituicao", nullable = false)
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.ALL})
+    @JoinColumn(name = "id_instituicao", nullable = false)
     private Instituicao instituicao;
 
-    @Column(name = "nr_sequencia")
+    @Column(name = "sq_atuacao")
     private Integer sequencia;
 
     // LISTA 1 : VINCULOS (CARGOS/DATAS)

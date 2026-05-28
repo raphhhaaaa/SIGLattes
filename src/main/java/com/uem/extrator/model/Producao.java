@@ -5,21 +5,22 @@ import javax.transaction.TransactionScoped;
 import java.util.Date;
 
 @Entity
-@Table(name = "PRODUCAO", schema = "LATTESEXTRATOR", indexes = {
+@Table(name = "PRODUCAO", indexes = {
         @Index(name = "idx_prod_tipo", columnList = "tp_producao"), // Acelera filtro por Artigo/Evento
-        @Index(name = "idx_prod_ano", columnList = "ano_producao"),   // Acelera ordenação por ano
-        @Index(name = "idx_prod_curr", columnList = "curriculo_id"), // por id
-        @Index(name = "idx_prod_hash", columnList = "hash_titulo")
+        @Index(name = "idx_prod_ano", columnList = "an_producao"),   // Acelera ordenação por ano
+        @Index(name = "idx_prod_curr", columnList = "id_cnpq"), // por id
+        @Index(name = "idx_prod_hash", columnList = "cd_hash_titulo")
 })
 
 public class Producao {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_producao")
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "curriculo_id", nullable = false)
+    @JoinColumn(name = "id_cnpq", nullable = false)
     private Curriculo curriculo;
 
     // campos gerais
@@ -29,10 +30,10 @@ public class Producao {
     @Column(name = "ds_titulo", length = 4000)
     private String titulo;
 
-    @Column(name = "hash_titulo", length = 64)
+    @Column(name = "cd_hash_titulo", length = 64)
     private String hashTitulo;
 
-    @Column(name = "ano_producao")
+    @Column(name = "an_producao")
     private Integer ano;
 
     @Column(name = "nm_pais", length = 100)
@@ -41,10 +42,10 @@ public class Producao {
     @Column(name = "ds_idioma", length = 50)
     private String idioma;
 
-    @Column(name = "ds_doi", length = 500)
+    @Column(name = "cd_doi", length = 500)
     private String doi;
 
-    @Column(name = "nr_citacoes")
+    @Column(name = "nu_citacoes")
     private Integer citacoes;
 
     @Column(name = "ds_acesso", length = 20)

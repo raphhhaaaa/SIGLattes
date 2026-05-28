@@ -1,6 +1,7 @@
 package com.uem.extrator.service;
 
 import com.uem.extrator.model.*;
+import net.bytebuddy.asm.Advice;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -181,10 +182,15 @@ public class LattesParser {
                         detalheNomeEvento = null;
                         detalheAnais = null;
 
+
+
+
                     } else if ("DADOS-BASICOS-DO-ARTIGO".equals(currentElement) && producaoAtual != null) {
                         producaoAtual.setTitulo(getAttributeValueSafe(reader, "TITULO-DO-ARTIGO"));
                         producaoAtual.setHashTitulo(gerarHash(producaoAtual.getTitulo()));
-                        producaoAtual.setAno(parseIntSafe(getAttributeValueSafe(reader, "ANO-DO-ARTIGO")));
+                        Integer ano_Artigo = parseIntSafe(getAttributeValueSafe(reader, "ANO-DO-ARTIGO"));
+                        if (ano_Artigo > LocalDate.now().getYear() || ano_Artigo < 1960) ano_Artigo = LocalDate.now().getYear();
+                        producaoAtual.setAno(ano_Artigo);
                         producaoAtual.setPais(getAttributeValueSafe(reader, "PAIS-DE-PUBLICACAO"));
                         producaoAtual.setIdioma(getAttributeValueSafe(reader, "IDIOMA"));
 

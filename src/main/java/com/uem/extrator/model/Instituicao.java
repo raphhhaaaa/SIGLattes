@@ -3,7 +3,7 @@ package com.uem.extrator.model;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "INSTITUICAO", schema = "LATTESEXTRATOR", indexes = {
+@Table(name = "INSTITUICAO", indexes = {
         @Index(name = "idx_inst_nome", columnList = "nm_instituicao")
 })
 
@@ -11,7 +11,7 @@ public class Instituicao {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "cd_instituicao")
+    @Column(name = "id_instituicao")
     private Long id;
 
     @Column(name = "nm_instituicao", length = 500)

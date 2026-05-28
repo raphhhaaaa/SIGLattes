@@ -81,7 +81,7 @@
                                     border-radius:6px;
                                     border:1px solid #1e2127;
                                     box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);"
-                                 placeholder="-- Digite sua consulta aqui...&#10;Ex: SELECT c.nm_completo, count(p.id) as total_producoes &#10;FROM CURRICULO c &#10;JOIN PRODUCAO p ON c.cd_cnpq = p.curriculo_id &#10;GROUP BY c.nm_completo ORDER BY total_producoes DESC;" />
+                                 placeholder="-- Digite sua consulta aqui...&#10;Ex: SELECT c.nm_completo, count(p.id) as total_producoes &#10;FROM CURRICULO c &#10;JOIN PRODUCAO p ON c.id_cnpq = p.id_cnpq &#10;GROUP BY c.nm_completo ORDER BY total_producoes DESC;" />
 
                         <!-- BOTÕES -->
                         <hlayout hflex="1"

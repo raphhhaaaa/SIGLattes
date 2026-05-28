@@ -126,6 +126,7 @@ public class CurriculoDAO {
                                         formacao.setNomeCurso(cursoNoBanco);
                                         cursosProcessadosNestaTransacao.put(nomeNormalizado, cursoNoBanco);
                                     } else {
+                                        session.save(cursoCandidato);
                                         cursosProcessadosNestaTransacao.put(nomeNormalizado, cursoCandidato);
                                     }
                                 }
@@ -143,6 +144,7 @@ public class CurriculoDAO {
                                         formacao.setNomeInstituicao(instNoBanco);
                                         instituicoesProcessadasNestaTransacao.put(nomeInstNormalizado, instNoBanco);
                                     } else {
+                                        session.save(instCandidata);
                                         instituicoesProcessadasNestaTransacao.put(nomeInstNormalizado, instCandidata);
                                     }
                                 }
@@ -164,6 +166,7 @@ public class CurriculoDAO {
                                         atuacao.setInstituicao(instNoBanco);
                                         instituicoesProcessadasNestaTransacao.put(nomeInstNormalizado, instNoBanco);
                                     } else {
+                                        session.save(instCandidata);
                                         atuacao.setInstituicao(instCandidata);
                                         instituicoesProcessadasNestaTransacao.put(nomeInstNormalizado, instCandidata);
                                     }
@@ -172,7 +175,7 @@ public class CurriculoDAO {
                         }
                     }
 
-                    session.saveOrUpdate(curriculo);
+                    curriculo = (Curriculo) session.merge(curriculo);
                     session.getTransaction().commit();
 
                 } catch (Exception e) {

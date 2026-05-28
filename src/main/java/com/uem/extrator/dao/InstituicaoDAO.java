@@ -50,13 +50,13 @@ public class InstituicaoDAO {
              * mas em native query usamos diretamente.
              */
             String sql =
-                "SELECT i.nm_instituicao, COUNT(DISTINCT combined.cd_cnpq) AS qtd " +
-                "FROM LATTESEXTRATOR.INSTITUICAO i " +
+                "SELECT i.nm_instituicao, COUNT(DISTINCT combined.id_cnpq) AS qtd " +
+                "FROM INSTITUICAO i " +
                 "LEFT JOIN (" +
-                "   SELECT cd_instituicao, cd_cnpq FROM LATTESEXTRATOR.FORMACAO " +
+                "   SELECT id_instituicao, id_cnpq FROM FORMACAO " +
                 "   UNION ALL " +
-                "   SELECT cd_instituicao, cd_cnpq FROM LATTESEXTRATOR.ATUACAO " +
-                ") AS combined ON i.cd_instituicao = combined.cd_instituicao " +
+                "   SELECT id_instituicao, id_cnpq FROM ATUACAO " +
+                ") AS combined ON i.id_instituicao = combined.id_instituicao " +
                 "WHERE i.nm_instituicao IS NOT NULL " +
                 "AND (" +
                 "   LOCATE('UNIVERSIDADE', UPPER(i.nm_instituicao)) = 1 " +

@@ -223,17 +223,17 @@
 
 <!--                                    <n:br/>-->
 
-<!--                                    &lt;!&ndash; BOTÃO DE FORÇAR VERIFICAÇÃO &ndash;&gt;-->
-<!--                                    <zk if="${sessionScope.usuario_logado.admin}">-->
-<!--                                        <div sclass="form-group row">-->
-<!--                                            <div sclass="col-sm-12 text-right">-->
-<!--                                                <button label="Forçar verificação de curriculos"-->
-<!--                                                        onClick="@command('forcarVerificacao')"-->
-<!--                                                        iconSclass="fa fa-refresh"-->
-<!--                                                        sclass="btn btn-sm btn-outline-danger"/>-->
-<!--                                            </div>-->
-<!--                                        </div>-->
-<!--                                    </zk>-->
+                                    <!-- BOTÃO DE FORÇAR VERIFICAÇÃO -->
+                                    <zk if="${sessionScope.usuario_logado.admin}">
+                                        <div sclass="form-group row">
+                                            <div sclass="col-sm-12 text-right">
+                                                <button label="Forçar verificação de curriculos"
+                                                        onClick="@command('forcarVerificacao')"
+                                                        iconSclass="fa fa-refresh"
+                                                        sclass="btn btn-sm btn-outline-danger"/>
+                                            </div>
+                                        </div>
+                                    </zk>
 
                                 </div>
 
