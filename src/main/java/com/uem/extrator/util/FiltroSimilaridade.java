@@ -56,6 +56,21 @@ public class FiltroSimilaridade {
         return resultado;
     }
 
+    public static boolean isMesmoVeiculo(String veiculo1, String veiculo2) {
+        if ((veiculo1 == null || veiculo1.isEmpty()) || (veiculo2 == null || veiculo2.isEmpty())) return false;
+
+        String v1 = normalizar(veiculo1);
+        String v2 = normalizar(veiculo2);
+
+        if (v1.equals(v2)) return true;
+
+        float distanciaRelativa = distanciaRelativa(v1, v2);
+
+        if (distanciaRelativa < 0.15f && v1.length() > 5) return true;
+
+        return false;
+    }
+
     private static boolean isSiglaOuAbreviacao(String sigla, String nomeCompleto) {
         if (sigla.length() < 2 || sigla.length() > 10) return false;
         
