@@ -17,9 +17,9 @@
 
     <vlayout sclass="modern-sidebar" vflex="1" spacing="0" style="overflow-y: auto; overflow-x: hidden;">
 
-        <a label="Extrator Lattes" iconSclass="fas fa-cloud-download-alt"
+        <a label="Início" iconSclass="fas fa-cloud-download-alt"
            sclass="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? 'sidebar-item active' : 'sidebar-item'}"
-           href="/index.zul" tooltiptext="Extrator Lattes"/>
+           href="/index.zul" tooltiptext="Extrator"/>
 
         <label value="CADASTROS" sclass="sidebar-section-title"/>
 

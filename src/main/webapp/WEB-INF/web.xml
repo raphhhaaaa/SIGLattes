@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
          version="4.0">
 
-  <display-name>Extrator Lattes UEM</display-name>
+  <display-name>SIGLattes UEM</display-name>
 
   <listener>
     <description>ZK Session Cleaner</description>

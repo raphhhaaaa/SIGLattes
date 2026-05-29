@@ -1,4 +1,4 @@
-# 🎓 Extrator Lattes (CNPq) - UEM
+# 🎓 SIGLattes (CNPq) - UEM
 
 ![Java](https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
 ![Hibernate](https://img.shields.io/badge/Hibernate-59666C?style=for-the-badge&logo=hibernate&logoColor=white)
@@ -127,7 +127,7 @@ No arquivo ```src/main/resources/hibernate.cfg.xml```, configure suas credenciai
 
 ---
 
-## ⚒️ Extrator Lattes
+## ⚒️ SIGLattes
 
 ### 1. Login:
 Ao entrar no sistema pela primeira vez, o usuário se deparará com a tela de login, e os campos de Usuário e Senha, respectivamente. 

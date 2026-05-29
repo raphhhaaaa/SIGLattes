@@ -272,7 +272,7 @@ public class AutomacaoService {
         StringBuilder html = new StringBuilder();
         html.append("<div style='font-family: Arial, sans-serif; color: #333; max-width: 600px; border: 1px solid #ddd; padding: 20px;'>");
         html.append("<h2 style='color: #0056b3; border-bottom: 2px solid #0056b3; padding-bottom: 10px;'>📊 Resumo Semanal</h2>");
-        html.append("<p>Olá, aqui está o status atual do <strong>Extrator Lattes</strong>:</p>");
+        html.append("<p>Olá, aqui está o status atual do <strong>SIGLattes</strong>:</p>");
 
         html.append("<table style='width: 100%; border-collapse: collapse; margin-top: 20px;'>");
 

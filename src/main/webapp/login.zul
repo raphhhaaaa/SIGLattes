@@ -1,5 +1,5 @@
 <?taglib uri="http://www.zkoss.org/dsp/web/core" prefix="c"?>
-<?page title="Login - Extrator Lattes UEM" contentType="text/html;charset=UTF-8"?>
+<?page title="Login - SIGLattes UEM" contentType="text/html;charset=UTF-8"?>
 <?link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico"?>
 <?link rel="stylesheet" type="text/css" href="/css/bootstrap.css"?>
 <?link rel="stylesheet" type="text/css" href="/css/zkbootstrap.css"?>
@@ -22,7 +22,7 @@
             width: 100%;
             height: 100%;
             display: flex;
-            justify-content: center;
+            justify-content: right;
             align-items: center;
             overflow: hidden;
         }
@@ -42,7 +42,10 @@
             z-index: -1;
         }
         .login-card {
-            width: 400px;
+            max-height: fit-content;
+            height: -webkit-fill-available;
+            min-width: 33%;
+            align-content: center;
             padding: 30px;
             border-radius: 8px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
@@ -59,17 +62,85 @@
             margin-top: 15px;
             font-weight: bold;
         }
+
+        .instrucoes-card {
+            position: relative;
+            width: 55%;
+            height: 28%;
+            display: flex;
+            justify-content: right;
+            align-items: center;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            background: rgba(255, 255, 255, 0.97);
+            left: -160px;
+        }
+
+        .texto-instrucoes {
+            position: relative;
+            justify-content: center;
+            left: -125px;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-sig {
+            position: relative;
+            position: relative;
+            display: grid;
+            justify-content: center;
+            bottom: 153px;
+            left: 660px;
+        }
+
+        .texto-informativo {
+            font-size: 20px;
+
+        }
     </style>
 
     <div sclass="plano-de-fundo" viewModel="@id('vm') @init('com.uem.extrator.viewmodel.LoginVM')">
 
+        <div sclass="instrucoes-card text-center ml-auto mr-auto mb-2">
+
+            <div sclass="logo-sig">
+                <image class="mr-2" width="248.8px" height="70px" src="/images/logo-sig.png"/>
+            </div>
+
+
+            <div sclass="texto-instrucoes">
+
+                <html>
+                    <p class="texto-informativo">
+                        O sistema SIGLattes nasceu da necessidade de reunir e organizar os dados publicados nos currículos Lattes dos pesquisadores da universidade.
+                    </p>
+
+                    <p class="texto-informativo">
+                        O sistema realiza a busca dos currículos diretamente na base de dados do CNPq, por meio de um webservice disponibilizado e autorizado pelo próprio CNPq.
+                        A partir do currículo Lattes de cada docente, o SIGLattes executa a extração, o tratamento e o armazenamento das informações em banco de dados próprio.
+                    </p>
+
+                    <p class="texto-informativo">
+                        Com base nesses dados, o sistema realiza processos de seleção, classificação e agrupamento das informações, possibilitando a geração de indicadores e
+                        relatórios personalizados sobre a produção científica, tecnológica e acadêmica do corpo docente da instituição.
+                    </p>
+                </html>
+
+            </div>
+
+        </div>
+
         <vlayout sclass="login-card">
             <div sclass="login-header">
                 <image src="/images/uem.png" height="80px" />
+
                 <separator height="10px"/>
-                <label value="SIGLattes" sclass="h4" style="color:#005a9c; font-weight:bold;"/>
-                <div style="color:#666; font-size:12px;">// EM DESENVOLVIMENTO //</div>
+
+                <div style="color:#005a9c; font-weight:bold; font-size: 40px;">SIGLattes</div>
+                <div style="color:#666; font-size:20px;">// EM DESENVOLVIMENTO //</div>
             </div>
+
+            <separator bar="true" height="15px"/>
 
             <label value="Usuário" style="font-weight:bold;"/>
             <textbox value="@bind(vm.usuario)" width="100%" height="40px" placeholder="Digite seu login"
@@ -84,11 +155,14 @@
             <button label="ENTRAR" sclass="btn btn-primary login-btn"
                     onClick="@command('autenticar')" />
 
+            <a href="ExtratorLattes/login.zul">Esqueceu a senha?</a>
+            <a href="ExtratorLattes/login.zul">Guia de uso</a>
+
             <separator height="10px"/>
             <label value="@load(vm.mensagemErro)" style="color:red; font-size:12px; text-align:center; display:block;"/>
         </vlayout>
 
-        <div style="position:absolute; bottom:10px; text-align:center; width:100%; color:black; font-size:16px;">
+        <div style="position:absolute; bottom:10px; text-align:center; width:100%; color:black; font-size:16px; left: -450px">
             © 2026 Universidade Estadual de Maringá - Pró-Reitoria de Planejamento e Desenvolvimento Institucional - SIGLattes v1.0
         </div>
     </div>

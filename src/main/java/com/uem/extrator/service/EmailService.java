@@ -74,7 +74,7 @@ public class EmailService {
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(destinatario));
 
             // E-mail
-            message.setSubject("[Extrator Lattes] " + assunto);
+            message.setSubject("[SIGLattes] " + assunto);
             message.setContent(corpo, "text/html; charset=utf-8");
 
             // envio

@@ -27,7 +27,7 @@ public class Producao {
     @Column(name = "tp_producao", length = 50)
     private String tipo; // "ARTIGO", "LIVRO", "EVENTO"
 
-    @Column(name = "ds_titulo", length = 4000)
+    @Column(name = "de_titulo", length = 4000)
     private String titulo;
 
     @Column(name = "cd_hash_titulo", length = 64)
@@ -39,7 +39,7 @@ public class Producao {
     @Column(name = "nm_pais", length = 100)
     private String pais;
 
-    @Column(name = "ds_idioma", length = 50)
+    @Column(name = "de_idioma", length = 50)
     private String idioma;
 
     @Column(name = "cd_doi", length = 500)
@@ -48,7 +48,7 @@ public class Producao {
     @Column(name = "nu_citacoes")
     private Integer citacoes;
 
-    @Column(name = "ds_acesso", length = 20)
+    @Column(name = "de_acesso", length = 20)
     private String statusAcesso = "-";
 
     @Column(name = "dt_atualizacao_metricas")
@@ -66,10 +66,10 @@ public class Producao {
     @Column(name = "cd_isbn_issn", length = 70)
     private String isbnIssn;        // Código de identificação internacional de livros (isbn) e artigos (issn).
 
-    @Column(name = "ds_vol_paginas", length = 1000)
+    @Column(name = "de_vol_paginas", length = 1000)
     private String volumePaginas;
 
-    @Column(name = "ds_natureza", length = 50)
+    @Column(name = "de_natureza", length = 50)
     private String natureza;        // "COMPLETO", "RESUMO"
 
     @Transient
