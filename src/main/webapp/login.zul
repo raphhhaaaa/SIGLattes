@@ -66,36 +66,35 @@
         .instrucoes-card {
             position: relative;
             width: 55%;
-            height: 28%;
+            height: 24%;
             display: flex;
-            justify-content: right;
+            flex-direction: column;
+            justify-content: center;
             align-items: center;
             overflow: hidden;
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
             background: rgba(255, 255, 255, 0.97);
             left: -160px;
-        }
-
-        .texto-instrucoes {
-            position: relative;
-            justify-content: center;
-            left: -125px;
-            display: flex;
-            align-items: center;
+            padding: 24px 40px;
+            gap: 16px;
         }
 
         .logo-sig {
-            position: relative;
-            position: relative;
-            display: grid;
+            display: flex;
             justify-content: center;
-            bottom: 153px;
-            left: 660px;
+            align-items: center;
+        }
+
+        .texto-instrucoes {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
         }
 
         .texto-informativo {
-            font-size: 20px;
-
+            font-size: 18px;
+            margin-bottom: 8px;
         }
     </style>
 
@@ -136,8 +135,8 @@
 
                 <separator height="10px"/>
 
-                <div style="color:#005a9c; font-weight:bold; font-size: 40px;">SIGLattes</div>
-                <div style="color:#666; font-size:20px;">// EM DESENVOLVIMENTO //</div>
+                <div style="color:#005a9c; font-weight:bold; font-size: 30px;">SIGLattes</div>
+                <div style="color:#666; font-size:17px;">// EM DESENVOLVIMENTO //</div>
             </div>
 
             <separator bar="true" height="15px"/>
@@ -155,8 +154,8 @@
             <button label="ENTRAR" sclass="btn btn-primary login-btn"
                     onClick="@command('autenticar')" />
 
-            <a href="ExtratorLattes/login.zul">Esqueceu a senha?</a>
-            <a href="ExtratorLattes/login.zul">Guia de uso</a>
+            <html><![CDATA[<a href="https://npd.uem.br/senha/geraenvsenha.php?uid=ra" target="_blank">Esqueceu a senha?</a> <i><small style="color:gray;"> <strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Nota:</strong> para contas locais, contate o Administrador</small></i]]></html>
+            <a href="guia-de-uso.html" target="_blank">Guia de uso</a>
 
             <separator height="10px"/>
             <label value="@load(vm.mensagemErro)" style="color:red; font-size:12px; text-align:center; display:block;"/>

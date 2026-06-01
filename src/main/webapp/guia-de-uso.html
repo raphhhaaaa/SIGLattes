@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia de Uso — SIGLattes UEM</title>
+    <link rel="shortcut icon" type="image/x-icon" href="images/favicon.ico">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        /* ─── Reset & Base ─────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        :root {
+            --azul-uem:      #005a9c;
+            --azul-uem-dark: #003f6e;
+            --azul-light:    #e8f0fa;
+            --verde-admin: #1a7f33;
+            --verde-light:   #e6f4ef;
+            --amarelo:       #f59e0b;
+            --cinza-100:     #f3f4f6;
+            --cinza-200:     #e5e7eb;
+            --cinza-600:     #4b5563;
+            --cinza-800:     #1f2937;
+            --white:         #ffffff;
+            --radius:        10px;
+            --shadow:        0 2px 12px rgba(0,0,0,0.10);
+        }
+
+        html { font-size: 17.5px; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+            background: var(--cinza-100);
+            color: var(--cinza-800);
+            line-height: 1.6;
+        }
+
+        /* ─── PDF print ─────────────────────────────────── */
+        @media print {
+            body { background: white; font-size: 11pt; }
+            .no-print { display: none !important; }
+            .page-break { page-break-before: always; }
+            section { page-break-inside: avoid; }
+            h1, h2, h3 { page-break-after: avoid; }
+        }
+
+        /* ─── Cover ─────────────────────────────────────── */
+        .cover {
+            background: linear-gradient(135deg, var(--azul-uem-dark) 0%, var(--azul-uem) 60%, #1a8dc8 100%);
+            color: white;
+            text-align: center;
+            padding: 60px 40px 50px;
+            position: relative;
+            overflow: hidden;
+        }
+        .cover::before {
+            content: '';
+            position: absolute;
+            top: -80px; right: -80px;
+            width: 320px; height: 320px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.06);
+        }
+        .cover::after {
+            content: '';
+            position: absolute;
+            bottom: -60px; left: -60px;
+            width: 240px; height: 240px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+        }
+        .cover-logo {
+            width: 90px;
+            margin-bottom: 18px;
+            filter: brightness(0) invert(1);
+            opacity: 0.95;
+        }
+        .cover h1 {
+            font-size: 2.6rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+        }
+        .cover .subtitle {
+            font-size: 1.05rem;
+            opacity: 0.85;
+            margin-bottom: 24px;
+        }
+        .cover .badge-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            background: rgba(255,255,255,0.18);
+            border: 1px solid rgba(255,255,255,0.30);
+            border-radius: 999px;
+            padding: 5px 14px;
+            font-size: 1.38rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        /* ─── Back button ────────────────────────────────── */
+        .btn-voltar {
+            position: fixed;
+            top: 18px;
+            left: 18px;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.18);
+            border: 2px solid rgba(255,255,255,0.50);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 0.88rem;
+            font-weight: 600;
+            text-decoration: none;
+            backdrop-filter: blur(6px);
+            transition: background 0.2s, border-color 0.2s;
+            font-family: inherit;
+        }
+        .btn-voltar:hover {
+            background: rgba(255,255,255,0.32);
+            border-color: rgba(255,255,255,0.80);
+            color: white;
+            text-decoration: none;
+        }
+
+        /* ─── Print button ───────────────────────────────── */
+        .btn-print {
+            position: fixed;
+            top: 18px;
+            right: 18px;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.18);
+            border: 2px solid rgba(255,255,255,0.50);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 0.88rem;
+            font-weight: 600;
+            text-decoration: none;
+            backdrop-filter: blur(6px);
+            transition: background 0.2s, border-color 0.2s;
+            font-family: inherit;
+        }
+        .btn-print:hover {
+            background: rgba(255,255,255,0.32);
+            border-color: rgba(255,255,255,0.80);
+        }
+
+        /* ─── Layout ─────────────────────────────────────── */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 24px 60px;
+        }
+
+        /* ─── TOC ────────────────────────────────────────── */
+        .toc {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 28px 32px;
+            margin-bottom: 36px;
+        }
+        .toc h2 {
+            font-size: 0.80rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--azul-uem);
+            margin-bottom: 16px;
+        }
+        .toc ol { padding-left: 20px; }
+        .toc li { margin: 6px 0; font-size: 0.97rem; }
+        .toc a { color: var(--azul-uem); text-decoration: none; font-weight: 500; }
+        .toc a:hover { text-decoration: underline; }
+
+        /* ─── Section heading ────────────────────────────── */
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 40px 0 18px;
+        }
+        .section-title .icon {
+            width: 38px; height: 38px;
+            border-radius: 10px;
+            background: transparent;
+            color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .section-title h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--azul-uem-dark);
+        }
+
+        /* ─── Cards ──────────────────────────────────────── */
+        .card {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 24px 28px;
+            margin-bottom: 20px;
+        }
+        .card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--azul-uem-dark);
+        }
+        .card p { margin-bottom: 10px; color: var(--cinza-600); font-size: 0.97rem; }
+        .card p:last-child { margin-bottom: 0; }
+
+        /* ─── Steps ──────────────────────────────────────── */
+        .steps { list-style: none; padding: 0; }
+        .steps li {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--cinza-200);
+        }
+        .steps li:last-child { border-bottom: none; }
+        .step-num {
+            width: 30px; height: 30px;
+            background: var(--azul-uem);
+            color: white;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.85rem;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .step-text { flex: 1; }
+        .step-text strong { display: block; margin-bottom: 3px; color: var(--cinza-800); }
+        .step-text span { color: var(--cinza-600); font-size: 0.96rem; }
+
+        /* ─── Info callout ───────────────────────────────── */
+        .callout {
+            border-left: 4px solid var(--azul-uem);
+            background: var(--azul-light);
+            border-radius: 0 var(--radius) var(--radius) 0;
+            padding: 14px 18px;
+            margin: 16px 0;
+            color: var(--azul-uem-dark);
+            font-size: 0.97rem;
+        }
+        .callout.warn {
+            border-color: var(--amarelo);
+            background: #fffbea;
+            color: #78350f;
+        }
+        .callout.success {
+            border-color: var(--verde-admin);
+            background: var(--verde-light);
+            color: var(--verde-admin);
+        }
+
+        /* ─── Access level cards ─────────────────────────── */
+        .access-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 620px) { .access-grid { grid-template-columns: 1fr; } }
+
+        .access-card {
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
+        .access-card.default {
+            background: linear-gradient(135deg, #0d3d6b 0%, var(--azul-uem) 100%);
+            color: white;
+        }
+
+        .access-card .role-label {
+            font-size: 0.70rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            opacity: 0.75;
+            margin-bottom: 6px;
+        }
+        .access-card h3 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+        .access-card ul { padding-left: 18px; }
+        .access-card li {
+            margin-bottom: 7px;
+            font-size: 0.97rem;
+            opacity: 0.92;
+        }
+        .access-card .access-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        /* ─── Feature table ──────────────────────────────── */
+        .feat-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            font-size: 0.96rem;
+        }
+        .feat-table th {
+            background: var(--azul-uem);
+            color: white;
+            padding: 11px 14px;
+            text-align: left;
+            font-weight: 600;
+        }
+        .feat-table td { padding: 10px 14px; border-bottom: 1px solid var(--cinza-200); }
+        .feat-table tr:last-child td { border-bottom: none; }
+        .feat-table tr:nth-child(even) td { background: var(--cinza-100); }
+        .check { color: #16a34a; font-weight: 700; }
+        .cross { color: #dc2626; font-weight: 700; }
+
+        /* ─── Footer ─────────────────────────────────────── */
+        .footer {
+            background: var(--azul-uem-dark);
+            color: rgba(255,255,255,0.70);
+            text-align: center;
+            padding: 22px 24px;
+            font-size: 0.82rem;
+        }
+        .footer strong { color: white; }
+    </style>
+</head>
+<body>
+
+<!-- ══════════════ BOTÕES FIXOS ══════════════ -->
+<a class="btn-voltar no-print" href="SIGLattes/login.zul">
+    <i class="fa-solid fa-angle-left"></i> Voltar
+</a>
+<button class="btn-print no-print" onclick="window.print()">
+    <i class="fa-solid fa-print"></i> Salvar / Imprimir
+</button>
+
+<!-- ══════════════ CAPA ══════════════ -->
+<div class="cover">
+    <h1>SIGLattes</h1>
+    <p class="subtitle">Guia de Uso do Sistema — Universidade Estadual de Maringá</p>
+    <div class="badge-row">
+        <span class="badge">🎓 Plataforma Lattes / CNPq</span>
+        <span class="badge">🏛️ UEM — PLD / LNI</span>
+        <span class="badge">📄 v1.0 · 2026</span>
+    </div>
+</div>
+
+<!-- ══════════════ CONTEÚDO ══════════════ -->
+<div class="container">
+
+    <!-- Sumário -->
+    <div class="toc">
+        <h2>📋 Sumário</h2>
+        <ol>
+            <li><a href="#sobre">Sobre o SIGLattes</a></li>
+            <li><a href="#acesso">Como Acessar o Sistema</a></li>
+            <li><a href="#login">Métodos de Autenticação</a></li>
+            <li><a href="#admin">Perfil: Administrador</a></li>
+            <li><a href="#usuario">Perfil: Usuário Comum</a></li>
+            <li><a href="#comparativo">Comparativo de Funcionalidades</a></li>
+            <li><a href="#paginas">Resumo das Páginas</a></li>
+            <li><a href="#duvidas">Dúvidas e Suporte</a></li>
+        </ol>
+    </div>
+
+    <!-- 1. Sobre -->
+    <div id="sobre">
+        <div class="section-title">
+            <div class="icon">📖</div>
+            <h2>1. Sobre o SIGLattes</h2>
+        </div>
+        <div class="card">
+            <p>
+                O <strong>SIGLattes</strong> é um sistema desenvolvido internamente pela
+                <strong>Universidade Estadual de Maringá (UEM)</strong>, sob gestão da
+                Pró-Reitoria de Planejamento e Desenvolvimento Institucional — Divisão de
+                Informações e Planos (PLD/LNI).
+            </p>
+            <p>
+                Sua finalidade é automatizar a recuperação, o tratamento e a análise dos
+                <strong>Currículos Lattes</strong> dos pesquisadores da instituição, conectando-se
+                ao WebService oficial do CNPq para obter dados atualizados diretamente na fonte.
+            </p>
+            <p>
+                Com base nesses dados, o sistema gera <strong>indicadores, relatórios e painéis</strong>
+                que apoiam a tomada de decisão da gestão universitária: distribuição de bolsas,
+                progressões de carreira, formação de comitês e atendimento a editais de fomento.
+            </p>
+            <div class="callout warn">
+                ⚠️ Este sistema é de uso <strong>interno e restrito</strong> à UEM. O acesso
+                por usuários não autorizados ou o compartilhamento de credenciais é proibido e
+                poderá acarretar medidas administrativas.
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Como Acessar -->
+    <div id="acesso">
+        <div class="section-title">
+            <div class="icon">🌐</div>
+            <h2>2. Como Acessar o Sistema</h2>
+        </div>
+        <div class="card">
+            <h3>Endereço de Acesso</h3>
+            <p>
+                O SIGLattes é uma aplicação web acessada pelo navegador de internet.
+                Digite o endereço abaixo na barra de endereços do seu navegador:
+            </p>
+            <div class="callout" style="font-size:1.05rem; font-weight:600; letter-spacing:0.3px;">
+                http://&lt;servidor-uem&gt;:8080/SIGLattes/
+            </div>
+            <p style="margin-top:12px;">
+                <em>(O endereço exato do servidor é fornecido pelo administrador do sistema.
+                Em ambiente de desenvolvimento local, use
+                <strong>http://localhost:8080/SIGLattes/</strong>.)</em>
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>Requisitos para Acesso</h3>
+            <ul class="steps">
+                <li>
+                    <div class="step-num">1</div>
+                    <div class="step-text">
+                        <strong>Navegador Atualizado</strong>
+                        <span>Use Google Chrome, Mozilla Firefox, Microsoft Edge ou Safari em versões recentes.</span>
+                    </div>
+                </li>
+                <li>
+                    <div class="step-num">2</div>
+                    <div class="step-text">
+                        <strong>Rede da UEM ou VPN Institucional</strong>
+                        <span>O sistema está disponível apenas dentro da rede da universidade. Para acesso externo, utilize a VPN institucional da UEM.</span>
+                    </div>
+                </li>
+                <li>
+                    <div class="step-num">3</div>
+                    <div class="step-text">
+                        <strong>Credenciais de Acesso</strong>
+                        <span>Você precisa de um login e senha válidos — fornecidos pelo administrador do sistema ou via credenciais institucionais (LDAP UEM).</span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 3. Login -->
+    <div id="login">
+        <div class="section-title">
+            <div class="icon">🔐</div>
+            <h2>3. Métodos de Autenticação</h2>
+        </div>
+
+        <div class="card">
+            <p>Ao acessar o endereço do sistema, você verá a tela de login com dois campos:
+               <strong>Usuário</strong> e <strong>Senha</strong>. Existem dois caminhos para entrar:</p>
+        </div>
+
+        <div class="card">
+            <h3>🔑 Método 1 — Conta criada pelo Administrador</h3>
+            <ul class="steps">
+                <li>
+                    <div class="step-num">1</div>
+                    <div class="step-text">
+                        <strong>Solicite uma conta</strong>
+                        <span>Entre em contato com o administrador do SIGLattes para que ele crie um perfil para você no sistema.</span>
+                    </div>
+                </li>
+                <li>
+                    <div class="step-num">2</div>
+                    <div class="step-text">
+                        <strong>Receba suas credenciais</strong>
+                        <span>O administrador irá fornecer seu nome de usuário e senha iniciais.</span>
+                    </div>
+                </li>
+                <li>
+                    <div class="step-num">3</div>
+                    <div class="step-text">
+                        <strong>Faça login</strong>
+                        <span>Digite o usuário e a senha nos campos correspondentes e clique em <strong>ENTRAR</strong> (ou pressione Enter).</span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h3>🏛️ Método 2 — Autenticação LDAP UEM (Credenciais Institucionais)</h3>
+            <ul class="steps">
+                <li>
+                    <div class="step-num">1</div>
+                    <div class="step-text">
+                        <strong>Use seu login institucional</strong>
+                        <span>Digite o mesmo usuário e senha que você usa nos sistemas da UEM (e-mail institucional, portal do professor, SISAV etc.).</span>
+                    </div>
+                </li>
+                <li>
+                    <div class="step-num">2</div>
+                    <div class="step-text">
+                        <strong>Validação automática</strong>
+                        <span>O sistema irá verificar suas credenciais junto ao servidor LDAP da UEM. Caso autorizado, uma conta temporária é criada automaticamente.</span>
+                    </div>
+                </li>
+            </ul>
+            <div class="callout warn" style="margin-top:14px;">
+                A autenticação LDAP é restrita a <strong>docentes e funcionários</strong>
+                vinculados à UEM. Alunos não têm acesso por padrão.
+            </div>
+        </div>
+
+        <div class="callout success">
+            ✅ Após o login bem-sucedido, você será redirecionado automaticamente para a
+            <strong>Página Inicial (Dashboard)</strong> do SIGLattes.
+        </div>
+    </div>
+
+    <!-- 4. Admin -->
+    <div id="admin" class="page-break">
+        <div class="section-title">
+            <h2>4. Perfil: Administrador</h2>
+        </div>
+
+        <div class="access-grid">
+            <div class="access-card default">
+                <div class="access-icon">👑</div>
+                <div class="role-label">Nível de Acesso</div>
+                <h3>Administrador</h3>
+                <ul>
+                    <li>Acesso total ao sistema</li>
+                    <li>Gerencia usuários e permissões</li>
+                    <li>Acessa configurações operacionais</li>
+                    <li>Consulta SQL livre no banco</li>
+                    <li>Upload manual de XML de currículo</li>
+                    <li>Upload do arquivo Qualis CAPES</li>
+                    <li>Visualiza logs e auditoria</li>
+                    <li>Controla automações e backups</li>
+                </ul>
+            </div>
+
+            <div class="card" style="margin:0;">
+                <h3>O que o Administrador pode fazer?</h3>
+                <p>
+                    O perfil de <strong>Administrador</strong> possui controle integral sobre
+                    todas as funcionalidades do SIGLattes, incluindo as áreas sensíveis de
+                    configuração e gestão de infraestrutura.
+                </p>
+                <p>
+                    Além de tudo que o Usuário Comum pode fazer, o Administrador tem acesso exclusivo a:
+                </p>
+                <ul style="padding-left:18px; color:var(--cinza-600); font-size:0.92rem;">
+                    <li style="margin-bottom:6px;"><strong>Gestão de Usuários:</strong> criação, edição e remoção de contas e permissões.</li>
+                    <li style="margin-bottom:6px;"><strong>Configurações do Sistema:</strong> intervalos de backup, sincronização, credenciais de e-mail e endpoint do WebService.</li>
+                    <li style="margin-bottom:6px;"><strong>Consulta SQL Livre:</strong> execução de comandos SQL de leitura diretamente no banco de dados.</li>
+                    <li style="margin-bottom:6px;"><strong>Upload de XML:</strong> importação manual de arquivos XML de currículo Lattes.</li>
+                    <li style="margin-bottom:6px;"><strong>Qualis CAPES:</strong> upload do arquivo .csv com a classificação atualizada das revistas.</li>
+                    <li><strong>Logs e Auditoria:</strong> visualização do histórico completo de eventos, acessos e erros do sistema.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top:20px;">
+            <h3>Responsabilidades do Administrador</h3>
+            <ul class="steps">
+                <li>
+                    <div class="step-num">📌</div>
+                    <div class="step-text">
+                        <strong>Criar e gerenciar contas de usuários</strong>
+                        <span>Acesse <em>Sistema &rarr; Usuários</em> para criar perfis, definir o nível de acesso (Admin ou Usuário Comum) e desativar contas quando necessário.</span>
+                    </div>
+                </li>
+                <li>
+                    <div class="step-num">⚙️</div>
+                    <div class="step-text">
+                        <strong>Manter as configurações operacionais</strong>
+                        <span>Acesse <em>Sistema &rarr; Configurações</em> para ajustar parâmetros como agendamento de backups, sincronização automática de currículos e serviço de e-mail.</span>
+                    </div>
+                </li>
+                <li>
+                    <div class="step-num">🔍</div>
+                    <div class="step-text">
+                        <strong>Monitorar o sistema via Logs</strong>
+                        <span>Acesse <em>Sistema &rarr; Logs</em> para verificar o histórico de extrações, tentativas de login, erros e status das automações em segundo plano.</span>
+                    </div>
+                </li>
+                <li>
+                    <div class="step-num">🗄️</div>
+                    <div class="step-text">
+                        <strong>Consultas avançadas ao banco de dados</strong>
+                        <span>Acesse <em>Relatórios &rarr; Consulta SQL Livre</em> para executar queries de leitura personalizadas — útil para relatórios emergenciais ou análises não cobertas pela interface.</span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 5. Usuário Comum -->
+    <div id="usuario">
+        <div class="section-title">
+            <h2>5. Perfil: Usuário Comum</h2>
+        </div>
+
+        <div class="access-grid">
+            <div class="access-card default">
+                <div class="access-icon">👤</div>
+                <div class="role-label">Nível de Acesso</div>
+                <h3>Usuário Comum</h3>
+                <ul>
+                    <li>Acesso às funções de análise</li>
+                    <li>Extração de novos currículos</li>
+                    <li>Consulta de cadastros</li>
+                    <li>Geração de relatórios</li>
+                    <li>Verificação de atualizações</li>
+                    <li>Visualização do dashboard</li>
+                </ul>
+            </div>
+
+            <div class="card" style="margin:0;">
+                <h3>O que o Usuário Comum pode fazer?</h3>
+                <p>
+                    O <strong>Usuário Comum</strong> tem acesso às principais ferramentas de
+                    extração e análise de dados do SIGLattes, sem acesso às funcionalidades
+                    administrativas e de configuração do sistema.
+                </p>
+                <ul style="padding-left:18px; color:var(--cinza-600); font-size:0.92rem;">
+                    <li style="margin-bottom:6px;"><strong>Extração de Currículos:</strong> por ID Lattes, por CPF ou em lote.</li>
+                    <li style="margin-bottom:6px;"><strong>Cadastros:</strong> consultar pessoas, instituições e cursos registrados.</li>
+                    <li style="margin-bottom:6px;"><strong>Relatórios:</strong> Relatório Dinâmico, Relatório de Revistas e Relatório de Produtividade.</li>
+                    <li style="margin-bottom:6px;"><strong>Verificar Atualizações:</strong> identificar e atualizar currículos desatualizados.</li>
+                    <li><strong>Dashboard:</strong> visualizar gráficos e métricas gerais da produção científica.</li>
+                </ul>
+                <div class="callout warn" style="margin-top:14px; font-size:0.88rem;">
+                    🚫 Funcionalidades exclusivas do Administrador (Usuários, Configurações, Logs e Consulta SQL) não aparecem no menu para este perfil.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Comparativo -->
+    <div id="comparativo" class="page-break">
+        <div class="section-title">
+            <div class="icon">⚖️</div>
+            <h2>6. Comparativo de Funcionalidades</h2>
+        </div>
+        <table class="feat-table">
+            <thead>
+                <tr>
+                    <th>Funcionalidade</th>
+                    <th style="text-align:center;">👑 Admin</th>
+                    <th style="text-align:center;">👤 Usuário Comum</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Dashboard / Página Inicial</td><td class="check" style="text-align:center;">✔</td><td class="check" style="text-align:center;">✔</td></tr>
+                <tr><td>Extrair currículo por ID Lattes</td><td class="check" style="text-align:center;">✔</td><td class="check" style="text-align:center;">✔</td></tr>
+                <tr><td>Extrair currículo por CPF</td><td class="check" style="text-align:center;">✔</td><td class="check" style="text-align:center;">✔</td></tr>
+                <tr><td>Extração em Lote</td><td class="check" style="text-align:center;">✔</td><td class="check" style="text-align:center;">✔</td></tr>
+                <tr><td>Upload de XML (currículo)</td><td class="check" style="text-align:center;">✔</td><td class="cross" style="text-align:center;">✗</td></tr>
+                <tr><td>Verificar e Atualizar Currículos</td><td class="check" style="text-align:center;">✔</td><td class="check" style="text-align:center;">✔</td></tr>
+                <tr><td>Cadastro de Pessoas</td><td class="check" style="text-align:center;">✔</td><td class="check" style="text-align:center;">✔</td></tr>
+                <tr><td>Cadastro de Instituições</td><td class="check" style="text-align:center;">✔</td><td class="check" style="text-align:center;">✔</td></tr>
+                <tr><td>Cadastro de Cursos</td><td class="check" style="text-align:center;">✔</td><td class="check" style="text-align:center;">✔</td></tr>
+                <tr><td>Relatório Dinâmico</td><td class="check" style="text-align:center;">✔</td><td class="check" style="text-align:center;">✔</td></tr>
+                <tr><td>Relatório de Revistas</td><td class="check" style="text-align:center;">✔</td><td class="check" style="text-align:center;">✔</td></tr>
+                <tr><td>Relatório de Produtividade</td><td class="check" style="text-align:center;">✔</td><td class="check" style="text-align:center;">✔</td></tr>
+                <tr><td>Consulta SQL Livre</td><td class="check" style="text-align:center;">✔</td><td class="cross" style="text-align:center;">✗</td></tr>
+                <tr><td>Gestão de Usuários</td><td class="check" style="text-align:center;">✔</td><td class="cross" style="text-align:center;">✗</td></tr>
+                <tr><td>Configurações do Sistema</td><td class="check" style="text-align:center;">✔</td><td class="cross" style="text-align:center;">✗</td></tr>
+                <tr><td>Upload Qualis CAPES (.csv)</td><td class="check" style="text-align:center;">✔</td><td class="cross" style="text-align:center;">✗</td></tr>
+                <tr><td>Visualização de Logs</td><td class="check" style="text-align:center;">✔</td><td class="cross" style="text-align:center;">✗</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 7. Resumo das páginas -->
+    <div id="paginas">
+        <div class="section-title">
+            <div class="icon">🗺️</div>
+            <h2>7. Resumo das Páginas</h2>
+        </div>
+
+        <div class="card">
+            <h3>🏠 Página Inicial (Dashboard)</h3>
+            <p>
+                Ponto central do sistema. Exibe o <strong>Extrator de Currículos Lattes</strong>
+                (por ID, CPF, lote ou upload XML), <strong>gráficos de produção científica</strong>
+                da UEM e um <strong>painel de métricas</strong> com status de conexão ao CNPq,
+                quantidade de currículos cadastrados, desatualizados e processados no dia.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>🔄 Verificar Atualizações</h3>
+            <p>
+                Permite identificar currículos com dados desatualizados no banco e solicitar
+                a atualização — de forma individual ou em massa — buscando a versão mais
+                recente diretamente no repositório do CNPq.
+            </p>
+        </div>
+
+        <div style="font-weight:700; font-size:0.80rem; text-transform:uppercase; letter-spacing:1px; color:var(--azul-uem); margin: 22px 0 10px;">
+            📂 Cadastros
+        </div>
+
+        <div class="card">
+            <h3>👤 Pessoas</h3>
+            <p>Lista todos os currículos cadastrados. Clique em <strong>"Ver detalhes"</strong> para
+            abrir um modal com uma versão compacta do Currículo Lattes da pessoa.</p>
+        </div>
+
+        <div class="card">
+            <h3>🏫 Instituições</h3>
+            <p>Tabela de todas as instituições coletadas durante as extrações, com o número
+            de ocorrências registradas.</p>
+        </div>
+
+        <div class="card">
+            <h3>📖 Cursos</h3>
+            <p>Tabela de todos os cursos identificados nos currículos extraídos.</p>
+        </div>
+
+        <div style="font-weight:700; font-size:0.80rem; text-transform:uppercase; letter-spacing:1px; color:var(--azul-uem); margin: 22px 0 10px;">
+            📊 Relatórios
+        </div>
+
+        <div class="card">
+            <h3>📊 Relatório Dinâmico</h3>
+            <p>Ferramenta de busca avançada com múltiplos filtros cruzados (tipo de produção,
+            instituição, formação etc.). Ideal para mapear a produtividade sob demanda e
+            atender editais de fomento.</p>
+        </div>
+
+        <div class="card">
+            <h3>🌐 Relatório de Revistas</h3>
+            <p>Lista os veículos de publicação científica com nome, ISSN, nota Qualis CAPES
+            e volume de publicações. Permite filtrar por nome ou classificação CAPES (A1, A2, B3, C…).</p>
+        </div>
+
+        <div class="card">
+            <h3>🏆 Relatório de Produtividade</h3>
+            <p>Ranking dos pesquisadores com métricas bibliométricas (artigos, índice H,
+            citações). Gera também um pódio com o Top 3 pesquisadores por instituição.
+            Ferramenta essencial para distribuição de bolsas e progressões de carreira.</p>
+        </div>
+
+        <div class="card">
+            <h3>💻 Consulta SQL Livre <span style="font-size:0.75rem; background:#fde68a; color:#78350f; padding:2px 8px; border-radius:999px; font-weight:600; margin-left:6px;">Somente Admin</span></h3>
+            <p>Interface de terminal que permite executar consultas SQL de <strong>leitura</strong>
+            diretamente no banco de dados DB2, sem filtros pré-definidos. Útil para relatórios
+            personalizados e análises emergenciais.</p>
+        </div>
+
+        <div style="font-weight:700; font-size:0.80rem; text-transform:uppercase; letter-spacing:1px; color:var(--azul-uem); margin: 22px 0 10px;">
+            ⚙️ Sistema (Somente Admin)
+        </div>
+
+        <div class="card">
+            <h3>🧑‍💻 Usuários <span style="font-size:0.75rem; background:#fde68a; color:#78350f; padding:2px 8px; border-radius:999px; font-weight:600; margin-left:6px;">Somente Admin</span></h3>
+            <p>Gestão centralizada de contas: cria novos perfis, define o nível de acesso
+            (Administrador ou Usuário Comum) e edita permissões.</p>
+        </div>
+
+        <div class="card">
+            <h3>⚙️ Configurações <span style="font-size:0.75rem; background:#fde68a; color:#78350f; padding:2px 8px; border-radius:999px; font-weight:600; margin-left:6px;">Somente Admin</span></h3>
+            <p>Painel de controle dinâmico para ajustar parâmetros operacionais em tempo real:
+            intervalos de backup, agendamento de sincronização, credenciais de e-mail,
+            endpoint do WebService e upload do arquivo Qualis CAPES.</p>
+        </div>
+
+        <div class="card">
+            <h3>📜 Logs <span style="font-size:0.75rem; background:#fde68a; color:#78350f; padding:2px 8px; border-radius:999px; font-weight:600; margin-left:6px;">Somente Admin</span></h3>
+            <p>Repositório de eventos com histórico de extrações, acessos/tentativas de login,
+            status das automações em segundo plano e erros operacionais. Principal ferramenta
+            de auditoria e depuração do sistema.</p>
+        </div>
+    </div>
+
+    <!-- 8. Dúvidas -->
+    <div id="duvidas">
+        <div class="section-title">
+            <div class="icon">💬</div>
+            <h2>8. Dúvidas e Suporte</h2>
+        </div>
+        <div class="card">
+            <p>
+                Em caso de dúvidas, problemas de acesso ou solicitação de novas contas,
+                entre em contato com a equipe responsável pelo SIGLattes:
+            </p>
+            <div class="callout">
+                🏛️ <strong>Pró-Reitoria de Planejamento e Desenvolvimento Institucional — PLD</strong><br>
+                Divisão de Informações e Planos (LNI)<br>
+                Universidade Estadual de Maringá — UEM
+            </div>
+            <div class="callout warn" style="margin-top:12px;">
+                🔒 Nunca compartilhe sua senha com outras pessoas. Em caso de perda ou
+                comprometimento das credenciais, solicite imediatamente a redefinição ao <strong>administrador do sistema.</strong>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ══════════════ RODAPÉ ══════════════ -->
+<div class="footer">
+    <strong>SIGLattes v1.0</strong> &nbsp;·&nbsp;
+    Universidade Estadual de Maringá &nbsp;·&nbsp;
+    Pró-Reitoria de Planejamento e Desenvolvimento Institucional — PLD/LNI &nbsp;·&nbsp;
+    © 2026 — Uso interno e restrito
+</div>
+
+</body>
+</html>

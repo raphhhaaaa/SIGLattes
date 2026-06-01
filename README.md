@@ -123,7 +123,7 @@ No arquivo ```src/main/resources/hibernate.cfg.xml```, configure suas credenciai
 
 2. Faça o deploy no Tomcat 9.
 
-3. Acesse: ```http://localhost:8080/ExtratorLattes/```
+3. Acesse: ```http://localhost:8080/SIGLattes/```
 
 ---
 
