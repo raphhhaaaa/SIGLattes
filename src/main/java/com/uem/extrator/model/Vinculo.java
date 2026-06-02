@@ -5,7 +5,7 @@ import javax.persistence.*;
 @Entity
 @Table(name = "VINCULO", indexes = {
         @Index(name = "idx_vinc_atuacao", columnList = "id_atuacao"),
-        @Index(name = "idx_vinc_anos", columnList = "ai_inicio, af_vinculo")
+        @Index(name = "idx_vinc_anos", columnList = "ai_vinculo, af_vinculo")
 })
 public class Vinculo {
 
@@ -30,7 +30,7 @@ public class Vinculo {
     @Column(name = "fg_vinculo_empregaticio", length = 20)
     private String  flagVinculoEmpregaticio;
 
-    @Column(name = "ai_inicio")
+    @Column(name = "ai_vinculo")
     private Integer anoInicio;
 
     @Column(name = "me_inicio")

@@ -33,7 +33,7 @@ public class Formacao {
     @JoinColumn(name = "id_instituicao")
     private Instituicao nomeInstituicao;
 
-    @Column(name = "ai_inicio")
+    @Column(name = "an_inicio")
     private Integer anoInicio;
 
     @Column(name = "an_conclusao")

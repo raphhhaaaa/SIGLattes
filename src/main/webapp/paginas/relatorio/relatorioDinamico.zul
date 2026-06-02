@@ -21,6 +21,8 @@
         .nav-tabs { border-bottom: 1px solid #dee2e6; }
         .z-tab-selected { font-weight: bold; background: #fff; border-top: 2px solid #007bff; }
 
+        .meu-north { top: -10px !important; }
+
     </style>
 
     <borderlayout width="100vw" height="100vh"
@@ -28,7 +30,7 @@
                   viewModel="@id('vm') @init('com.uem.extrator.viewmodel.RelatorioDinamicoVM')"
                   validationMessages="@id('vmsgs')">
 
-        <north border="none">
+        <north border="none" sclass="meu-north">
             <include src="/header.zul" />
         </north>
 
@@ -150,7 +152,7 @@
                                                   sclass="form-control-sm"/>
                                     </div>
 
-                                    <div style="position: relative; right: -1540px" sclass="">
+                                    <div style="position: relative; right: -1230px" sclass="">
                                         <button label="Extrair CSV (Resumo)"
                                                 onClick="@command('exportarCsvSimples')"
                                                 iconSclass="z-icon-download"
