@@ -25,7 +25,7 @@ public class ConfigManager {
     public static final String URL_SEMANTIC_SCHOLAR_PAPER = "https://api.semanticscholar.org/graph/v1/paper/";
 
     // Motor de Concorrência e Rate Limiting
-    public static final int MAX_THREADS_EXTRACAO = 30;       // Quantidade de threads simultâneas (Lattes)
+    public static final int MAX_THREADS_EXTRACAO = 30;       // Quantidade de threads simultâneas (Lattes) — reduzido para evitar throttling/ban do CNPq em extrações em lote
     public static final int SEMAFORO_SEMANTIC_SCHOLAR = 1;   // Conexões simultâneas permitidas (Rate Limit 1 RPS)
     public static final int TEMPO_ESPERA_API_RATE_LIMIT_MS = 1000; // Espera para respeitar 1 req/s
 

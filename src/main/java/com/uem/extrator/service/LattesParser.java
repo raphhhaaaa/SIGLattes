@@ -1,7 +1,7 @@
 package com.uem.extrator.service;
 
 import com.uem.extrator.model.*;
-import net.bytebuddy.asm.Advice;
+import com.uem.extrator.util.FiltroSimilaridade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,8 +22,10 @@ public class LattesParser {
     // instancia logger
     private static final Logger logger = LoggerFactory.getLogger(LattesParser.class);
 
-    // inicialização factory
-    private static final XMLInputFactory FACTORY = XMLInputFactory.newInstance();
+    // ATENÇÃO: XMLInputFactory NÃO é thread-safe — NÃO deve ser static.
+    // Em extração em lote com múltiplas threads, uma factory estática compartilhada
+    // causa NullPointerException por race condition em setProperty/createXMLStreamReader.
+    // Cada chamada a parse() cria sua própria instância local (custo negligenciável).
 
     // metodo de parseamento
     public Curriculo parse(String xmlConteudo, String idLattes) throws Exception {
@@ -52,15 +54,13 @@ public class LattesParser {
         Curriculo curriculo = new Curriculo();
         curriculo.setIdLattes(idLattes);
 
-
-
-
-        // BLINDAGEM CONTRA XXE //
-        FACTORY.setProperty(XMLInputFactory.SUPPORT_DTD, false);
-        FACTORY.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+        // BLINDAGEM CONTRA XXE — instância local, thread-safe
+        XMLInputFactory factory = XMLInputFactory.newInstance();
+        factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+        factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 
         // cursor
-        XMLStreamReader reader = FACTORY.createXMLStreamReader(new StringReader(xmlConteudo));
+        XMLStreamReader reader = factory.createXMLStreamReader(new StringReader(xmlConteudo));
 
         while (reader.hasNext()) {
             int event = reader.next();
@@ -370,7 +370,7 @@ public class LattesParser {
                     }
                     // FECHA PRODUÇÕES
                     else if ("ARTIGO-PUBLICADO".equals(endElement) && producaoAtual != null) {
-                        producaoAtual.setNomeVeiculo(detalhePeriodico);
+                        producaoAtual.setNomeVeiculo(FiltroSimilaridade.verificaVeiculo(detalhePeriodico));
                         producaoAtual.setIsbnIssn(detalheISSN);
                         if (detalheVol == null) detalheVol = "";
                         if (detalhePag == null) detalhePag = "";
@@ -378,14 +378,14 @@ public class LattesParser {
                         curriculo.adicionarProducao(producaoAtual);
                         producaoAtual = null;
                     } else if ("LIVRO-PUBLICADO-OU-ORGANIZADO".equals(endElement) && producaoAtual != null) {
-                        producaoAtual.setNomeVeiculo(detalheEditora);
+                        producaoAtual.setNomeVeiculo(FiltroSimilaridade.verificaVeiculo(detalheEditora));
                         producaoAtual.setIsbnIssn(detalheISBN);
                         producaoAtual.setVolumePaginas(detalhePag + " págs");
                         curriculo.adicionarProducao(producaoAtual);
                         producaoAtual = null;
                     } else if ("TRABALHO-EM-EVENTOS".equals(endElement) && producaoAtual != null) {
                         producaoAtual.setNomeEvento(detalheNomeEvento);
-                        producaoAtual.setNomeVeiculo(detalheAnais);
+                        producaoAtual.setNomeVeiculo(FiltroSimilaridade.verificaVeiculo(detalheAnais));
                         curriculo.adicionarProducao(producaoAtual);
                         producaoAtual = null;
                     }

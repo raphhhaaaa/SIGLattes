@@ -3,6 +3,7 @@ package com.uem.extrator.dao;
 import com.uem.extrator.dto.RelatorioRevistaDTO;
 import com.uem.extrator.model.*;
 import com.uem.extrator.service.AuditLogService;
+import com.uem.extrator.util.FiltroSimilaridade;
 import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
@@ -177,6 +178,10 @@ public class CurriculoDAO {
 
                     curriculo = (Curriculo) session.merge(curriculo);
                     session.getTransaction().commit();
+
+                    // Invalida o cache de veículos para que o próximo parse
+                    // recarregue os nomes canônicos atualizados do banco
+                    FiltroSimilaridade.invalidarCacheVeiculos();
 
                 } catch (Exception e) {
                     if (session.getTransaction().isActive()) session.getTransaction().rollback();

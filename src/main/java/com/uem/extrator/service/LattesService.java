@@ -4,6 +4,8 @@ import com.uem.extrator.dao.CurriculoDAO;
 import com.uem.extrator.model.Curriculo;
 import com.uem.extrator.model.Producao;
 import com.uem.extrator.util.ConfigManager;
+import com.uem.extrator.util.FiltroSimilaridade;
+import com.uem.extrator.util.HibernateUtil;
 import javax.xml.namespace.QName;
 import javax.xml.ws.Service;
 import javax.xml.ws.BindingProvider;
@@ -115,6 +117,11 @@ public class LattesService {
                 }
 
                 String xmlConteudo = descompactarZip(zipBytes);
+                // Inicializa o cache de veículos canônicos antes do parse
+                try (org.hibernate.Session dbSession = HibernateUtil.getSessionFactory().openSession()) {
+                    FiltroSimilaridade.inicializarCacheVeiculos(dbSession);
+                }
+
                 LattesParser parser = new LattesParser();
                 Curriculo curriculo = parser.parse(xmlConteudo, idLimpo);
 
@@ -157,14 +164,18 @@ public class LattesService {
                 // Se for erro de "ID inexistente", não adianta tentar de novo
                 if (e.getMessage() != null && e.getMessage().contains("inexistente")) throw e;
 
-                // Se ainda tiver tentativas, espera um pouco e tenta de novo
+                // Se ainda tiver tentativas, aguarda antes de tentar novamente.
+                // 5s dá tempo ao CNPq de se recuperar de lentidão/throttling
                 if (i < maxRetries) {
-                    try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
+                    try { Thread.sleep(5000); } catch (InterruptedException ignored) {}
                 }
             }
         }
 
-        throw new Exception("Falha após " + (maxRetries+1) + " tentativas. Último erro: " + lastError.getMessage());
+        String msgUltimoErro = (lastError != null && lastError.getMessage() != null)
+                ? lastError.getMessage()
+                : (lastError != null ? lastError.getClass().getName() : "erro desconhecido");
+        throw new Exception("Falha após " + (maxRetries + 1) + " tentativas. Último erro: " + msgUltimoErro);
     }
 
     // Metodo interno que chama o SOAP
