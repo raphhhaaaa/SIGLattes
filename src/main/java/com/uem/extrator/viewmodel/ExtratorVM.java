@@ -173,10 +173,12 @@ public class ExtratorVM {
              */
             String existsUEM =
                     " AND EXISTS (" +
-                    "   SELECT 1 FROM Atuacao a JOIN a.instituicao i" +
+                    "   SELECT 1 FROM Atuacao a JOIN a.vinculos v JOIN a.instituicao i" +
                     "   WHERE a.curriculo = p.curriculo" +
                     "   AND (i.siglaInstituicao = 'UEM'" +
                     "     OR i.nomeInstituicao LIKE '%Universidade Estadual de Maringá%')" +
+                    "   AND (v.anoInicio IS NULL OR v.anoInicio <= p.ano)" +
+                    "   AND (v.anoFim IS NULL OR v.anoFim >= p.ano)" +
                     ") ";
 
             int anoAtual = Year.now().getValue();

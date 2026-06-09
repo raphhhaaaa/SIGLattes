@@ -99,9 +99,12 @@ public class ProducaoDAO {
             if (nomeInstituicao != null && !"TODAS".equals(nomeInstituicao)) {
                 // CORREÇÃO DO CAMINHO: Curriculo -> Atuacoes -> Vinculos
                 hql.append("JOIN c.atuacoes a ");
+                hql.append("JOIN a.vinculos v ");
                 hql.append("JOIN a.instituicao i ");
                 hql.append("WHERE p.tipo = :tipo ");
                 hql.append("AND i.nomeInstituicao = :nomeInst ");
+                hql.append("AND (v.anoInicio IS NULL OR v.anoInicio <= p.ano) ");
+                hql.append("AND (v.anoFim IS NULL OR v.anoFim >= p.ano) ");
             } else {
                 hql.append("WHERE p.tipo = :tipo ");
             }

@@ -115,7 +115,7 @@ public class InstituicaoDAO {
 
         for (Instituicao inst : cacheTodas) {
             if (FiltroSimilaridade.isMesmaInstituicao(nomeCandidato, inst.getNomeInstituicao())) {
-                return inst;
+                return session.get(Instituicao.class, inst.getId()); // retorna do banco / sesssão atual garantindo o estado managed
             }
         }
 
