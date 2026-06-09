@@ -22,7 +22,7 @@ public class Atuacao {
     @JoinColumn(name = "id_cnpq", nullable = false)
     private Curriculo curriculo;
 
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.ALL})
     @JoinColumn(name = "id_instituicao", nullable = false)
     private Instituicao instituicao;
 

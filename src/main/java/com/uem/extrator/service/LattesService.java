@@ -117,11 +117,9 @@ public class LattesService {
                 }
 
                 String xmlConteudo = descompactarZip(zipBytes);
-                // Inicializa os caches de normalização antes do parse
+                // Inicializa o cache de veículos canônicos antes do parse
                 try (org.hibernate.Session dbSession = HibernateUtil.getSessionFactory().openSession()) {
                     FiltroSimilaridade.inicializarCacheVeiculos(dbSession);
-                    FiltroSimilaridade.inicializarCacheTitulos(dbSession);
-                    FiltroSimilaridade.inicializarCacheCursos(dbSession);
                 }
 
                 LattesParser parser = new LattesParser();

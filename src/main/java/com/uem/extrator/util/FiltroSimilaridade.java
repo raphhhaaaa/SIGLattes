@@ -4,7 +4,9 @@ import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.hibernate.Session;
 
 import java.text.Normalizer;
-import java.util.*;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 public class FiltroSimilaridade {
 
@@ -71,28 +73,13 @@ public class FiltroSimilaridade {
         return false;
     }
 
-    public static boolean isMesmaProducao(String titulo1, String titulo2) {
-        if (titulo1 == null || titulo2 == null) return false;
-
-        String t1 = normalizarGenerico(titulo1);
-        String t2 = normalizarGenerico(titulo2);
-
-        if (t1.equals(t2)) return true;
-
-        // Títulos muito curtos: qualquer diferença já é significativa
-        if (t1.length() <= 10 || t2.length() <= 10) return false;
-
-        int distancia = distanciaLevenshtein(t1, t2);
-
-        // Tolerância proporcional ao menor título, cap em 8
-        // Ex: 40 chars → limite 2 | 80 chars → limite 4 | 160+ chars → limite 8
-        // Usar o menor evita que um título longo "absorva" um curto
-        int limite = Math.min(8, Math.max(2, Math.min(t1.length(), t2.length()) / 20));
-
-        return distancia <= limite;
+    public static boolean isMesmaProducao(String prod1, String prod2) {
+        // TODO: implementar logica de validação de nomes de produções
+        return false;
     }
 
     public static boolean isMesmoCurso(String curso1, String curso2) {
+        // TODO: implementar logica de validação de nomes de cursos
 
         if ((curso1 == null || curso1.isEmpty()) || (curso2 == null || curso2.isEmpty())) return false;
 
@@ -161,136 +148,8 @@ public class FiltroSimilaridade {
         cacheVeiculos.clear();
     }
 
-    // ==========================================
-    // CACHE E NORMALIZAÇÃO DE TÍTULOS DE PRODUÇÃO
-    // ==========================================
-
-    /**
-     * Índice de títulos canônicos por primeira palavra normalizada.
-     * Reduz o espaço de busca Levenshtein de ~55k para ~200 títulos por consulta.
-     * Ex: "machine" → ["Machine Learning em Saúde", "Machine Learning aplicado..."]
-     */
-    private static final Map<String, List<String>> cacheTitulosPorPrefixo = new java.util.HashMap<>();
-    private static boolean cacheTitulosInicializado = false;
-
-    /**
-     * Carrega todos os títulos existentes no banco, indexando pela primeira palavra
-     * normalizada para buscas eficientes. Deve ser chamado antes do parse.
-     */
-    public static synchronized void inicializarCacheTitulos(Session session) {
-        if (cacheTitulosInicializado) return;
-        try {
-            List<String> existentes = session.createQuery(
-                    "SELECT DISTINCT p.titulo FROM Producao p WHERE p.titulo IS NOT NULL",
-                    String.class).list();
-            for (String titulo : existentes) {
-                indexarTitulo(titulo);
-            }
-            cacheTitulosInicializado = true;
-        } catch (Exception e) {
-            // Se falhar, opera sem cache nessa rodada
-        }
-    }
-
-    private static void indexarTitulo(String titulo) {
-        String normalizado = normalizarGenerico(titulo);
-        if (normalizado.isEmpty()) return;
-        String primeiraPalavra = normalizado.split("\\s+")[0];
-        cacheTitulosPorPrefixo
-                .computeIfAbsent(primeiraPalavra, k -> new ArrayList<>())
-                .add(titulo);
-    }
-
-    /**
-     * Normaliza o título de uma produção consultando o cache indexado.
-     * Se um título similar já existir (isMesmaProducao), retorna o canônico —
-     * garantindo que o hash gerado em seguida coincida com o do coautor já salvo.
-     *
-     * synchronized: necessário pelo mesmo motivo que normalizarVeiculo.
-     */
-    public static synchronized String normalizarTituloProducao(String tituloEntrada) {
-        if (tituloEntrada == null || tituloEntrada.trim().isEmpty()) return tituloEntrada;
-        String limpo = tituloEntrada.trim();
-        String normalizado = normalizarGenerico(limpo);
-        if (normalizado.isEmpty()) return limpo;
-
-        // Busca apenas no bucket da primeira palavra — O(~200) em vez de O(55k)
-        String primeiraPalavra = normalizado.split("\\s+")[0];
-        List<String> candidatos = cacheTitulosPorPrefixo.get(primeiraPalavra);
-        if (candidatos != null) {
-            for (String canonico : candidatos) {
-                if (isMesmaProducao(limpo, canonico)) {
-                    return canonico;
-                }
-            }
-        }
-
-        // Novo título — indexa como canônico
-        indexarTitulo(limpo);
-        return limpo;
-    }
-
-    /**
-     * Invalida o cache de títulos. Deve ser chamado após salvar um currículo
-     * para que o próximo parse recarregue os títulos atualizados do banco.
-     */
-    public static synchronized void invalidarCacheTitulos() {
-        cacheTitulosInicializado = false;
-        cacheTitulosPorPrefixo.clear();
-    }
-
-    // ==========================================
-    // CACHE E NORMALIZAÇÃO DE CURSOS
-    // ==========================================
-
-    private static final Set<String> cacheCursos = new LinkedHashSet<>();
-    private static boolean cacheCursosInicializado = false;
-
-    /**
-     * Carrega os nomes de cursos existentes no banco como nomes canônicos.
-     * O volume de cursos distintos é pequeno (~500), então um Set linear é suficiente.
-     */
-    public static synchronized void inicializarCacheCursos(Session session) {
-        if (cacheCursosInicializado) return;
-        try {
-            List<String> existentes = session.createQuery(
-                    "SELECT DISTINCT c.nomeCurso FROM Curso c WHERE c.nomeCurso IS NOT NULL",
-                    String.class).list();
-            cacheCursos.addAll(existentes);
-            cacheCursosInicializado = true;
-        } catch (Exception e) {
-            // Se falhar, opera sem cache nessa rodada
-        }
-    }
-
-    /**
-     * Normaliza o nome de um curso consultando o cache.
-     * Se um nome similar já existir (isMesmoCurso), retorna o canônico.
-     * Caso contrário, registra o novo nome como canônico e o retorna.
-     */
-    public static synchronized String normalizarNomeCurso(String nomeEntrada) {
-        if (nomeEntrada == null || nomeEntrada.trim().isEmpty()) return nomeEntrada;
-        String limpo = nomeEntrada.trim();
-        for (String canonico : cacheCursos) {
-            if (isMesmoCurso(limpo, canonico)) {
-                return canonico;
-            }
-        }
-        cacheCursos.add(limpo);
-        return limpo;
-    }
-
-    /**
-     * Invalida o cache de cursos. Deve ser chamado após salvar um currículo.
-     */
-    public static synchronized void invalidarCacheCursos() {
-        cacheCursosInicializado = false;
-        cacheCursos.clear();
-    }
-
     private static boolean isSiglaOuAbreviacao(String sigla, String nomeCompleto) {
         if (sigla.length() < 2 || sigla.length() > 10) return false;
-
         
         // Se a sigla aparece dentro do nome completo entre espaços ou parênteses
         if (nomeCompleto.contains(" " + sigla + " ") || 

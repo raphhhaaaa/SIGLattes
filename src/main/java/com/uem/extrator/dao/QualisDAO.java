@@ -18,8 +18,8 @@ public class QualisDAO {
     
     public long contarTodos() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Long result = session.createQuery("SELECT COUNT(q) FROM Qualis q", Long.class).uniqueResult();
-            return result  != null ? result : 0;
+            Query<Long> query = session.createQuery("SELECT COUNT(q) FROM Qualis q", Long.class);
+            return query.uniqueResult() != null ? query.uniqueResult() : 0;
         } catch (Exception e) {
             logger.error("Erro na base de dados (QualisDAO)", e);
             return 0;
