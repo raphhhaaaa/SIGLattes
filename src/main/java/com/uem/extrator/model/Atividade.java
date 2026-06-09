@@ -8,31 +8,31 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "ATIVIDADE", schema = "LATTESEXTRATOR")
+@Table(name = "ATIVIDADE")
 public class Atividade {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "cd_atividade")
+    @Column(name = "id_atividade")
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "cd_atuacao", nullable = false)
+    @JoinColumn(name = "id_atuacao", nullable = false)
     private Atuacao atuacao;
 
     @Column(name = "tp_atividade", length = 200)
     private String tipoAtividades;
 
-    @Column(name = "nr_mes_inicio")
+    @Column(name = "me_inicio")
     private Integer mesInicio;
 
-    @Column(name = "nr_ano_inicio")
+    @Column(name = "ai_atividade")
     private Integer anoInicio;
 
-    @Column(name = "nr_mes_fim")
+    @Column(name = "me_fim")
     private Integer mesFim;
 
-    @Column(name = "nr_ano_fim")
+    @Column(name = "af_atividade")
     private Integer anoFim;
 
     @Column(name = "nm_grande_area", length = 500)

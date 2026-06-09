@@ -33,14 +33,11 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import java.time.Year;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.Date;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.io.ByteArrayInputStream;
@@ -167,31 +164,47 @@ public class ExtratorVM {
 
     private String gerarScriptGraficos() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            String filtroUEM = " AND (i.siglaInstituicao = 'UEM' OR i.nomeInstituicao LIKE '%Universidade Estadual de Maringá%') ";
+            /*
+             * DASHBOARD — usa COUNT(DISTINCT hashTitulo) em SQL para manter velocidade.
+             *
+             * A deduplicação por Levenshtein (isMesmaProducao / contarProducoesUnicas)
+             * é O(n²) e adequada para relatórios dedicados, não para carregamento
+             * automático do dashboard. O EXISTS já garante sem produto cartesiano.
+             */
+            String existsUEM =
+                    " AND EXISTS (" +
+                    "   SELECT 1 FROM Atuacao a JOIN a.instituicao i" +
+                    "   WHERE a.curriculo = p.curriculo" +
+                    "   AND (i.siglaInstituicao = 'UEM'" +
+                    "     OR i.nomeInstituicao LIKE '%Universidade Estadual de Maringá%')" +
+                    ") ";
+
             int anoAtual = Year.now().getValue();
             int anoLimite = anoAtual - 10;
 
-            // Gráfico 1: Evolução
-            String hql1 = "SELECT p.ano, COUNT(p.id) " +
-                    "FROM Curriculo c JOIN c.producoes p JOIN c.atuacoes a JOIN a.instituicao i " +
-                    "WHERE p.ano >= " + anoLimite + filtroUEM +
+            // Gráfico 1: Evolução por ano (últimos 10 anos)
+            String hql1 = "SELECT p.ano, COUNT(DISTINCT p.hashTitulo) " +
+                    "FROM Producao p " +
+                    "WHERE p.ano >= " + anoLimite + " AND p.ano IS NOT NULL " +
+                    existsUEM +
                     "GROUP BY p.ano " +
                     "ORDER BY p.ano ASC";
 
             List<Object[]> res1 = session.createQuery(hql1, Object[].class).getResultList();
             String labels1 = "['" + res1.stream().map(r -> r[0].toString()).collect(Collectors.joining("','")) + "']";
-            String data1 = "[" + res1.stream().map(r -> r[1].toString()).collect(Collectors.joining(",")) + "]";
+            String data1   = "[" + res1.stream().map(r -> r[1].toString()).collect(Collectors.joining(",")) + "]";
 
-            // Gráfico 2: Tipos
-            String hql2 = "SELECT p.tipo, COUNT(p.id) " +
-                    "FROM Curriculo c JOIN c.producoes p JOIN c.atuacoes a JOIN a.instituicao i " +
-                    "WHERE 1=1 " + filtroUEM +
+            // Gráfico 2: Distribuição por tipo (todos os anos)
+            String hql2 = "SELECT p.tipo, COUNT(DISTINCT p.hashTitulo) " +
+                    "FROM Producao p " +
+                    "WHERE p.tipo IS NOT NULL " +
+                    existsUEM +
                     "GROUP BY p.tipo " +
-                    "ORDER BY COUNT(p.id) DESC";
+                    "ORDER BY COUNT(DISTINCT p.hashTitulo) DESC";
 
             List<Object[]> res2 = session.createQuery(hql2, Object[].class).getResultList();
             String labels2 = "['" + res2.stream().map(r -> r[0] != null ? r[0].toString() : "Outros").collect(Collectors.joining("','")) + "']";
-            String data2 = "[" + res2.stream().map(r -> r[1].toString()).collect(Collectors.joining(",")) + "]";
+            String data2   = "[" + res2.stream().map(r -> r[1].toString()).collect(Collectors.joining(",")) + "]";
 
             return String.format("setTimeout(function(){ if(typeof renderizarGraficos === 'function') renderizarGraficos(%s, %s, %s, %s); }, 300);", labels1, data1, labels2, data2);
 
@@ -200,6 +213,7 @@ public class ExtratorVM {
             return "";
         }
     }
+
 
     private void iniciarVerificacaoDesatualizados() {
         this.verificandoAtualizacoes = true;
@@ -972,13 +986,13 @@ public class ExtratorVM {
                         return;
                     }
 
-                    if (curriculoDAO.existe(idBusca)) {
-                        sucesso.incrementAndGet();
-                        atualizarLogBatch(desktop, "⏩  ["+(index+1)+"/"+total+"] ID " + idBusca + " já cadastrado. Pulando...\n");
-                        AuditLogService.registrarExtracao("LOTE_PULADO", login, true, idBusca, "Currículo já existente no banco (Ignorado)");
-                        finalizarTarefa(desktop, concluidos, total, sucesso, erro);
-                        return;
-                    }
+//                    if (curriculoDAO.existe(idBusca)) {
+//                        sucesso.incrementAndGet();
+//                        atualizarLogBatch(desktop, "⏩  ["+(index+1)+"/"+total+"] ID " + idBusca + " já cadastrado. Pulando...\n");
+//                        AuditLogService.registrarExtracao("LOTE_PULADO", login, true, idBusca, "Currículo já existente no banco (Ignorado)");
+//                        finalizarTarefa(desktop, concluidos, total, sucesso, erro);
+//                        return;
+//                    }
 
                     atualizarLogBatch(desktop, "["+(index+1)+"/"+total+"] ID "+idBusca+"...");
                     Curriculo c = lattesService.getCurriculo(idBusca);
@@ -995,8 +1009,11 @@ public class ExtratorVM {
                     }
                 } catch(Exception e) {
                     erro.incrementAndGet();
-                    atualizarLogBatch(desktop, "❌ Erro: " + e.getMessage() + "\n");
-                    AuditLogService.registrarExtracao("LOTE_ERRO", login, false, dado, "Erro técnico: " + e.getMessage());
+                    String msgErro = (e.getMessage() != null) ? e.getMessage()
+                            : e.getClass().getName() + (e.getCause() != null ? " causado por: " + e.getCause() : "");
+                    logger.error("[LOTE] Falha ao processar entrada '{}': {}", dado, msgErro, e);
+                    atualizarLogBatch(desktop, "\u274c Erro: " + msgErro + "\n");
+                    AuditLogService.registrarExtracao("LOTE_ERRO", login, false, dado, "Erro t\u00e9cnico: " + msgErro);
                 }
 
                 finalizarTarefa(desktop, concluidos, total, sucesso, erro);

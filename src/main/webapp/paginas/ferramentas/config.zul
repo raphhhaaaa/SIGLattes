@@ -9,12 +9,42 @@
 
 <zk xmlns="http://www.zkoss.org/2005/zul" xmlns:n="native">
 
+    <style>
+
+        .meu-north { top: -10px !important; }
+
+        .password-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .password-wrapper .z-textbox {
+            padding-right: 40px !important;
+        }
+        .btn-show-password {
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: #555;
+            padding: 4px 6px;
+            line-height: 1;
+            z-index: 10;
+        }
+        .btn-show-password:hover {
+            color: #005a9c;
+        }
+
+    </style>
+
     <borderlayout width="100vw" height="100vh"
                   apply="org.zkoss.bind.BindComposer"
                   viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ConfigVM')"
                   validationMessages="@id('vmsgs')">
 
-        <north border="none">
+        <north border="none" sclass="meu-north">
             <include src="/header.zul" />
         </north>
 
@@ -151,7 +181,11 @@
                             <div sclass="form-group row mb-0">
                                 <label value="Semantic Scholar API Key:" sclass="col-sm-2.5 col-form-label font-weight-bold"/>
                                 <div sclass="col-sm-8">
-                                    <textbox value="@bind(vm.semanticScholarApiKey)" sclass="form-control form-control-sm" placeholder="Insira sua API Key"/>
+                                    <div sclass="password-wrapper">
+                                        <textbox id="ssKey" value="@bind(vm.semanticScholarApiKey)" type="password" sclass="form-control form-control-sm" placeholder="Insira sua API Key"/>
+                                        <button id="btnEyeSsKey" sclass="btn-show-password" iconSclass="fa fa-eye"
+                                                onClick='ssKey.setType("text".equals(ssKey.getType())?"password":"text"); btnEyeSsKey.setIconSclass("text".equals(ssKey.getType())?"fa fa-eye-slash":"fa fa-eye");'/>
+                                    </div>
                                 </div>
                             </div>
 
@@ -191,7 +225,11 @@
                                     <div sclass="form-group row">
                                         <label value="Senha SMTP:" sclass="col-sm-4 col-form-label font-weight-bold"/>
                                         <div sclass="col-sm-8">
-                                            <textbox value="@bind(vm.smtpPassword)" type="password" sclass="form-control form-control-sm" placeholder="Senha ou App Password" style="height: 35px;"/>
+                                            <div sclass="password-wrapper">
+                                                <textbox id="smtpPwd" value="@bind(vm.smtpPassword)" type="password" sclass="form-control form-control-sm" placeholder="Senha ou App Password" style="height: 35px;"/>
+                                                <button id="btnEyeSmtp" sclass="btn-show-password" iconSclass="fa fa-eye"
+                                                        onClick='smtpPwd.setType("text".equals(smtpPwd.getType())?"password":"text"); btnEyeSmtp.setIconSclass("text".equals(smtpPwd.getType())?"fa fa-eye-slash":"fa fa-eye");'/>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -223,7 +261,7 @@
 
 <!--                                    <n:br/>-->
 
-<!--                                    &lt;!&ndash; BOTÃO DE FORÇAR VERIFICAÇÃO &ndash;&gt;-->
+                                    <!-- BOTÃO DE FORÇAR VERIFICAÇÃO -->
 <!--                                    <zk if="${sessionScope.usuario_logado.admin}">-->
 <!--                                        <div sclass="form-group row">-->
 <!--                                            <div sclass="col-sm-12 text-right">-->

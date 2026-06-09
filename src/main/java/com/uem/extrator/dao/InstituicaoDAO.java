@@ -50,13 +50,13 @@ public class InstituicaoDAO {
              * mas em native query usamos diretamente.
              */
             String sql =
-                "SELECT i.nm_instituicao, COUNT(DISTINCT combined.cd_cnpq) AS qtd " +
-                "FROM LATTESEXTRATOR.INSTITUICAO i " +
+                "SELECT i.nm_instituicao, COUNT(DISTINCT combined.id_cnpq) AS qtd " +
+                "FROM INSTITUICAO i " +
                 "LEFT JOIN (" +
-                "   SELECT cd_instituicao, cd_cnpq FROM LATTESEXTRATOR.FORMACAO " +
+                "   SELECT id_instituicao, id_cnpq FROM FORMACAO " +
                 "   UNION ALL " +
-                "   SELECT cd_instituicao, cd_cnpq FROM LATTESEXTRATOR.ATUACAO " +
-                ") AS combined ON i.cd_instituicao = combined.cd_instituicao " +
+                "   SELECT id_instituicao, id_cnpq FROM ATUACAO " +
+                ") AS combined ON i.id_instituicao = combined.id_instituicao " +
                 "WHERE i.nm_instituicao IS NOT NULL " +
                 "AND (" +
                 "   LOCATE('UNIVERSIDADE', UPPER(i.nm_instituicao)) = 1 " +
@@ -96,10 +96,10 @@ public class InstituicaoDAO {
         }
     }
 
-    private static List<Instituicao> cacheTodas = null;
-    private static long ultimaAtualizacaoTodas = 0;
+    private static volatile List<Instituicao> cacheTodas = null;
+    private static volatile long ultimaAtualizacaoTodas = 0;
 
-    public Instituicao buscarPorSimilaridade(Session session, String nomeCandidato) {
+    public synchronized Instituicao buscarPorSimilaridade(Session session, String nomeCandidato) {
         if (nomeCandidato == null || nomeCandidato.trim().isEmpty()) return null;
 
         // 1. Busca exata (rápida via índice)

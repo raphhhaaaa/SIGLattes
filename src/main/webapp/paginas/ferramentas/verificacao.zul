@@ -12,12 +12,17 @@
 <zk xmlns="http://www.zkoss.org/2005/zul"
     xmlns:n="http://www.zkoss.org/2005/zk/native">
 
+    <style>
+        .log-box { font-family: monospace; background-color: #f8f9fa; font-size: 11px; resize: none; border: 1px solid #ced4da; }
+        .meu-north { top: -10px !important; }
+    </style>
+
     <borderlayout width="100vw" height="100vh"
                   apply="org.zkoss.bind.BindComposer"
                   viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ExtratorVM')"
                   validationMessages="@id('vmsgs')">
 
-        <north border="none">
+        <north border="none" sclass="meu-north">
             <include src="/header.zul" />
         </north>
 
@@ -30,10 +35,6 @@
 
         <center border="none" sclass="main-content-wrapper">
             <vlayout vflex="1" spacing="0">
-
-        <style>
-            .log-box { font-family: monospace; background-color: #f8f9fa; font-size: 11px; resize: none; border: 1px solid #ced4da; }
-        </style>
 
         <div sclass="container-fluid flex-grow-1" style="padding: 20px;">
             <div sclass="row">

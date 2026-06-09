@@ -3,6 +3,7 @@ package com.uem.extrator.dao;
 import com.uem.extrator.dto.RelatorioRevistaDTO;
 import com.uem.extrator.model.*;
 import com.uem.extrator.service.AuditLogService;
+import com.uem.extrator.util.FiltroSimilaridade;
 import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
@@ -126,6 +127,7 @@ public class CurriculoDAO {
                                         formacao.setNomeCurso(cursoNoBanco);
                                         cursosProcessadosNestaTransacao.put(nomeNormalizado, cursoNoBanco);
                                     } else {
+                                        session.save(cursoCandidato);
                                         cursosProcessadosNestaTransacao.put(nomeNormalizado, cursoCandidato);
                                     }
                                 }
@@ -143,6 +145,7 @@ public class CurriculoDAO {
                                         formacao.setNomeInstituicao(instNoBanco);
                                         instituicoesProcessadasNestaTransacao.put(nomeInstNormalizado, instNoBanco);
                                     } else {
+                                        session.save(instCandidata);
                                         instituicoesProcessadasNestaTransacao.put(nomeInstNormalizado, instCandidata);
                                     }
                                 }
@@ -164,6 +167,7 @@ public class CurriculoDAO {
                                         atuacao.setInstituicao(instNoBanco);
                                         instituicoesProcessadasNestaTransacao.put(nomeInstNormalizado, instNoBanco);
                                     } else {
+                                        session.save(instCandidata);
                                         atuacao.setInstituicao(instCandidata);
                                         instituicoesProcessadasNestaTransacao.put(nomeInstNormalizado, instCandidata);
                                     }
@@ -172,8 +176,14 @@ public class CurriculoDAO {
                         }
                     }
 
-                    session.saveOrUpdate(curriculo);
+                    curriculo = (Curriculo) session.merge(curriculo);
                     session.getTransaction().commit();
+
+                    // Invalida os caches para que o próximo parse recarregue
+                    // os nomes canônicos atualizados do banco
+                    FiltroSimilaridade.invalidarCacheVeiculos();
+                    FiltroSimilaridade.invalidarCacheTitulos();
+                    FiltroSimilaridade.invalidarCacheCursos();
 
                 } catch (Exception e) {
                     if (session.getTransaction().isActive()) session.getTransaction().rollback();

@@ -8,12 +8,19 @@
 
 <zk xmlns="http://www.zkoss.org/2005/zul" xmlns:n="native">
 
+    <style>
+
+        .meu-north { top: -10px !important; }
+
+
+    </style>
+
     <borderlayout width="100vw" height="100vh"
                   apply="org.zkoss.bind.BindComposer"
                   viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ListagemVM')"
                   validationMessages="@id('vmsgs')">
 
-        <north border="none">
+        <north border="none" sclass="meu-north">
             <include src="/header.zul" />
         </north>
 

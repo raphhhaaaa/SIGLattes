@@ -3,43 +3,43 @@ package com.uem.extrator.model;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "FORMACAO", schema = "LATTESEXTRATOR", indexes = {
-        @Index(name = "idx_formacao_curriculo", columnList = "cd_cnpq"),
-        @Index(name = "idx_formacao_tipo_ano", columnList = "tp_formacao, ano_conclusao")
+@Table(name = "FORMACAO", indexes = {
+        @Index(name = "idx_formacao_curriculo", columnList = "id_cnpq"),
+        @Index(name = "idx_formacao_tipo_ano", columnList = "tp_formacao, an_conclusao")
 })
 
 public class Formacao {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "cd_formacao")
+    @Column(name = "id_formacao")
     private Long id;
 
     @ManyToOne // relação com curriculo
-    @JoinColumn(name = "cd_cnpq", nullable = false)
+    @JoinColumn(name = "id_cnpq", nullable = false)
     private Curriculo curriculo;
 
     @Column(name = "tp_formacao", length = 100)
     private String tipoFormacao;
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinColumn(name = "cd_curso")
+    @JoinColumn(name = "id_curso")
     private Curso nomeCurso;
 
     // @Column(name = "nm_curso", length = 300)
     // private String nomeCurso;
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinColumn(name = "cd_instituicao")
+    @JoinColumn(name = "id_instituicao")
     private Instituicao nomeInstituicao;
 
-    @Column(name = "ano_inicio")
+    @Column(name = "an_inicio")
     private Integer anoInicio;
 
-    @Column(name = "ano_conclusao")
+    @Column(name = "an_conclusao")
     private Integer anoConclusao;
 
-    @Column(name = "ds_status", length = 50)
+    @Column(name = "st_formacao", length = 50)
     private String status; // Ex: CONCLUIDO, EM_ANDAMENTO
 
     public Formacao() {}

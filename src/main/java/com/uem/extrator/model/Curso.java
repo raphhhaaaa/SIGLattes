@@ -3,13 +3,13 @@ package com.uem.extrator.model;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "CURSO", schema = "LATTESEXTRATOR")
+@Table(name = "CURSO")
 
 public class Curso {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "cd_curso")
+    @Column(name = "id_curso")
     private Long id;
 
     @Column(name = "nm_curso", length = 500)

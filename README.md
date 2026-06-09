@@ -1,4 +1,4 @@
-# 🎓 Extrator Lattes (CNPq) - UEM
+# 🎓 SIGLattes (CNPq) - UEM
 
 ![Java](https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
 ![Hibernate](https://img.shields.io/badge/Hibernate-59666C?style=for-the-badge&logo=hibernate&logoColor=white)
@@ -123,11 +123,11 @@ No arquivo ```src/main/resources/hibernate.cfg.xml```, configure suas credenciai
 
 2. Faça o deploy no Tomcat 9.
 
-3. Acesse: ```http://localhost:8080/ExtratorLattes/```
+3. Acesse: ```http://localhost:8080/SIGLattes/```
 
 ---
 
-## ⚒️ Extrator Lattes
+## ⚒️ SIGLattes
 
 ### 1. Login:
 Ao entrar no sistema pela primeira vez, o usuário se deparará com a tela de login, e os campos de Usuário e Senha, respectivamente. 
@@ -232,7 +232,7 @@ o servidor. Através desta tela, o administrador configura intervalos de backup,
 de e-mail e outras propriedades do `ConfigManager` que ditam o comportamento da automação. É possível também nessa tela alterar
 o endpoint do webservice utilizado e fazer upload manual do arquivo .csv do Qualis CAPES.
 
-<img width="2549" height="1229" alt="Captura de tela de 2026-05-26 08-58-01" src="https://github.com/user-attachments/assets/16ed01d3-9404-42f5-b66c-5122ebf6e748" />
+<img width="2549" height="1229" alt="Captura de tela de 2026-05-26 08-58-01" src="https://github.com/user-attachments/assets/b5ee7376-3f96-4580-aeb6-8baf43672be7" />
 
 ### 📜 _Logs_
 Repositório de eventos que regista toda a atividade técnica e operacional da plataforma. Exibe o histórico de execução das

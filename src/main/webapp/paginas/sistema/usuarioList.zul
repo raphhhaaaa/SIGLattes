@@ -8,12 +8,19 @@
 <?script type="text/javascript" src="/js/toastr.js"?>
 
 <zk xmlns:n="native">
+
+    <style>
+
+        .meu-north { top: -10px !important; }
+
+    </style>
+
     <borderlayout width="100vw" height="100vh"
                   apply="org.zkoss.bind.BindComposer"
                   viewModel="@id('vm') @init('com.uem.extrator.viewmodel.UsuarioVM')"
                   validationMessages="@id('vmsgs')">
 
-        <north border="none">
+        <north border="none" sclass="meu-north">
             <include src="/header.zul" />
         </north>
 

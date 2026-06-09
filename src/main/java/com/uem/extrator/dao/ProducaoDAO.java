@@ -1,6 +1,7 @@
 package com.uem.extrator.dao;
 
 import com.uem.extrator.model.Producao;
+import com.uem.extrator.util.FiltroSimilaridade;
 import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -9,7 +10,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class ProducaoDAO {
 
@@ -29,6 +32,48 @@ public class ProducaoDAO {
             }
         }
     }
+    /**
+     * Conta produções únicas a partir de uma lista de pares [titulo, doi],
+     * aplicando deduplicação em dois níveis:
+     *
+     *  1. DOI  — identificador global único; deduplicação exata O(1) por hash set.
+     *  2. Levenshtein — aplicado APENAS aos artigos sem DOI (mitigação de performance);
+     *     agrupa títulos com ≥ 90% de similaridade como sendo a mesma produção.
+     *
+     * @param producoes lista de Object[] onde [0] = titulo (String) e [1] = doi (String)
+     * @return número de produções únicas estimado
+     */
+    public static int contarProducoesUnicas(List<Object[]> producoes) {
+        Set<String> doisVistos       = new HashSet<>();
+        List<String> titulosSemDoi  = new ArrayList<>();
+
+        for (Object[] p : producoes) {
+            String titulo = p[0] != null ? p[0].toString() : "";
+            String doi    = p[1] != null ? p[1].toString().trim().toUpperCase() : "";
+
+            if (!doi.isEmpty()) {
+                doisVistos.add(doi); // DOI é único: deduplicação exata e barata
+            } else {
+                titulosSemDoi.add(titulo); // sem DOI: vai para Levenshtein
+            }
+        }
+
+        // Levenshtein apenas para artigos sem DOI (grupo reduzido ~43% do total)
+        List<String> canonicos = new ArrayList<>();
+        for (String titulo : titulosSemDoi) {
+            boolean jaExiste = false;
+            for (String canonico : canonicos) {
+                if (FiltroSimilaridade.isMesmaProducao(titulo, canonico)) {
+                    jaExiste = true;
+                    break;
+                }
+            }
+            if (!jaExiste) canonicos.add(titulo);
+        }
+
+        return doisVistos.size() + canonicos.size();
+    }
+
     public Long contarTotalProducoes() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             // hql simples para contar as linhas na tabela Producao

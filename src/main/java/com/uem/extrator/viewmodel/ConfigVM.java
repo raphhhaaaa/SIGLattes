@@ -229,8 +229,8 @@ public class ConfigVM {
         // tenta enviar
         try {
             logger.info("Iniciando teste de envio de e-mail...");
-            EmailService.getInstance().enviarAlerta("Teste de Configuração - Extrator Lattes",
-                    "<h1>Olá!</h1><p>Se você recebeu este e-mail, a configuração SMTP do Extrator Lattes está <strong>funcionando corretamente</strong>.</p>");
+            EmailService.getInstance().enviarAlerta("Teste de Configuração - SIGLattes",
+                    "<h1>Olá!</h1><p>Se você recebeu este e-mail, a configuração SMTP do SIGLattes está <strong>funcionando corretamente</strong>.</p>");
 
             Clients.showNotification("E-mail de teste enviado! Verifique sua caixa de entrada", "info", null, null, 3000);
 

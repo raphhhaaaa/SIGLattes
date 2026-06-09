@@ -10,8 +10,8 @@ import java.security.NoSuchAlgorithmException;
 import org.mindrot.jbcrypt.*;
 
 @Entity
-@Table(name = "USUARIO", schema = "LATTESEXTRATOR", indexes = {
-        @Index(name = "idx_usuario_login", columnList = "login", unique = true)
+@Table(name = "USUARIO", indexes = {
+        @Index(name = "idx_usuario_login", columnList = "nm_login", unique = true)
 })
 public class Usuario implements Serializable {
 
@@ -19,19 +19,19 @@ public class Usuario implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "cd_usuario")
+    @Column(name = "id_usuario")
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(name = "nm_login", nullable = false, unique = true, length = 50)
     private String login;
 
-    @Column(nullable = false, length = 64) // SHA-256 gera 64 caracteres hex
+    @Column(name = "se_usuario", nullable = false, length = 64) // SHA-256 gera 64 caracteres hex
     private String senha;
 
-    @Column(name = "nome_completo", nullable = false, length = 60)
+    @Column(name = "nm_completo", nullable = false, length = 60)
     private String nome;
 
-    @Column(name = "admin")
+    @Column(name = "fg_admin")
     private boolean admin = false;
 
     public Usuario() {}

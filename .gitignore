@@ -65,5 +65,11 @@ ehthumbs.db
 src/main/resources/hibernate.cfg.xml
 target/classes/hibernate.cfg.xml
 
+# Script de limpeza de duplicatas do banco
+src/main/java/com/uem/extrator/DryRunLimpeza.java
+
 # Testes
 src/test/
+
+# AI context
+/artifacts

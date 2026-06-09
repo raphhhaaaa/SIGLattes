@@ -5,20 +5,21 @@ import java.io.Serializable;
 
 
 @Entity
-@Table(name = "QUALIS",  schema = "LATTESEXTRATOR")
+@Table(name = "QUALIS")
 public class Qualis {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_qualis")
     private Long id;
 
-    @Column(name = "issn", length = 20, unique = true, nullable = false)
+    @Column(name = "cd_issn", length = 20, unique = true, nullable = false)
     private String issn;
 
     @Column(name = "nm_revista", length = 500)
     private String nomeRevista;
 
-    @Column(name = "estrato", length = 5)
+    @Column(name = "sg_estrato", length = 5)
     private String estrato;
 
     public Qualis() {}
