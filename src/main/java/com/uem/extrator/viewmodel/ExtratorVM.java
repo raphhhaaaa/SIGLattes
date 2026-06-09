@@ -33,14 +33,11 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import java.time.Year;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.Date;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.io.ByteArrayInputStream;
@@ -168,13 +165,11 @@ public class ExtratorVM {
     private String gerarScriptGraficos() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             /*
-             * CORREÇÃO: O JOIN triplo (producoes JOIN atuacoes JOIN instituicao) gerava
-             * produto cartesiano: cada produção era multiplicada pelo número de atuações
-             * do pesquisador na UEM, inflando o resultado.
+             * DASHBOARD — usa COUNT(DISTINCT hashTitulo) em SQL para manter velocidade.
              *
-             * Solução: EXISTS (sem produto cartesiano) + COUNT(DISTINCT hashTitulo)
-             * para evitar também a dupla contagem de co-autorias entre pesquisadores UEM,
-             * alinhado ao padrão já usado em RelatorioDAO.
+             * A deduplicação por Levenshtein (isMesmaProducao / contarProducoesUnicas)
+             * é O(n²) e adequada para relatórios dedicados, não para carregamento
+             * automático do dashboard. O EXISTS já garante sem produto cartesiano.
              */
             String existsUEM =
                     " AND EXISTS (" +
@@ -190,7 +185,7 @@ public class ExtratorVM {
             // Gráfico 1: Evolução por ano (últimos 10 anos)
             String hql1 = "SELECT p.ano, COUNT(DISTINCT p.hashTitulo) " +
                     "FROM Producao p " +
-                    "WHERE p.ano >= " + anoLimite +
+                    "WHERE p.ano >= " + anoLimite + " AND p.ano IS NOT NULL " +
                     existsUEM +
                     "GROUP BY p.ano " +
                     "ORDER BY p.ano ASC";
@@ -202,7 +197,7 @@ public class ExtratorVM {
             // Gráfico 2: Distribuição por tipo (todos os anos)
             String hql2 = "SELECT p.tipo, COUNT(DISTINCT p.hashTitulo) " +
                     "FROM Producao p " +
-                    "WHERE p.tipo IS NOT NULL" +
+                    "WHERE p.tipo IS NOT NULL " +
                     existsUEM +
                     "GROUP BY p.tipo " +
                     "ORDER BY COUNT(DISTINCT p.hashTitulo) DESC";
@@ -218,6 +213,7 @@ public class ExtratorVM {
             return "";
         }
     }
+
 
     private void iniciarVerificacaoDesatualizados() {
         this.verificandoAtualizacoes = true;
@@ -990,13 +986,13 @@ public class ExtratorVM {
                         return;
                     }
 
-                    if (curriculoDAO.existe(idBusca)) {
-                        sucesso.incrementAndGet();
-                        atualizarLogBatch(desktop, "⏩  ["+(index+1)+"/"+total+"] ID " + idBusca + " já cadastrado. Pulando...\n");
-                        AuditLogService.registrarExtracao("LOTE_PULADO", login, true, idBusca, "Currículo já existente no banco (Ignorado)");
-                        finalizarTarefa(desktop, concluidos, total, sucesso, erro);
-                        return;
-                    }
+//                    if (curriculoDAO.existe(idBusca)) {
+//                        sucesso.incrementAndGet();
+//                        atualizarLogBatch(desktop, "⏩  ["+(index+1)+"/"+total+"] ID " + idBusca + " já cadastrado. Pulando...\n");
+//                        AuditLogService.registrarExtracao("LOTE_PULADO", login, true, idBusca, "Currículo já existente no banco (Ignorado)");
+//                        finalizarTarefa(desktop, concluidos, total, sucesso, erro);
+//                        return;
+//                    }
 
                     atualizarLogBatch(desktop, "["+(index+1)+"/"+total+"] ID "+idBusca+"...");
                     Curriculo c = lattesService.getCurriculo(idBusca);

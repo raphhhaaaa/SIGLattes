@@ -416,8 +416,8 @@ public class SemanticScholarService {
         }
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setRequestProperty("Accept", "application/json");
-        conn.setConnectTimeout(15000); // Aumentei o tempo de tolerância para 15 segundos
-        conn.setReadTimeout(15000);
+        conn.setConnectTimeout(20000); // Aumentei o tempo de tolerância para 20 segundos
+        conn.setReadTimeout(20000);
 
         if (method.equals("POST")) {
             conn.setDoOutput(true);

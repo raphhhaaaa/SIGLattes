@@ -70,3 +70,6 @@ src/main/java/com/uem/extrator/DryRunLimpeza.java
 
 # Testes
 src/test/
+
+# AI context
+/artifacts

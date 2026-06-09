@@ -2,6 +2,7 @@ package com.uem.extrator.service;
 
 import com.uem.extrator.model.*;
 import com.uem.extrator.util.FiltroSimilaridade;
+import net.bytebuddy.asm.Advice;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,6 +11,7 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
 import java.io.StringReader;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -87,6 +89,10 @@ public class LattesParser {
                     else if ("DADOS-GERAIS".equals(currentElement)) {
 
                         String nome = getAttributeValueSafe(reader, "NOME-COMPLETO");
+                        if (nome.trim().isEmpty()) {
+                            logger.warn("Currículo {} sem nome completo - usando fallback.", idLattes);
+                            nome = "Pesquisador ID " + idLattes;
+                        }
                         curriculo.setNomeCompleto(nome);
 
                         // NOME-CITACAO
@@ -171,6 +177,7 @@ public class LattesParser {
                     // artigos
                     else if ("ARTIGO-PUBLICADO".equals(currentElement)) {
                         producaoAtual = new Producao();
+                        producaoAtual.setCurriculo(curriculo);
                         producaoAtual.setTipo("ARTIGO");
 
                         detalhePeriodico = null;
@@ -186,16 +193,16 @@ public class LattesParser {
 
 
                     } else if ("DADOS-BASICOS-DO-ARTIGO".equals(currentElement) && producaoAtual != null) {
-                        producaoAtual.setTitulo(getAttributeValueSafe(reader, "TITULO-DO-ARTIGO"));
+                        producaoAtual.setTitulo(FiltroSimilaridade.normalizarTituloProducao(
+                                getAttributeValueSafe(reader, "TITULO-DO-ARTIGO")));
                         producaoAtual.setHashTitulo(gerarHash(producaoAtual.getTitulo()));
                         Integer ano_Artigo = parseIntSafe(getAttributeValueSafe(reader, "ANO-DO-ARTIGO"));
-                        if (ano_Artigo > LocalDate.now().getYear() || ano_Artigo < 1960) ano_Artigo = LocalDate.now().getYear();
-                        producaoAtual.setAno(ano_Artigo);
+                        producaoAtual.setAno(validarAno(ano_Artigo));
                         producaoAtual.setPais(getAttributeValueSafe(reader, "PAIS-DE-PUBLICACAO"));
                         producaoAtual.setIdioma(getAttributeValueSafe(reader, "IDIOMA"));
 
-                        String doiLattes = getAttributeValueSafe(reader, "DOI");
-                        if (doiLattes.length() > 200) doiLattes = doiLattes.substring(0, 195) + "...";
+                        String doiLattes = limparDoiValido(getAttributeValueSafe(reader, "DOI"));
+                        if (doiLattes != null && doiLattes.length() > 200) doiLattes = doiLattes.substring(0, 195) + "...";
                         producaoAtual.setDoi(doiLattes);
 
                     } else if ("DETALHAMENTO-DO-ARTIGO".equals(currentElement) && producaoAtual != null) {
@@ -220,9 +227,10 @@ public class LattesParser {
                         detalheAnais = null;
 
                     } else if ("DADOS-BASICOS-DO-LIVRO".equals(currentElement) && producaoAtual != null) {
-                        producaoAtual.setTitulo(getAttributeValueSafe(reader, "TITULO-DO-LIVRO"));
+                        producaoAtual.setTitulo(FiltroSimilaridade.normalizarTituloProducao(
+                                getAttributeValueSafe(reader, "TITULO-DO-LIVRO")));
                         producaoAtual.setHashTitulo(gerarHash(producaoAtual.getTitulo()));
-                        producaoAtual.setAno(parseIntSafe(getAttributeValueSafe(reader, "ANO")));
+                        producaoAtual.setAno(validarAno(parseIntSafe(getAttributeValueSafe(reader, "ANO"))));
                         producaoAtual.setPais(getAttributeValueSafe(reader, "PAIS-DE-PUBLICACAO"));
                         producaoAtual.setIdioma(getAttributeValueSafe(reader, "IDIOMA"));
 
@@ -247,9 +255,10 @@ public class LattesParser {
                         detalheAnais = null;
 
                     } else if ("DADOS-BASICOS-DO-TRABALHO".equals(currentElement) && producaoAtual != null) {
-                        producaoAtual.setTitulo(getAttributeValueSafe(reader, "TITULO-DO-TRABALHO"));
+                        producaoAtual.setTitulo(FiltroSimilaridade.normalizarTituloProducao(
+                                getAttributeValueSafe(reader, "TITULO-DO-TRABALHO")));
                         producaoAtual.setHashTitulo(gerarHash(producaoAtual.getTitulo()));
-                        producaoAtual.setAno(parseIntSafe(getAttributeValueSafe(reader, "ANO-DO-TRABALHO")));
+                        producaoAtual.setAno(validarAno(parseIntSafe(getAttributeValueSafe(reader, "ANO-DO-TRABALHO"))));
                         producaoAtual.setPais(getAttributeValueSafe(reader, "PAIS-DO-EVENTO"));
                         producaoAtual.setNatureza(getAttributeValueSafe(reader, "NATUREZA"));
 
@@ -371,7 +380,7 @@ public class LattesParser {
                     // FECHA PRODUÇÕES
                     else if ("ARTIGO-PUBLICADO".equals(endElement) && producaoAtual != null) {
                         producaoAtual.setNomeVeiculo(FiltroSimilaridade.verificaVeiculo(detalhePeriodico));
-                        producaoAtual.setIsbnIssn(detalheISSN);
+                        producaoAtual.setIsbnIssn(validarISSN(detalheISSN));
                         if (detalheVol == null) detalheVol = "";
                         if (detalhePag == null) detalhePag = "";
                         producaoAtual.setVolumePaginas("Vol: " + detalheVol + ", p.: " + detalhePag);
@@ -444,6 +453,35 @@ public class LattesParser {
         return val != null ? val : "";
     }
 
+
+    private String validarISSN(String issn) {
+        if (issn == null) return null;
+        String limpo = issn.replaceAll("[^0-9X]", "");
+        if (limpo.length() == 8) {
+            return limpo.substring(0,4) + "-" + limpo.substring(4);
+        }
+        return null; // issn invalido, não salvar
+    }
+
+    private Integer validarAno(Integer ano) {
+        int anoAtual = LocalDate.now().getYear();
+        if (ano == null || ano < 1900 || ano > anoAtual) return anoAtual;
+        else {
+            return ano;
+        }
+    }
+
+    private String limparDoiValido(String doi) {
+        if (doi == null || doi.trim().isEmpty()) return null;
+        String limpo = doi.replaceAll("(?i)https?://(dx\\.)?doi\\.org/", "")
+                .replaceAll("(?i)doi:", "")
+                .trim();
+        if (limpo.startsWith("10.") && limpo.contains("/")) {
+            return limpo;
+        }
+        return null;
+    }
+
     private boolean isTagOrientacao(String tag) {
         return "ORIENTACAO-CONCLUIDA-DE-MESTRADO".equals(tag) ||
                 "ORIENTACAO-CONCLUIDA-DE-DOUTORADO".equals(tag) ||
@@ -508,7 +546,10 @@ public class LattesParser {
         if (nomeLimpo.isEmpty() || nomeLimpo.length() >= 150) {
             return new Curso("Outros / Nome não padronizado");
         }
-        return new Curso(nomeLimpo);
+
+        // Normaliza contra o cache: se um nome similar já existe, usa o canônico
+        String nomeCanônico = FiltroSimilaridade.normalizarNomeCurso(nomeLimpo);
+        return new Curso(nomeCanônico);
     }
 
     private String limparString(String texto) {
@@ -599,9 +640,8 @@ public class LattesParser {
 
         if (cv.getAtuacoes() != null) {
             for (Atuacao at : cv.getAtuacoes()) {
-                if (at.getInstituicao() != null &&
-                        at.getInstituicao().getNomeInstituicao() != null &&
-                        at.getInstituicao().getNomeInstituicao().equalsIgnoreCase(nomeInstituicao)) {
+                if (FiltroSimilaridade.isMesmaInstituicao(
+                        at.getInstituicao().getNomeInstituicao(), nomeInstituicao)) {
                     return at;
                 }
             }
@@ -641,7 +681,7 @@ public class LattesParser {
         try {
             String limpo = texto.toLowerCase().replaceAll("\\s+", "");
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] messageDigest = md.digest(limpo.getBytes());
+            byte[] messageDigest = md.digest(limpo.getBytes(StandardCharsets.UTF_8));
 
             return String.format("%064x", new BigInteger(1, messageDigest));
         } catch (Exception e) {

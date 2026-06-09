@@ -179,9 +179,11 @@ public class CurriculoDAO {
                     curriculo = (Curriculo) session.merge(curriculo);
                     session.getTransaction().commit();
 
-                    // Invalida o cache de veículos para que o próximo parse
-                    // recarregue os nomes canônicos atualizados do banco
+                    // Invalida os caches para que o próximo parse recarregue
+                    // os nomes canônicos atualizados do banco
                     FiltroSimilaridade.invalidarCacheVeiculos();
+                    FiltroSimilaridade.invalidarCacheTitulos();
+                    FiltroSimilaridade.invalidarCacheCursos();
 
                 } catch (Exception e) {
                     if (session.getTransaction().isActive()) session.getTransaction().rollback();

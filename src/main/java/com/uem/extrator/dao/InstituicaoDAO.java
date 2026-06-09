@@ -96,10 +96,10 @@ public class InstituicaoDAO {
         }
     }
 
-    private static List<Instituicao> cacheTodas = null;
-    private static long ultimaAtualizacaoTodas = 0;
+    private static volatile List<Instituicao> cacheTodas = null;
+    private static volatile long ultimaAtualizacaoTodas = 0;
 
-    public Instituicao buscarPorSimilaridade(Session session, String nomeCandidato) {
+    public synchronized Instituicao buscarPorSimilaridade(Session session, String nomeCandidato) {
         if (nomeCandidato == null || nomeCandidato.trim().isEmpty()) return null;
 
         // 1. Busca exata (rápida via índice)
