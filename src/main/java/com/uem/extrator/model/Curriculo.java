@@ -22,7 +22,7 @@ public class Curriculo {
     @Column(name = "dt_atualizacao")
     private Date dataAtualizacao;
 
-    @Column(name = "nm_completo", length = 500)
+    @Column(name = "nm_completo", length = 500, nullable = false)
     private String nomeCompleto;
 
     @Column(name = "nm_citacao", length = 2000)
