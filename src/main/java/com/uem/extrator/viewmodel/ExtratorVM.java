@@ -557,7 +557,9 @@ public class ExtratorVM {
 
             if (dataRemota != null && dataLocal != null) {
                 return zerarHora(dataRemota).after(zerarHora(dataLocal));
-            } else return dataRemota != null && dataLocal != null;
+            }
+            // Se não tem data local mas o CNPq tem, está desatualizado!
+            return dataRemota != null;
         } catch (Exception e) {
             return false;
         }
