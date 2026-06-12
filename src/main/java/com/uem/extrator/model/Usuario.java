@@ -10,7 +10,7 @@ import java.security.NoSuchAlgorithmException;
 import org.mindrot.jbcrypt.*;
 
 @Entity
-@Table(name = "USUARIO", indexes = {
+@Table(name = "SEL_USUARIO", indexes = {
         @Index(name = "idx_usuario_login", columnList = "nm_login", unique = true)
 })
 public class Usuario implements Serializable {

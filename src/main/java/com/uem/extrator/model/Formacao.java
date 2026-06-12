@@ -3,7 +3,7 @@ package com.uem.extrator.model;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "FORMACAO", indexes = {
+@Table(name = "SEL_FORMACAO", indexes = {
         @Index(name = "idx_formacao_curriculo", columnList = "id_cnpq"),
         @Index(name = "idx_formacao_tipo_ano", columnList = "tp_formacao, an_conclusao")
 })

@@ -5,7 +5,7 @@ import java.io.Serializable;
 
 
 @Entity
-@Table(name = "QUALIS")
+@Table(name = "SEL_QUALIS")
 public class Qualis {
 
     @Id

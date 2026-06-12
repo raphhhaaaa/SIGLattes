@@ -49,7 +49,7 @@ public class QualisDAO {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             Transaction tx = session.beginTransaction();
             try {
-                session.createNativeQuery("DELETE FROM QUALIS").executeUpdate();
+                session.createNativeQuery("DELETE FROM SEL_QUALIS").executeUpdate();
                 tx.commit();
             } catch (Exception e) {
                 if (tx != null && tx.isActive()) tx.rollback();

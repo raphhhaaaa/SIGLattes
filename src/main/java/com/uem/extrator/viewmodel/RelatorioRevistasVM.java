@@ -52,7 +52,7 @@ public class RelatorioRevistasVM {
             "  MAX(p.nm_veiculo) AS revista, " +
             "  p.cd_isbn_issn AS issn, " +
             "  COUNT(p.id_producao) AS qtd " +
-            "FROM PRODUCAO p " +
+            "FROM SEL_PRODUCAO p " +
             "WHERE p.tp_producao = 'ARTIGO' " +
             "  AND p.cd_isbn_issn IS NOT NULL " +
             "  AND p.cd_isbn_issn <> '' " +

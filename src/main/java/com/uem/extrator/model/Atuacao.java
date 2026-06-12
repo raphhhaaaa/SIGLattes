@@ -7,7 +7,7 @@ import org.hibernate.annotations.Fetch;       // <--- IMPORTANTE
 import org.hibernate.annotations.FetchMode;
 
 @Entity
-@Table(name = "ATUACAO", indexes = {
+@Table(name = "SEL_ATUACAO", indexes = {
         @Index(name = "idx_atu_curr", columnList = "id_cnpq"),
         @Index(name = "idx_atu_inst", columnList = "id_instituicao")
 })
