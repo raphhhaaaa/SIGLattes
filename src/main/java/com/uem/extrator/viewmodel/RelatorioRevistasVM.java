@@ -51,7 +51,7 @@ public class RelatorioRevistasVM {
             "SELECT " +
             "  MAX(p.nm_veiculo) AS revista, " +
             "  p.cd_isbn_issn AS issn, " +
-            "  COUNT(p.id)       AS qtd " +
+            "  COUNT(p.id_producao) AS qtd " +
             "FROM PRODUCAO p " +
             "WHERE p.tp_producao = 'ARTIGO' " +
             "  AND p.cd_isbn_issn IS NOT NULL " +

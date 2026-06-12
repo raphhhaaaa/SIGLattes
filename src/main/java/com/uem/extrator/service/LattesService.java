@@ -38,6 +38,13 @@ public class LattesService {
     private static Service cachedService = null;
     private static String lastWsdlUrl = null;
 
+    // Configuração global para o pool de conexões HTTP do Java
+    // Evita a exaustão de canais do túnel SSH reaproveitando os sockets TCP
+    static {
+        System.setProperty("http.keepAlive", "true");
+        System.setProperty("http.maxConnections", "100"); // Padrão do Java é 5, o que causa gargalo em multithread
+    }
+
     private CurriculoDAO curriculoDAO = new CurriculoDAO();
 
     private synchronized Service getService(String wsdlUrl) throws Exception {
@@ -86,6 +93,11 @@ public class LattesService {
             requestContext.put("javax.xml.ws.client.receiveTimeout", timeoutMs);
             requestContext.put("javax.xml.ws.client.connectionTimeout", timeoutMs);
 
+            // Força o header HTTP Keep-Alive para que o CNPq (e o túnel SSH) não fechem a conexão TCP
+            Map<String, List<String>> headers = new HashMap<>();
+            headers.put("Connection", Collections.singletonList("Keep-Alive"));
+            requestContext.put(javax.xml.ws.handler.MessageContext.HTTP_REQUEST_HEADERS, headers);
+
             return port;
         } catch (Exception e) {
             throw new Exception("Falha ao conectar no Serviço Lattes (" + urlConfigurada + "). Verifique a URL na tela de Configuração ou o Túnel SSH.");
@@ -127,14 +139,13 @@ public class LattesService {
                 LattesParser parser = new LattesParser();
                 Curriculo curriculo = parser.parse(xmlConteudo, idLimpo);
 
-                // A data do XML (ddMMyyyy) é suficiente para a maioria dos casos.
-                // A chamada SOAP extra abaixo (obterDataAtualizacaoRemota) é lenta e redundante
-                // se já baixamos o XML. Vamos usar a data do XML se disponível.
-                if (curriculo.getDataAtualizacao() == null) {
-                    Date dataRealCNPq = obterDataAtualizacaoRemota(idLimpo);
-                    if (dataRealCNPq != null) {
-                        curriculo.setDataAtualizacao(dataRealCNPq);
-                    }
+                // IMPORTANTE: A data dentro do XML (ddMMyyyy) costuma ter um atraso/cache do CNPq
+                // em relação à data real do banco de dados deles. Se usarmos a data do XML,
+                // o sistema vai ficar em um loop achando que está sempre desatualizado.
+                // Vamos sempre sobrescrever com a data quente do WebService.
+                Date dataRealCNPq = obterDataAtualizacaoRemota(idLimpo);
+                if (dataRealCNPq != null) {
+                    curriculo.setDataAtualizacao(dataRealCNPq);
                 }
 
                 List<Producao> producoes = curriculo.getProducoes();

@@ -155,20 +155,24 @@ public class AuditLogService {
     }
 
     private static void salvarNoBanco(String tipo, String usuario, String identificador, String mensagem) {
-        Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            tx = session.beginTransaction();
-            LogAuditoria log = new LogAuditoria(
-                    new Date(),
-                    tipo,
-                    (usuario != null && !usuario.isEmpty()) ? usuario : "SISTEMA",
-                    (identificador != null && !identificador.isEmpty()) ? identificador : "N/A",
-                    mensagem);
-            session.save(log);
-            tx.commit();
+            Transaction tx = null;
+            try {
+                tx = session.beginTransaction();
+                LogAuditoria log = new LogAuditoria(
+                        new Date(),
+                        tipo,
+                        (usuario != null && !usuario.isEmpty()) ? usuario : "SISTEMA",
+                        (identificador != null && !identificador.isEmpty()) ? identificador : "N/A",
+                        mensagem);
+                session.save(log);
+                tx.commit();
+            } catch (Exception e) {
+                if (tx != null && tx.isActive()) tx.rollback();
+                logger.error("Erro crítico ao gravar log no banco de dados: ", e);
+            }
         } catch (Exception e) {
-            if (tx != null) tx.rollback();
-            logger.error("Erro crítico ao gravar log no banco de dados: ", e);
+            logger.error("Falha ao abrir sessão para gravar log no banco de dados: ", e);
         }
     }
 }

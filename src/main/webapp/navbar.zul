@@ -21,6 +21,10 @@
            sclass="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? 'sidebar-item active' : 'sidebar-item'}"
            href="/index.zul" tooltiptext="Extrator"/>
 
+        <a label="Verificar Atualizações" iconSclass="fa fa-refresh"
+           sclass="${desktop.requestPath.contains('verificacao') ? 'sidebar-item active' : 'sidebar-item'}"
+           href="/paginas/ferramentas/verificacao.zul" tooltiptext="Verificar curriculos desatualizados"/>
+
         <label value="CADASTROS" sclass="sidebar-section-title"/>
 
         <a label="Pessoas" iconSclass="fas fa-users"

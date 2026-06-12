@@ -138,7 +138,7 @@ Para ter acesso, existem dois caminhos:
 2. Servidor LDAP UEM: Através da autenticação pelo servidor LDAP da UEM o usuário poderá colocar suas credenciais instituicionais, que serão validadas e, caso autorizado, liberadadas
 para acesso, com uma conta temporária.
 
-<img width="2566" height="1319" alt="Captura de tela de 2026-05-07 09-16-23" src="https://github.com/user-attachments/assets/ebba6add-d4fe-47e0-a327-d285a871dfff" />
+<img width="2571" height="1322" alt="Captura de tela de 2026-06-09 09-50-23" src="https://github.com/user-attachments/assets/9c41e74b-81fa-41ed-bcce-600db18ab46b" />
 
 > **Nota 1:** A autenticação por LDAP UEM se restringe apenas à docentes/funcionários vinculados à UEM. Alunos, por padrão, são impedidos de entrar no sistema.
 
@@ -154,7 +154,7 @@ A página inicial é o coração do sistema. Assim que o usuário entra, ele pod
  - de currículos desatualizados no momento e currículos processados no dia.);
  - Menu Lateral.
 
-<img width="2566" height="1319" alt="Captura de tela de 2026-05-07 09-17-01" src="https://github.com/user-attachments/assets/976bc652-c78f-4843-9f96-230f8ba94eab" />
+<img width="2571" height="1322" alt="Captura de tela de 2026-06-09 09-50-42" src="https://github.com/user-attachments/assets/fc05f5b2-729a-4764-977b-e6817b6f7416" />
 
 ### 3. Verificar Atualizações
 Nesta página o usuário pode buscar por currículos desatualizados e atualiza-los. De forma individual ou geral.
@@ -177,13 +177,12 @@ no botão de ação "Ver detalhes" que abrirá um modal detalhado com uma versã
 Tabela que guarda o registro de todas as instituições colhidas na extração dos currículos. Exibe também o número de ocorrências
 que cada instituição registrou ao total.
 
-<img width="2564" height="1324" alt="Captura de tela de 2026-05-19 10-15-13" src="https://github.com/user-attachments/assets/75750426-0975-4be1-99f9-2ab6a5ff354b" />
-
+<img width="2559" height="1322" alt="Captura de tela de 2026-06-09 09-51-09" src="https://github.com/user-attachments/assets/ad493e8e-8cf9-4cf5-8753-841f90739c0e" />
 
 ### 📖 _Cursos_ 
 Tabela que guarda o registro de todos os cursos colhidos na extração dos currículos.
 
-<img width="2566" height="1319" alt="Captura de tela de 2026-05-07 09-21-21" src="https://github.com/user-attachments/assets/ae2209f1-920f-4db9-b94d-4829e40a554a" />
+<img width="2559" height="1322" alt="Captura de tela de 2026-06-09 09-51-19" src="https://github.com/user-attachments/assets/697e18a2-3839-4a1f-bba4-b68fab8b2337" />
 
 ## RELATÓRIOS:
 

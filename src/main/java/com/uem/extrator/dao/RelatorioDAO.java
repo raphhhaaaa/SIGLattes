@@ -54,9 +54,11 @@ public class RelatorioDAO {
                        .append("WHERE f.tipoFormacao = :termo ")
                        .append("AND f.anoConclusao IS NOT NULL ")
                        .append("AND EXISTS (")
-                       .append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i ")
+                       .append("  SELECT 1 FROM Atuacao a JOIN a.vinculos v JOIN a.instituicao i ")
                        .append("  WHERE a.curriculo = f.curriculo ")
-                       .append("  AND UPPER(i.nomeInstituicao) = :nomeInst")
+                       .append("  AND UPPER(i.nomeInstituicao) = :nomeInst ")
+                       .append("  AND (v.anoInicio IS NULL OR v.anoInicio <= f.anoConclusao) ")
+                       .append("  AND (v.anoFim IS NULL OR v.anoFim >= f.anoConclusao)")
                        .append(") ")
                        .append("GROUP BY f.anoConclusao ")
                        .append("ORDER BY f.anoConclusao DESC");
@@ -81,9 +83,11 @@ public class RelatorioDAO {
                        .append("WHERE p.tipo = :termo ")
                        .append("AND p.ano IS NOT NULL ")
                        .append("AND EXISTS (")
-                       .append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i ")
+                       .append("  SELECT 1 FROM Atuacao a JOIN a.vinculos v JOIN a.instituicao i ")
                        .append("  WHERE a.curriculo = p.curriculo ")
-                       .append("  AND UPPER(i.nomeInstituicao) = :nomeInst")
+                       .append("  AND UPPER(i.nomeInstituicao) = :nomeInst ")
+                       .append("  AND (v.anoInicio IS NULL OR v.anoInicio <= p.ano) ")
+                       .append("  AND (v.anoFim IS NULL OR v.anoFim >= p.ano)")
                        .append(") ")
                        .append("GROUP BY p.ano ")
                        .append("ORDER BY p.ano DESC");
@@ -131,9 +135,11 @@ public class RelatorioDAO {
                        .append("JOIN FETCH f.curriculo ")
                        .append("WHERE f.tipoFormacao = :termo ")
                        .append("AND EXISTS (")
-                       .append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i ")
+                       .append("  SELECT 1 FROM Atuacao a JOIN a.vinculos v JOIN a.instituicao i ")
                        .append("  WHERE a.curriculo = f.curriculo ")
-                       .append("  AND UPPER(i.nomeInstituicao) = :nomeInst")
+                       .append("  AND UPPER(i.nomeInstituicao) = :nomeInst ")
+                       .append("  AND (v.anoInicio IS NULL OR v.anoInicio <= f.anoConclusao) ")
+                       .append("  AND (v.anoFim IS NULL OR v.anoFim >= f.anoConclusao)")
                        .append(") ")
                        .append("ORDER BY f.anoConclusao DESC");
                 } else {
@@ -154,9 +160,11 @@ public class RelatorioDAO {
                        .append("JOIN FETCH p.curriculo c ")
                        .append("WHERE p.tipo = :termo ")
                        .append("AND EXISTS (")
-                       .append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i ")
+                       .append("  SELECT 1 FROM Atuacao a JOIN a.vinculos v JOIN a.instituicao i ")
                        .append("  WHERE a.curriculo = c ")
-                       .append("  AND UPPER(i.nomeInstituicao) = :nomeInst")
+                       .append("  AND UPPER(i.nomeInstituicao) = :nomeInst ")
+                       .append("  AND (v.anoInicio IS NULL OR v.anoInicio <= p.ano) ")
+                       .append("  AND (v.anoFim IS NULL OR v.anoFim >= p.ano)")
                        .append(") ")
                        .append("ORDER BY p.citacoes DESC NULLS LAST, p.ano DESC");
                 } else {
@@ -216,9 +224,11 @@ public class RelatorioDAO {
                  */
                 hqlProd.append("WHERE p.tipo IN ('ARTIGO','LIVRO','EVENTO') ")
                        .append("AND EXISTS (")
-                       .append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i ")
+                       .append("  SELECT 1 FROM Atuacao a JOIN a.vinculos v JOIN a.instituicao i ")
                        .append("  WHERE a.curriculo = p.curriculo ")
-                       .append("  AND UPPER(i.nomeInstituicao) = :inst")
+                       .append("  AND UPPER(i.nomeInstituicao) = :inst ")
+                       .append("  AND (v.anoInicio IS NULL OR v.anoInicio <= p.ano) ")
+                       .append("  AND (v.anoFim IS NULL OR v.anoFim >= p.ano) ")
                        .append(") ");
             } else {
                 hqlProd.append("WHERE p.tipo IN ('ARTIGO','LIVRO','EVENTO') ");
@@ -237,9 +247,11 @@ public class RelatorioDAO {
             if (filtrar) {
                 hqlForm.append("WHERE f.tipoFormacao IN ('DOUTORADO','MESTRADO') ")
                        .append("AND EXISTS (")
-                       .append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i ")
+                       .append("  SELECT 1 FROM Atuacao a JOIN a.vinculos v JOIN a.instituicao i ")
                        .append("  WHERE a.curriculo = f.curriculo ")
-                       .append("  AND UPPER(i.nomeInstituicao) = :inst")
+                       .append("  AND UPPER(i.nomeInstituicao) = :inst ")
+                       .append("  AND (v.anoInicio IS NULL OR v.anoInicio <= f.anoConclusao) ")
+                       .append("  AND (v.anoFim IS NULL OR v.anoFim >= f.anoConclusao) ")
                        .append(") ");
             } else {
                 hqlForm.append("WHERE f.tipoFormacao IN ('DOUTORADO','MESTRADO') ");
@@ -279,8 +291,10 @@ public class RelatorioDAO {
                    .append("WHERE f.tipoFormacao = :termo ");
                 if (filtrar) {
                     hql.append("AND EXISTS (")
-                       .append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i ")
-                       .append("  WHERE a.curriculo = c AND UPPER(i.nomeInstituicao) = :inst")
+                       .append("  SELECT 1 FROM Atuacao a JOIN a.vinculos v JOIN a.instituicao i ")
+                       .append("  WHERE a.curriculo = c AND UPPER(i.nomeInstituicao) = :inst ")
+                       .append("  AND (v.anoInicio IS NULL OR v.anoInicio <= f.anoConclusao) ")
+                       .append("  AND (v.anoFim IS NULL OR v.anoFim >= f.anoConclusao)")
                        .append(") ");
                 }
                 hql.append("GROUP BY c.nomeCompleto ")
@@ -291,8 +305,10 @@ public class RelatorioDAO {
                    .append("WHERE p.tipo = :termo ");
                 if (filtrar) {
                     hql.append("AND EXISTS (")
-                       .append("  SELECT 1 FROM Atuacao a JOIN a.instituicao i ")
-                       .append("  WHERE a.curriculo = c AND UPPER(i.nomeInstituicao) = :inst")
+                       .append("  SELECT 1 FROM Atuacao a JOIN a.vinculos v JOIN a.instituicao i ")
+                       .append("  WHERE a.curriculo = c AND UPPER(i.nomeInstituicao) = :inst ")
+                       .append("  AND (v.anoInicio IS NULL OR v.anoInicio <= p.ano) ")
+                       .append("  AND (v.anoFim IS NULL OR v.anoFim >= p.ano)")
                        .append(") ");
                 }
                 hql.append("GROUP BY c.nomeCompleto ")
