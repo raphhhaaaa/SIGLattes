@@ -46,13 +46,13 @@ public class Producao {
     @Column(name = "cd_doi", length = 500)
     private String doi;
 
-    @Column(name = "nu_citacoes")
+    @Column(name = "nu_citacao")
     private Integer citacoes;
 
     @Column(name = "de_acesso", length = 20)
     private String statusAcesso = "-";
 
-    @Column(name = "dt_atualizacao_metricas")
+    @Column(name = "dt_atualizacao_metrica")
     @Temporal(TemporalType.TIMESTAMP)
     private Date dataAtualizacaoMetricas;
 
@@ -67,7 +67,7 @@ public class Producao {
     @Column(name = "cd_isbn_issn", length = 70)
     private String isbnIssn;        // Código de identificação internacional de livros (isbn) e artigos (issn).
 
-    @Column(name = "de_vol_paginas", length = 1000)
+    @Column(name = "de_vol_pagina", length = 1000)
     private String volumePaginas;
 
     @Column(name = "de_natureza", length = 50)

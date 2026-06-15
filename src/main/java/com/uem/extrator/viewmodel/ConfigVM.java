@@ -382,7 +382,7 @@ public class ConfigVM {
     @Command
     @NotifyChange("*")
     public void restaurarPadrao() {
-        this.wsdlUrl = "http://localhost:8888/srvcurriculo/WSCurriculo?wsdl";
+        this.wsdlUrl = "http://servicosweb.cnpq.br/srvcurriculo/WSCurriculo?wsdl";
         this.timeout = 20;
         this.retryAttempts = 3;
         this.verifyEnabled = false;

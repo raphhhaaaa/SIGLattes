@@ -35,7 +35,7 @@ public class ConfigManager {
 
 
     // valores padrão
-    private static final String DEFAULT_WSDL = "http://localhost:8888/srvcurriculo/WSCurriculo?wsdl";
+    private static final String DEFAULT_WSDL = "http://servicosweb.cnpq.br/srvcurriculo/WSCurriculo?wsdl";
     private static final String DEFAULT_TIMEOUT = "20"; // 20 segundos
     private static final String DEFAULT_RETRIES = "3"; // 3 tentativas
     private static final String DEFAULT_VERIFY_ENABLED = "false";
