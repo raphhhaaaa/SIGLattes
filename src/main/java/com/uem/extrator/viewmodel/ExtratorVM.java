@@ -990,13 +990,13 @@ public class ExtratorVM {
                         return;
                     }
 
-//                    if (curriculoDAO.existe(idBusca)) {
-//                        sucesso.incrementAndGet();
-//                        atualizarLogBatch(desktop, "⏩  ["+(index+1)+"/"+total+"] ID " + idBusca + " já cadastrado. Pulando...\n");
-//                        AuditLogService.registrarExtracao("LOTE_PULADO", login, true, idBusca, "Currículo já existente no banco (Ignorado)");
-//                        finalizarTarefa(desktop, concluidos, total, sucesso, erro);
-//                        return;
-//                    }
+                    if (curriculoDAO.existe(idBusca)) {
+                        sucesso.incrementAndGet();
+                        atualizarLogBatch(desktop, "⏩  ["+(index+1)+"/"+total+"] ID " + idBusca + " já cadastrado. Pulando...\n");
+                        AuditLogService.registrarExtracao("LOTE_PULADO", login, true, idBusca, "Currículo já existente no banco (Ignorado)");
+                        finalizarTarefa(desktop, concluidos, total, sucesso, erro);
+                        return;
+                    }
 
                     atualizarLogBatch(desktop, "["+(index+1)+"/"+total+"] ID "+idBusca+"...");
                     Curriculo c = lattesService.getCurriculo(idBusca);
