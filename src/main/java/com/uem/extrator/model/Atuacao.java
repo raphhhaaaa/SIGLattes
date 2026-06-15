@@ -14,7 +14,8 @@ import org.hibernate.annotations.FetchMode;
 public class Atuacao {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(name = "seqAtuacao", sequenceName = "SEL.SEQ_ATUACAO", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seqAtuacao")
     @Column(name = "id_atuacao")
     private Long id;
 

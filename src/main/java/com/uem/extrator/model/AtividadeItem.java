@@ -7,7 +7,8 @@ import javax.persistence.*;
 public class AtividadeItem {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(name = "seqAtividadeItem", sequenceName = "SEL.SEQ_ATIVIDADE_ITEM", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seqAtividadeItem")
     @Column(name = "id_atividade_item")
     private Long id;
 

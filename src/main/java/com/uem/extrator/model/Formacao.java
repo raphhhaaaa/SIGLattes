@@ -11,7 +11,8 @@ import javax.persistence.*;
 public class Formacao {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(name = "seqFormacao", sequenceName = "SEL.SEQ_FORMACAO", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seqFormacao")
     @Column(name = "id_formacao")
     private Long id;
 

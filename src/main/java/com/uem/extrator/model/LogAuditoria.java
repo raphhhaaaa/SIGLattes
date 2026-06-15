@@ -8,7 +8,8 @@ import java.util.Date;
 public class LogAuditoria {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(name = "seqLogAuditoria", sequenceName = "SEL.SEQ_AUDITORIA_LOG", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seqLogAuditoria")
     @Column(name = "id_log")
     private Long id;
 

@@ -8,7 +8,8 @@ import javax.persistence.*;
 public class Curso {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(name = "seqCurso", sequenceName = "SEL.SEQ_CURSO", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seqCurso")
     @Column(name = "id_curso")
     private Long id;
 

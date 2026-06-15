@@ -12,7 +12,8 @@ import java.util.List;
 public class Atividade {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(name = "seqAtividade", sequenceName = "SEL.SEQ_ATIVIDADE", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seqAtividade")
     @Column(name = "id_atividade")
     private Long id;
 

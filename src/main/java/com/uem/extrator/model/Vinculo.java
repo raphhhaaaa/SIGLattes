@@ -10,7 +10,8 @@ import javax.persistence.*;
 public class Vinculo {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(name = "seqVinculo", sequenceName = "SEL.SEQ_VINCULO", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seqVinculo")
     @Column(name = "id_vinculo")
     private Long id;
 

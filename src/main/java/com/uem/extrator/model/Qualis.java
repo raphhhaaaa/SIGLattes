@@ -9,7 +9,8 @@ import java.io.Serializable;
 public class Qualis {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(name = "seqQualis", sequenceName = "SEL.SEQ_QUALIS", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seqQualis")
     @Column(name = "id_qualis")
     private Long id;
 
