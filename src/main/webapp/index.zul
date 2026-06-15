@@ -249,21 +249,21 @@
                                     </div>
                                 </div>
 
-                                <div sclass="col-md-6">
-                                    <div sclass="card text-white bg-warning mb-3 shadow-sm dashboard-card">
-                                        <div sclass="card-body" style="min-height: 120px;">
-                                            <n:h5 class="card-title">Atualizações CNPq</n:h5>
-                                            <separator bar="true" sclass="mb-3"/>
-                                            <div sclass="d-flex align-items-center">
-                                                <span sclass="z-icon-refresh" style="font-size: 40px; margin-right: 15px; opacity: 0.8;"/>
-                                                <vlayout spacing="0">
-                                                    <label value="@load(vm.textoDesatualizados)" sclass="card-value"/>
-                                                    <label value="Currículos Desatualizados" style="font-size: 11px; opacity: 0.9;"/>
-                                                </vlayout>
+                                    <n:div sclass="col-md-6" onclick="window.location.href='paginas/ferramentas/verificacao.zul';">
+                                        <div sclass="card text-white bg-warning mb-3 shadow-sm dashboard-card">
+                                            <div sclass="card-body" style="min-height: 120px; cursor: pointer;">
+                                                <n:h5 class="card-title">Atualizações CNPq</n:h5>
+                                                <separator bar="true" sclass="mb-3"/>
+                                                <div sclass="d-flex align-items-center">
+                                                    <span sclass="z-icon-refresh" style="font-size: 40px; margin-right: 15px; opacity: 0.8;"/>
+                                                    <vlayout spacing="0">
+                                                        <label value="@load(vm.textoDesatualizados)" sclass="card-value"/>
+                                                        <label value="Currículos Desatualizados" style="font-size: 11px; opacity: 0.9;"/>
+                                                    </vlayout>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
+                                    </n:div>
 
                                 <div sclass="col-md-6">
                                     <div sclass="card text-white bg-primary mb-3 shadow-sm dashboard-card">
