@@ -59,15 +59,24 @@ public class ConfigManager {
 
     // SEGURANÇA
     private static final String DEFAULT_AUTH_TYPE = "LOCAL";
-    private static final String DEFAULT_AUDIT_LOGINS = "false";
-    private static final String DEFAULT_AUDIT_QUERIES = "false";
-    private static final String DEFAULT_AUDIT_ADMIN_ACTIONS = "false";
-
+    private static final String DEFAULT_AUDIT_LOGINS = "true";
+    private static final String DEFAULT_AUDIT_QUERIES = "true";
+    private static final String DEFAULT_AUDIT_ADMIN_ACTIONS = "true";
 
     private ConfigManager() {
-        // salva na pasta do usuário para não perder ao redeployar o WAR
-        // ex: C:\Users\SeuUsuario\lattes_extrator_config.properties
-        this.configPath = System.getProperty("user.home") + File.separator + "lattes_extrator_config.properties";
+        // Tenta salvar no diretorio do Tomcat onde temos certeza de permissão de escrita
+        String catBase = System.getProperty("catalina.base");
+        if (catBase != null) {
+            File confDir = new File(catBase, "conf");
+            if (confDir.exists() && confDir.canWrite()) {
+                this.configPath = confDir.getAbsolutePath() + File.separator + "lattes_extrator_config.properties";
+            } else {
+                this.configPath = catBase + File.separator + "logs" + File.separator + "lattes_extrator_config.properties";
+            }
+        } else {
+            this.configPath = System.getProperty("user.home") + File.separator + "lattes_extrator_config.properties";
+        }
+        
         this.properties = new Properties();
         carregar();
     }
@@ -218,7 +227,7 @@ public class ConfigManager {
     }
 
     public boolean isAuditQueries() {
-        return Boolean.parseBoolean(properties.getProperty("audit_queries", "false"));
+        return Boolean.parseBoolean(properties.getProperty("audit_queries", DEFAULT_AUDIT_QUERIES));
     }
     public void setAuditQueries(boolean auditQueries) {
         properties.setProperty("audit_queries", String.valueOf(auditQueries));
