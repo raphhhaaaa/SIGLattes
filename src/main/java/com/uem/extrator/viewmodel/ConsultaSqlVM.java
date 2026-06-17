@@ -70,6 +70,15 @@ public class ConsultaSqlVM {
             return;
         }
 
+        // Remove ponto e vírgula do final da query para evitar falha silenciosa no JDBC do DB2
+        final String queryExecucao;
+        String temp = sqlQuery.trim();
+        if (temp.endsWith(";")) {
+            queryExecucao = temp.substring(0, temp.length() - 1);
+        } else {
+            queryExecucao = temp;
+        }
+
         this.executando = true;
         this.colunas.clear();
         this.linhas.clear();
@@ -86,7 +95,7 @@ public class ConsultaSqlVM {
                 @Override
                 public void execute(Connection connection) throws SQLException {
                     try (Statement stmt = connection.createStatement();
-                         ResultSet rs = stmt.executeQuery(sqlQuery)) {
+                         ResultSet rs = stmt.executeQuery(queryExecucao)) {
 
                         ResultSetMetaData metaData = rs.getMetaData();
                         int columnCount = metaData.getColumnCount();
