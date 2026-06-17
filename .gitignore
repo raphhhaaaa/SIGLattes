@@ -73,3 +73,4 @@ src/test/
 
 # AI context
 /artifacts
+settings.json

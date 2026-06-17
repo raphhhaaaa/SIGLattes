@@ -19,7 +19,7 @@
              apply="org.zkoss.bind.BindComposer"
              viewModel="@id('vm') @init('com.uem.extrator.viewmodel.ExtratorVM')">
 
-            <n:a href="/SIGLattes" style="text-decoration: none" class="text-truncate">
+            <n:a href="/siglattes" style="text-decoration: none" class="text-truncate">
                 <div class="d-flex align-items-center m-0 text-truncate">
                     <div>
                         <image src="/images/header_logo.png" style="height:90px"/>
