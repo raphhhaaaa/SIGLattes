@@ -85,46 +85,39 @@ public class ConsultaSqlVM {
             session.doWork(new org.hibernate.jdbc.Work() {
                 @Override
                 public void execute(Connection connection) throws SQLException {
-                    boolean originalReadOnly = connection.isReadOnly();
-                    try {
-                        connection.setReadOnly(true);
-                        
-                        try (Statement stmt = connection.createStatement();
-                             ResultSet rs = stmt.executeQuery(sqlQuery)) {
+                    try (Statement stmt = connection.createStatement();
+                         ResultSet rs = stmt.executeQuery(sqlQuery)) {
 
-                            ResultSetMetaData metaData = rs.getMetaData();
-                            int columnCount = metaData.getColumnCount();
+                        ResultSetMetaData metaData = rs.getMetaData();
+                        int columnCount = metaData.getColumnCount();
 
-                            for (int i = 1; i <= columnCount; i++) {
-                                colunas.add(metaData.getColumnName(i));
-                            }
-
-                            int limite = 10000;
-                            int count = 0;
-                            while (rs.next() && count < limite) {
-                                List<Object> linha = new ArrayList<>();
-                                for (int i = 1; i <= columnCount; i++) {
-                                    Object valor = rs.getObject(i);
-                                    if (valor == null) {
-                                        linha.add("NULL");
-                                    } else if (valor instanceof Clob) {
-                                        Clob clob = (Clob) valor;
-                                        String texto = clob.getSubString(1, (int) Math.min(clob.length(), 200));
-                                        linha.add(texto + "...");
-                                    } else {
-                                        linha.add(valor.toString());
-                                    }
-                                }
-                                linhas.add(linha);
-                                count++;
-                            }
-
-                            if (count == limite) {
-                                Clients.showNotification("Resultado limitado às primeiras " + limite + " linhas.", "info", null, null, 4000);
-                            }
+                        for (int i = 1; i <= columnCount; i++) {
+                            colunas.add(metaData.getColumnName(i));
                         }
-                    } finally {
-                        connection.setReadOnly(originalReadOnly);
+
+                        int limite = 10000;
+                        int count = 0;
+                        while (rs.next() && count < limite) {
+                            List<Object> linha = new ArrayList<>();
+                            for (int i = 1; i <= columnCount; i++) {
+                                Object valor = rs.getObject(i);
+                                if (valor == null) {
+                                    linha.add("NULL");
+                                } else if (valor instanceof Clob) {
+                                    Clob clob = (Clob) valor;
+                                    String texto = clob.getSubString(1, (int) Math.min(clob.length(), 200));
+                                    linha.add(texto + "...");
+                                } else {
+                                    linha.add(valor.toString());
+                                }
+                            }
+                            linhas.add(linha);
+                            count++;
+                        }
+
+                        if (count == limite) {
+                            Clients.showNotification("Resultado limitado às primeiras " + limite + " linhas.", "info", null, null, 4000);
+                        }
                     }
                 }
             });
