@@ -79,25 +79,11 @@ public class AuditLogService {
     public long contarProcessamentosHoje() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
 
-            // Calcula o intervalo do dia atual no lado Java (sem funções no SQL)
-            Calendar cal = Calendar.getInstance();
-            cal.set(Calendar.HOUR_OF_DAY, 0);
-            cal.set(Calendar.MINUTE, 0);
-            cal.set(Calendar.SECOND, 0);
-            cal.set(Calendar.MILLISECOND, 0);
-            Date inicioHoje = cal.getTime();
-
-            cal.add(Calendar.DAY_OF_MONTH, 1);
-            Date inicioAmanha = cal.getTime();
-
             return session.createQuery(
                     "SELECT COUNT(l) FROM LogAuditoria l " +
-                    "WHERE l.dataHora >= :inicioHoje " +
-                    "AND l.dataHora < :inicioAmanha " +
+                    "WHERE l.dataHora >= CURRENT_DATE " +
                     "AND (l.tipo LIKE '%CPF%' OR l.tipo LIKE '%ID%' OR l.tipo LIKE '%LOTE%')",
                     Long.class)
-                    .setParameter("inicioHoje", inicioHoje)
-                    .setParameter("inicioAmanha", inicioAmanha)
                     .uniqueResult();
 
         } catch (Exception e) {
