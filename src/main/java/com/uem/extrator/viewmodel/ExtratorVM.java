@@ -11,6 +11,7 @@ import com.uem.extrator.service.LattesService;
 import com.uem.extrator.service.AuditLogService;
 import com.uem.extrator.util.ConfigManager;
 import com.uem.extrator.util.HibernateUtil;
+import com.uem.extrator.util.UsuarioSessaoListener;
 import org.hibernate.Session;
 import org.zkoss.bind.BindUtils;
 import org.zkoss.bind.annotation.BindingParam;
@@ -77,6 +78,7 @@ public class ExtratorVM {
     private String textoDesatualizados = "...";
     private Long consultasHoje;
     private Long totalPesquisadoresUem;
+    private int usuariosAtivos;
 
     // --- STATUS CONEXÃO --- //
     private boolean online;
@@ -108,12 +110,13 @@ public class ExtratorVM {
     }
 
     @Command
-    @NotifyChange({"totalCurriculos", "totalPesquisadoresUem", "textoDesatualizados", "consultasHoje", "online", "statusTexto", "statusClasse", "statusIcone"})
+    @NotifyChange({"totalCurriculos", "totalPesquisadoresUem", "textoDesatualizados", "consultasHoje", "usuariosAtivos", "online", "statusTexto", "statusClasse", "statusIcone"})
     public void atualizarDashboard() {
         // 1. Métricas rápidas
         this.totalCurriculos = curriculoDAO.contarTotalCurriculos();
         this.consultasHoje = curriculoDAO.getConsultasHoje();
         this.totalPesquisadoresUem = curriculoDAO.contarPesquisadoresUem();
+        this.usuariosAtivos = UsuarioSessaoListener.getTotalOnline();
 
         // 2. Ping do CNPq FORA DA THREAD (Síncrono - a tela espera ele terminar para desenhar os cartões)
         this.online = lattesService.testarConexaoCNPq();
@@ -1182,6 +1185,9 @@ public class ExtratorVM {
     public String getTextoDesatualizados() { return textoDesatualizados; }
     public Long getConsultasHoje() { return consultasHoje; }
     public List<Curriculo> getListaDesatualizados() { return listaDesatualizados; }
+    public int getUsuariosAtivos() {
+        return usuariosAtivos;
+    }
     public String getLogAtualizacao() { return logAtualizacao; }
     public Usuario getUsuarioLogado() { return usuarioLogado; }
     public Long getTotalPesquisadoresUem() { return totalPesquisadoresUem; }
