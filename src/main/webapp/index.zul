@@ -281,22 +281,6 @@
                                     </div>
                                 </div>
 
-                                <div sclass="col-md-6">
-                                    <div sclass="card text-white mb-3 shadow-sm dashboard-card" style="background-color: #6f42c1;">
-                                        <div sclass="card-body" style="min-height: 120px;">
-                                            <n:h5 class="card-title">Usuários ativos</n:h5>
-                                            <separator bar="true" sclass="mb-3"/>
-                                            <div sclass="d-flex align-items-center">
-                                                <span sclass="z-icon-solid fa-user" style="font-size: 40px; margin-right: 15px; opacity: 0.8;"/>
-                                                <vlayout spacing="0">
-                                                    <label value="@load(vm.usuariosAtivos)" sclass="card-value"/>
-                                                    <label value="Ativos no sistema agora" style="font-size: 11px; opacity: 0.9;"/>
-                                                </vlayout>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
                                 <script type="text/javascript"><![CDATA[
                                     var chartPesquisadores = null;
                                     var chartProducoes = null;
