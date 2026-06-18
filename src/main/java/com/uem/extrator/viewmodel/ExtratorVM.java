@@ -164,6 +164,13 @@ public class ExtratorVM {
 
     private String gerarScriptGraficos() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            
+            // FORÇA LEITURA SUJA (READ UNCOMMITTED)
+            // Impede que o DB2 trave a query do dashboard esperando locks de INSERT/UPDATE de outras rotinas.
+            session.doWork(connection -> {
+                connection.setTransactionIsolation(java.sql.Connection.TRANSACTION_READ_UNCOMMITTED);
+            });
+
             /*
              * DASHBOARD — usa COUNT(DISTINCT hashTitulo) em SQL para manter velocidade.
              *
@@ -171,24 +178,24 @@ public class ExtratorVM {
              * é O(n²) e adequada para relatórios dedicados, não para carregamento
              * automático do dashboard. O EXISTS já garante sem produto cartesiano.
              */
-            // 1. OTIMIZAÇÃO: em vez de EXISTS correlacionado (O(n²)), usamos INNER JOIN com DISTINCT.
-            // O COUNT(DISTINCT) já garante que não haverá contagem dupla caso o curriculo tenha múltiplos vínculos UEM ativos no ano.
-            String baseJoin = "FROM Producao p " +
-                              "JOIN p.curriculo c " +
-                              "JOIN c.atuacoes a " +
-                              "JOIN a.vinculos v " +
-                              "JOIN a.instituicao i " +
-                              "WHERE (i.siglaInstituicao = 'UEM' OR i.nomeInstituicao LIKE '%Universidade Estadual de Maringá%') " +
-                              "AND (v.anoInicio IS NULL OR v.anoInicio <= p.ano) " +
-                              "AND (v.anoFim IS NULL OR v.anoFim >= p.ano) ";
+            String existsUEM =
+                    " AND EXISTS (" +
+                    "   SELECT 1 FROM Atuacao a JOIN a.vinculos v JOIN a.instituicao i" +
+                    "   WHERE a.curriculo = p.curriculo" +
+                    "   AND (i.siglaInstituicao = 'UEM'" +
+                    "     OR i.nomeInstituicao LIKE '%Universidade Estadual de Maringá%')" +
+                    "   AND (v.anoInicio IS NULL OR v.anoInicio <= p.ano)" +
+                    "   AND (v.anoFim IS NULL OR v.anoFim >= p.ano)" +
+                    ") ";
 
             int anoAtual = Year.now().getValue();
             int anoLimite = anoAtual - 10;
 
             // Gráfico 1: Evolução por ano (últimos 10 anos)
             String hql1 = "SELECT p.ano, COUNT(DISTINCT p.hashTitulo) " +
-                    baseJoin + 
-                    "AND p.ano >= " + anoLimite + " AND p.ano IS NOT NULL " +
+                    "FROM Producao p " +
+                    "WHERE p.ano >= " + anoLimite + " AND p.ano IS NOT NULL " +
+                    existsUEM +
                     "GROUP BY p.ano " +
                     "ORDER BY p.ano ASC";
 
@@ -198,8 +205,9 @@ public class ExtratorVM {
 
             // Gráfico 2: Distribuição por tipo (todos os anos)
             String hql2 = "SELECT p.tipo, COUNT(DISTINCT p.hashTitulo) " +
-                    baseJoin + 
-                    "AND p.tipo IS NOT NULL " +
+                    "FROM Producao p " +
+                    "WHERE p.tipo IS NOT NULL " +
+                    existsUEM +
                     "GROUP BY p.tipo " +
                     "ORDER BY COUNT(DISTINCT p.hashTitulo) DESC";
 
@@ -207,8 +215,7 @@ public class ExtratorVM {
             String labels2 = "['" + res2.stream().map(r -> r[0] != null ? r[0].toString() : "Outros").collect(Collectors.joining("','")) + "']";
             String data2   = "[" + res2.stream().map(r -> r[1].toString()).collect(Collectors.joining(",")) + "]";
 
-            String script = String.format("var attempt = 0; function tryRender(){ if(typeof renderizarGraficos === 'function') { renderizarGraficos(%s, %s, %s, %s); } else if(attempt < 20) { attempt++; setTimeout(tryRender, 300); } }; tryRender();", labels1, data1, labels2, data2);
-            return script;
+            return String.format("setTimeout(function(){ if(typeof renderizarGraficos === 'function') renderizarGraficos(%s, %s, %s, %s); }, 300);", labels1, data1, labels2, data2);
 
         } catch (Exception e) {
             logger.error("Erro na ViewModel de Extração", e);
