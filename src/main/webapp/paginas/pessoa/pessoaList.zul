@@ -26,6 +26,8 @@
         <west id="sidebarMenu"
               width="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? '260px' : '75px'}"
               border="none"
+              collapsible="true"
+              slide="true"
               sclass="${desktop.requestPath == '/' or desktop.requestPath.contains('index') ? 'sidebar-wrapper' : 'sidebar-wrapper sidebar-mini'}">
             <include src="/navbar.zul" />
         </west>
