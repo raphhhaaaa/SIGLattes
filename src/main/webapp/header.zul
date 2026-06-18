@@ -31,17 +31,26 @@
                 </div>
             </n:a>
 
-            <div class="ml-auto flex-shrink-0" style="margin-right: 15px;">
+            <div class="ml-auto flex-shrink-0 d-flex align-items-center" style="margin-right: 15px;">
+                
+                <!-- label de usuários online -->
+                <div style="margin-right: 20px; font-size: 13px; color: #6c757d; font-weight: 500;" tooltiptext="Usuários ativos no momento">
+                    <span class="z-icon-circle" style="color: #28a745; font-size: 10px; margin-right: 5px; animation: pulse 2s infinite;"/>
+                    <label value="@load(vm.usuariosAtivos)"/>
+                    <label value=" online" style="margin-left: 2px;"/>
+                </div>
+
                 <button sclass="btn btn-light"
                         iconSclass="z-icon-user"
                         label="@load('Olá, '.concat(vm.usuarioLogado.nome))"
                         popup="menuUsuario, position=after_end"
-                        style="font-weight: bold; white-space: nowrap;"/> <menupopup id="menuUsuario">
-                <menuitem label="Sair do Sistema"
-                          iconSclass="z-icon-sign-out text-danger"
-                          sclass="text-danger font-weight-bold"
-                          onClick="@command('logout')"/>
-            </menupopup>
+                        style="font-weight: bold; white-space: nowrap;"/>
+                <menupopup id="menuUsuario">
+                    <menuitem label="Sair do Sistema"
+                              iconSclass="z-icon-sign-out text-danger"
+                              sclass="text-danger font-weight-bold"
+                              onClick="@command('logout')"/>
+                </menupopup>
             </div>
 
         </div>
