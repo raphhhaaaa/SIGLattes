@@ -282,7 +282,7 @@
                                 </div>
 
                                 <div sclass="col-md-6">
-                                    <div sclass="card text-white bg-primary mb-3 shadow-sm dashboard-card">
+                                    <div sclass="card text-white mb-3 shadow-sm dashboard-card" style="background-color: #6f42c1;">
                                         <div sclass="card-body" style="min-height: 120px;">
                                             <n:h5 class="card-title">Usuários ativos</n:h5>
                                             <separator bar="true" sclass="mb-3"/>
