@@ -166,56 +166,111 @@ public class ExtratorVM {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             
             // FORÇA LEITURA SUJA (READ UNCOMMITTED)
-            // Impede que o DB2 trave a query do dashboard esperando locks de INSERT/UPDATE de outras rotinas.
             session.doWork(connection -> {
                 connection.setTransactionIsolation(java.sql.Connection.TRANSACTION_READ_UNCOMMITTED);
             });
 
             /*
-             * DASHBOARD — usa COUNT(DISTINCT hashTitulo) em SQL para manter velocidade.
-             *
-             * A deduplicação por Levenshtein (isMesmaProducao / contarProducoesUnicas)
-             * é O(n²) e adequada para relatórios dedicados, não para carregamento
-             * automático do dashboard. O EXISTS já garante sem produto cartesiano.
+             * OTIMIZAÇÃO JAVA-SIDE JOIN (BYPASS DB2):
+             * O DB2 local da produção entra em colapso ao tentar avaliar subqueries 
+             * correlacionadas (EXISTS) envolvendo datas nas Views SEL_ATUACAO e SEL_VINCULO.
+             * Para contornar, extraímos os vínculos pra memória e avaliamos a regra 
+             * temporal no próprio Java em O(N).
              */
-            String existsUEM =
-                    " AND EXISTS (" +
-                    "   SELECT 1 FROM Atuacao a JOIN a.vinculos v JOIN a.instituicao i" +
-                    "   WHERE a.curriculo = p.curriculo" +
-                    "   AND (i.siglaInstituicao = 'UEM'" +
-                    "     OR i.nomeInstituicao LIKE '%Universidade Estadual de Maringá%')" +
-                    "   AND (v.anoInicio IS NULL OR v.anoInicio <= p.ano)" +
-                    "   AND (v.anoFim IS NULL OR v.anoFim >= p.ano)" +
-                    ") ";
 
-            int anoAtual = Year.now().getValue();
+            // 1. Obter todos os períodos de vínculo UEM válidos por pesquisador
+            String hqlVinculos = "SELECT a.curriculo.id, v.anoInicio, v.anoFim " +
+                                 "FROM Atuacao a JOIN a.vinculos v JOIN a.instituicao i " +
+                                 "WHERE i.siglaInstituicao = 'UEM' OR i.nomeInstituicao LIKE '%Universidade Estadual de Maringá%'";
+
+            List<Object[]> resVinculos = session.createQuery(hqlVinculos, Object[].class).getResultList();
+
+            java.util.Map<String, java.util.List<int[]>> uemPeriods = new java.util.HashMap<>();
+            for (Object[] row : resVinculos) {
+                String idCnpq = (String) row[0];
+                int start = row[1] != null ? (Integer) row[1] : 0;
+                int end = row[2] != null ? (Integer) row[2] : 9999;
+                uemPeriods.computeIfAbsent(idCnpq, k -> new java.util.ArrayList<>()).add(new int[]{start, end});
+            }
+
+            int anoAtual = java.time.Year.now().getValue();
             int anoLimite = anoAtual - 10;
 
-            // Gráfico 1: Evolução por ano (últimos 10 anos)
-            String hql1 = "SELECT p.ano, COUNT(DISTINCT p.hashTitulo) " +
-                    "FROM Producao p " +
-                    "WHERE p.ano >= " + anoLimite + " AND p.ano IS NOT NULL " +
-                    existsUEM +
-                    "GROUP BY p.ano " +
-                    "ORDER BY p.ano ASC";
+            // 2. Obter produções brutas dos pesquisadores vinculados à UEM (Sem produto cartesiano)
+            String hqlProds = "SELECT p.curriculo.id, p.ano, p.tipo, p.hashTitulo " +
+                              "FROM Producao p " +
+                              "WHERE p.ano IS NOT NULL " +
+                              "AND p.curriculo.id IN (" +
+                              "   SELECT a.curriculo.id FROM Atuacao a JOIN a.instituicao i " +
+                              "   WHERE i.siglaInstituicao = 'UEM' OR i.nomeInstituicao LIKE '%Universidade Estadual de Maringá%'" +
+                              ")";
 
-            List<Object[]> res1 = session.createQuery(hql1, Object[].class).getResultList();
-            String labels1 = "['" + res1.stream().map(r -> r[0].toString()).collect(Collectors.joining("','")) + "']";
-            String data1   = "[" + res1.stream().map(r -> r[1].toString()).collect(Collectors.joining(",")) + "]";
+            List<Object[]> rawProds = session.createQuery(hqlProds, Object[].class).getResultList();
 
-            // Gráfico 2: Distribuição por tipo (todos os anos)
-            String hql2 = "SELECT p.tipo, COUNT(DISTINCT p.hashTitulo) " +
-                    "FROM Producao p " +
-                    "WHERE p.tipo IS NOT NULL " +
-                    existsUEM +
-                    "GROUP BY p.tipo " +
-                    "ORDER BY COUNT(DISTINCT p.hashTitulo) DESC";
+            // 3. Processamento Java-Side: Filtragem temporal e Agrupamento
+            java.util.Map<Integer, java.util.Set<String>> countByAno = new java.util.TreeMap<>();
+            java.util.Map<String, java.util.Set<String>> countByTipo = new java.util.HashMap<>();
 
-            List<Object[]> res2 = session.createQuery(hql2, Object[].class).getResultList();
-            String labels2 = "['" + res2.stream().map(r -> r[0] != null ? r[0].toString() : "Outros").collect(Collectors.joining("','")) + "']";
-            String data2   = "[" + res2.stream().map(r -> r[1].toString()).collect(Collectors.joining(",")) + "]";
+            for (Object[] row : rawProds) {
+                String idCnpq = (String) row[0];
+                Integer ano = (Integer) row[1];
+                String tipo = (String) row[2];
+                String hash = (String) row[3];
 
-            return String.format("setTimeout(function(){ if(typeof renderizarGraficos === 'function') renderizarGraficos(%s, %s, %s, %s); }, 300);", labels1, data1, labels2, data2);
+                if (hash == null) continue;
+
+                // Regra de Negócio: Verifica se a produção ocorreu durante um vínculo ativo na UEM
+                boolean isValido = false;
+                java.util.List<int[]> periodos = uemPeriods.get(idCnpq);
+                if (periodos != null) {
+                    for (int[] p : periodos) {
+                        if (ano >= p[0] && ano <= p[1]) {
+                            isValido = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (isValido) {
+                    // Gráfico 1: Apenas últimos 10 anos
+                    if (ano >= anoLimite) {
+                        countByAno.computeIfAbsent(ano, k -> new java.util.HashSet<>()).add(hash);
+                    }
+                    // Gráfico 2: Todos os anos
+                    String tipoTratado = (tipo != null && !tipo.isEmpty()) ? tipo : "Outros";
+                    countByTipo.computeIfAbsent(tipoTratado, k -> new java.util.HashSet<>()).add(hash);
+                }
+            }
+
+            // 4. Montar as strings JSON para os gráficos
+            StringBuilder labels1 = new StringBuilder("['");
+            StringBuilder data1 = new StringBuilder("[");
+            boolean first1 = true;
+            for (java.util.Map.Entry<Integer, java.util.Set<String>> entry : countByAno.entrySet()) {
+                if (!first1) { labels1.append("','"); data1.append(","); }
+                labels1.append(entry.getKey());
+                data1.append(entry.getValue().size());
+                first1 = false;
+            }
+            labels1.append(first1 ? "']" : "']");
+            data1.append("]");
+
+            java.util.List<java.util.Map.Entry<String, java.util.Set<String>>> sortedTipos = new java.util.ArrayList<>(countByTipo.entrySet());
+            sortedTipos.sort((e1, e2) -> Integer.compare(e2.getValue().size(), e1.getValue().size()));
+
+            StringBuilder labels2 = new StringBuilder("['");
+            StringBuilder data2 = new StringBuilder("[");
+            boolean first2 = true;
+            for (java.util.Map.Entry<String, java.util.Set<String>> entry : sortedTipos) {
+                if (!first2) { labels2.append("','"); data2.append(","); }
+                labels2.append(entry.getKey());
+                data2.append(entry.getValue().size());
+                first2 = false;
+            }
+            labels2.append(first2 ? "']" : "']");
+            data2.append("]");
+
+            return String.format("setTimeout(function(){ if(typeof renderizarGraficos === 'function') renderizarGraficos(%s, %s, %s, %s); }, 300);", labels1.toString(), data1.toString(), labels2.toString(), data2.toString());
 
         } catch (Exception e) {
             logger.error("Erro na ViewModel de Extração", e);
