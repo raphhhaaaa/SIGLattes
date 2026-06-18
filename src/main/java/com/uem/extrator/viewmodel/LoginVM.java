@@ -4,6 +4,7 @@ import com.uem.extrator.dao.UsuarioDAO;
 import com.uem.extrator.model.Usuario;
 import com.uem.extrator.util.ConfigManager;
 import com.uem.extrator.service.UemLdapService;
+import com.uem.extrator.util.UsuarioSessaoListener;
 import org.zkoss.bind.annotation.Command;
 import org.zkoss.bind.annotation.Init;
 import org.zkoss.bind.annotation.NotifyChange;
@@ -68,6 +69,10 @@ public class LoginVM {
                 usuarioSessao.setNome(usuario.split("@")[0]); // Usa o RA ou NPM como nome
                 // define um perfil/nível de acesso padrão para quem vem do LDAP
                 usuarioSessao.setAdmin(false);
+                // cria vigia para monitoramente de sessao ativa
+                UsuarioSessaoListener vigia = new UsuarioSessaoListener(usuarioSessao.getLogin());
+                org.zkoss.zk.ui.Sessions.getCurrent().setAttribute("vigia_sessao", vigia);
+
             } else {
                 this.mensagemErro = "Utilizador ou palavra-passe institucionais inválidos.";
             }
@@ -87,6 +92,10 @@ public class LoginVM {
 
             if (!autenticado) {
                 this.mensagemErro = "Palavra-passe local inválida.";
+            } else {
+                // cria vigia para monitoramente de sessao ativa
+                UsuarioSessaoListener vigia = new UsuarioSessaoListener(usuarioSessao.getLogin());
+                org.zkoss.zk.ui.Sessions.getCurrent().setAttribute("vigia_sessao", vigia);
             }
         }
 
