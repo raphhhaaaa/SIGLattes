@@ -3,4 +3,18 @@
         <n:span class="fw-bold d-block d-md-inline">Núcleo de Processamento de Dados</n:span>
         <n:span class="d-none d-md-inline"> - </n:span> <n:span class="d-block d-md-inline">© 2026 Universidade Estadual de Maringá - Pró-Reitoria de Planejamento e Desenvolvimento Institucional - SIGLattes v1.0 - pre-release</n:span>
     </div>
+
+    <!-- SCRIPT GLOBAL DE RESPONSIVIDADE (Recolhe a barra em celulares) -->
+    <script type="text/javascript"><![CDATA[
+        zk.afterMount(function() {
+            if (window.innerWidth < 768) {
+                setTimeout(function() {
+                    var west = zk.Widget.$('$sidebarMenu');
+                    if (west && west.isOpen()) {
+                        west.setOpen(false);
+                    }
+                }, 200);
+            }
+        });
+    ]]></script>
 </zk>

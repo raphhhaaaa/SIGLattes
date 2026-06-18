@@ -120,6 +120,29 @@
         .btn-show-password:hover {
             color: #005a9c;
         }
+
+        /* RESPONSIVIDADE MOBILE */
+        @media (max-width: 768px) {
+            .plano-de-fundo {
+                flex-direction: column;
+                justify-content: center;
+                padding: 15px;
+            }
+            .instrucoes-card {
+                display: none !important;
+            }
+            .login-card {
+                min-width: 100%;
+                width: 100%;
+                margin: 0;
+            }
+            .footer-texto {
+                left: 0 !important;
+                font-size: 11px !important;
+                bottom: 5px !important;
+                padding: 0 10px;
+            }
+        }
     </style>
 
     <div sclass="plano-de-fundo" viewModel="@id('vm') @init('com.uem.extrator.viewmodel.LoginVM')">
@@ -189,7 +212,7 @@
             <label value="@load(vm.mensagemErro)" style="color:red; font-size:12px; text-align:center; display:block;"/>
         </vlayout>
 
-        <div style="position:absolute; bottom:10px; text-align:center; width:100%; color:black; font-size:16px; left: -450px">
+        <div sclass="footer-texto" style="position:absolute; bottom:10px; text-align:center; width:100%; color:black; font-size:16px; left: -450px">
             © 2026 Universidade Estadual de Maringá - Pró-Reitoria de Planejamento e Desenvolvimento Institucional - SIGLattes v1.0
         </div>
     </div>
