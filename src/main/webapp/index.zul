@@ -171,7 +171,7 @@
                                     <div sclass="badge badge-pill badge-primary" style="font-size: 13px; padding: 8px 15px; background-color: rgba(13, 110, 253, 0.1); color: #0d6efd; border: 1px solid rgba(13, 110, 253, 0.2);">
                                         <n:i class="fas fa-users" style="margin-right: 5px;"></n:i>
                                         <label value="@load(vm.totalPesquisadoresUem)" style="font-weight: bold; font-size: 14px; margin-right: 4px;"/>
-                                        <label value="Curriculos vinculados à UEM" style="font-weight: normal;"/>
+                                        <label value="Curriculos com vínculo ativo à UEM" style="font-weight: normal;"/>
                                     </div>
                                 </div>
                                 <div sclass="col-md-12 mb-2">
