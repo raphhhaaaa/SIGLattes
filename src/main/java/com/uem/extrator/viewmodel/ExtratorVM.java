@@ -104,7 +104,8 @@ public class ExtratorVM {
     public void init() {
         this.usuarioLogado = (Usuario) Sessions.getCurrent().getAttribute("usuario_logado");
         if (this.usuarioLogado == null) {
-            Executions.sendRedirect("/login.zul");
+            org.zkoss.zk.ui.Executions.sendRedirect("/login.zul");
+            return;
         }
         atualizarDashboard();
     }
@@ -367,6 +368,18 @@ public class ExtratorVM {
                 List<Object[]> resumos = curriculoDAO.listarResumoParaVerificacao();
                 final int total = resumos.size();
 
+                if (total == 0) {
+                    if (desktop != null && desktop.isAlive()) {
+                        org.zkoss.zk.ui.Executions.schedule(desktop, event -> {
+                            this.logAtualizacao = "Nenhum currículo encontrado no banco de dados local para verificar.\n";
+                            this.processando = false;
+                            org.zkoss.bind.BindUtils.postNotifyChange(null, null, this, "logAtualizacao");
+                            org.zkoss.bind.BindUtils.postNotifyChange(null, null, this, "processando");
+                        }, new org.zkoss.zk.ui.event.Event("onFinish"));
+                    }
+                    return;
+                }
+
                 final AtomicInteger concluidos = new AtomicInteger(0);
                 final AtomicInteger encontrados = new AtomicInteger(0);
                 final AtomicInteger progressoVisual = new AtomicInteger(0);
@@ -404,6 +417,27 @@ public class ExtratorVM {
                                     org.zkoss.bind.BindUtils.postNotifyChange(null, null, this, "listaDesatualizados");
                                 }, new org.zkoss.zk.ui.event.Event("onUIUpdate"));
                             }
+                        }
+                    }
+
+                    // VARREDURA FINAL
+                    try { Thread.sleep(500); } catch (InterruptedException e) {} // Dá tempo da última thread colocar o log final
+                    StringBuilder sbFinal = new StringBuilder();
+                    String msgFinal;
+                    while ((msgFinal = filaLogs.poll()) != null) { sbFinal.append(msgFinal); }
+
+                    List<Curriculo> novosFinal = new ArrayList<>();
+                    Curriculo cFinal;
+                    while ((cFinal = filaCurriculos.poll()) != null) { novosFinal.add(cFinal); }
+
+                    if (sbFinal.length() > 0 || !novosFinal.isEmpty()) {
+                        if (desktop != null && desktop.isAlive()) {
+                            org.zkoss.zk.ui.Executions.schedule(desktop, event -> {
+                                this.logAtualizacao += sbFinal.toString();
+                                this.listaDesatualizados.addAll(novosFinal);
+                                org.zkoss.bind.BindUtils.postNotifyChange(null, null, this, "logAtualizacao");
+                                org.zkoss.bind.BindUtils.postNotifyChange(null, null, this, "listaDesatualizados");
+                            }, new org.zkoss.zk.ui.event.Event("onUIUpdate"));
                         }
                     }
                 });
@@ -526,6 +560,27 @@ public class ExtratorVM {
                             org.zkoss.bind.BindUtils.postNotifyChange(null, null, this, "listaDesatualizados");
                         }, new org.zkoss.zk.ui.event.Event("onUIUpdate"));
                     }
+                }
+            }
+
+            // VARREDURA FINAL
+            try { Thread.sleep(500); } catch (InterruptedException e) {} // Dá tempo da última thread colocar o log final
+            StringBuilder sbFinal = new StringBuilder();
+            String msgFinal;
+            while ((msgFinal = filaLogs.poll()) != null) { sbFinal.append(msgFinal); }
+
+            List<Curriculo> removerListaFinal = new ArrayList<>();
+            Curriculo cFinal;
+            while ((cFinal = curriculosRemover.poll()) != null) { removerListaFinal.add(cFinal); }
+
+            if (sbFinal.length() > 0 || !removerListaFinal.isEmpty()) {
+                if (desktop != null && desktop.isAlive()) {
+                    org.zkoss.zk.ui.Executions.schedule(desktop, event -> {
+                        this.logAtualizacao += sbFinal.toString();
+                        this.listaDesatualizados.removeAll(removerListaFinal);
+                        org.zkoss.bind.BindUtils.postNotifyChange(null, null, this, "logAtualizacao");
+                        org.zkoss.bind.BindUtils.postNotifyChange(null, null, this, "listaDesatualizados");
+                    }, new org.zkoss.zk.ui.event.Event("onUIUpdate"));
                 }
             }
         });
@@ -674,6 +729,11 @@ public class ExtratorVM {
     @Command
     @NotifyChange({"logStatus", "barraVisivel", "processando", "idLattesInput", "curriculo", "resumoExpandido"})
     public void buscarPesquisador() {
+        if (usuarioLogado == null || (!usuarioLogado.isAdmin() && !usuarioLogado.isGestor())) {
+            org.zkoss.zk.ui.util.Clients.showNotification("Acesso negado: Apenas gestores podem extrair currículos.", "error", null, "middle_center", 3000);
+            return;
+        }
+
         // Validação Inteligente baseada na Aba
         if (abaSelecionada == 1) { // Aba CPF
             if (cpfInput == null || cpfInput.trim().isEmpty()) {
@@ -748,6 +808,11 @@ public class ExtratorVM {
     @Command
     @NotifyChange({"logStatus", "barraVisivel", "processando", "curriculo", "resumoExpandido"})
     public void buscarPorId() {
+        if (usuarioLogado == null || (!usuarioLogado.isAdmin() && !usuarioLogado.isGestor())) {
+            org.zkoss.zk.ui.util.Clients.showNotification("Acesso negado: Apenas gestores podem extrair currículos.", "error", null, "middle_center", 3000);
+            return;
+        }
+
         if (idLattesInput == null || idLattesInput.trim().length() != 16) {
             Clients.showNotification("⚠️ ID inválido (16 dígitos).", Clients.NOTIFICATION_TYPE_WARNING, null, "middle_center", 3000);
             return;
@@ -841,8 +906,13 @@ public class ExtratorVM {
 
     // --- UPLOAD ---
     @Command
-    @NotifyChange({"logBatch", "processando"})
-    public void carregarArquivo(@BindingParam("media") Media media) {
+    @NotifyChange({"logBatch", "processando", "barraVisivel"})
+    public void carregarArquivo(@BindingParam("media") org.zkoss.util.media.Media media) {
+        if (usuarioLogado == null || (!usuarioLogado.isAdmin() && !usuarioLogado.isGestor())) {
+            org.zkoss.zk.ui.util.Clients.showNotification("Acesso negado: Apenas gestores podem processar em lote.", "error", null, "middle-center", 3000);
+            return;
+        }
+
         if (media == null) return;
         if (!media.getName().toLowerCase().endsWith(".txt")) {
             Clients.showNotification("Envie um arquivo .txt", Clients.NOTIFICATION_TYPE_WARNING, null, null, 3000);

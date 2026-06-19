@@ -64,9 +64,12 @@ public class ConfigManager {
     private static final String DEFAULT_AUDIT_ADMIN_ACTIONS = "true";
 
     private ConfigManager() {
-        // Tenta salvar no diretorio do Tomcat onde temos certeza de permissão de escrita
+        // (PROD) Tenta salvar no diretorio do Tomcat onde temos certeza de permissão de escrita
         String catBase = System.getProperty("catalina.base");
-        if (catBase != null) {
+        
+        // (DEV) Se estiver rodando pelo IntelliJ em ambiente de desenvolvimento, o Tomcat fica numa pasta temporária
+        // que é apagada. Nesse caso (ou se não houver Tomcat), forçamos o salvamento na pasta do usuário.
+        if (catBase != null && !catBase.contains("JetBrains") && !catBase.contains(".cache")) {
             File confDir = new File(catBase, "conf");
             if (confDir.exists() && confDir.canWrite()) {
                 this.configPath = confDir.getAbsolutePath() + File.separator + "lattes_extrator_config.properties";

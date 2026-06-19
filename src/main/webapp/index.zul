@@ -68,6 +68,7 @@
 
                         <div sclass="card-body card-body-zero">
 
+                            <zk if="${sessionScope.usuario_logado.admin or sessionScope.usuario_logado.gestor}">
                             <tabbox id="tb" sclass="nav-tabs" selectedIndex="@bind(vm.abaSelecionada)" width="100%">
                                 <tabs>
                                     <tab label="Por ID Lattes" iconSclass="z-icon-id-card" disabled="@load(vm.processando)"/>
@@ -140,9 +141,11 @@
 
                                 </tabpanels>
                             </tabbox>
+                            </zk>
 
                             <div style="padding: 0px 20px 20px 20px; padding-bottom: 0px">
 
+                                <zk if="${sessionScope.usuario_logado.admin or sessionScope.usuario_logado.gestor}">
                                 <hlayout spacing="10px" style="padding-top: 5px; margin-bottom: 30px">
                                     <button label="Pesquisar" onClick="@command('buscarPorId')" visible="@load(vm.abaSelecionada eq 0)" disabled="@load(vm.processando)" sclass="btn btn-outline-primary" iconSclass="z-icon-search"/>
                                     <button label="Pesquisar" onClick="@command('buscarPesquisador')" visible="@load(vm.abaSelecionada eq 1 or vm.abaSelecionada eq 2)" disabled="@load(vm.processando)" sclass="btn btn-outline-primary" iconSclass="z-icon-search"/>
@@ -150,6 +153,7 @@
                                 </hlayout>
 
                                 <separator bar="true" height="15px"/>
+                                </zk>
 
                                 <vlayout visible="@load(vm.barraVisivel)" spacing="0">
                                     <separator height="20px"/>

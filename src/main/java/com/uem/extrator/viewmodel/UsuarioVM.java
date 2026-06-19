@@ -3,14 +3,10 @@ package com.uem.extrator.viewmodel;
 import com.uem.extrator.dao.UsuarioDAO;
 import com.uem.extrator.model.Usuario;
 import com.uem.extrator.service.AuditLogService;
-import org.zkoss.bind.annotation.Command;
-import org.zkoss.bind.annotation.Init;
-import org.zkoss.bind.annotation.NotifyChange;
+import org.zkoss.bind.annotation.*;
 import org.zkoss.zk.ui.util.Clients;
 import java.util.List;
 import org.zkoss.zk.ui.event.Event;
-import org.zkoss.bind.annotation.ContextParam;
-import org.zkoss.bind.annotation.ContextType;
 import com.uem.extrator.service.AuditLogService;
 import org.zkoss.zk.ui.Sessions;
 
@@ -108,6 +104,18 @@ public class UsuarioVM {
             carregarLista();
         } else {
             Clients.showNotification("Erro ao excluir. Tente novamente.", "error", null, null, 2000);
+        }
+    }
+
+    @Command
+    @NotifyChange("usuarioEdicao")
+    public void alternarPermissao(@BindingParam("tipo") String tipo) {
+        if (usuarioEdicao == null) return;
+        
+        if ("ADMIN".equals(tipo) && usuarioEdicao.isAdmin()) {
+            usuarioEdicao.setGestor(false);
+        } else if ("GESTOR".equals(tipo) && usuarioEdicao.isGestor()) {
+            usuarioEdicao.setAdmin(false);
         }
     }
 

@@ -94,9 +94,9 @@
                             <listcell label="@load(each.nome)" style="font-weight: bold;"/>
                             <listcell label="@load(each.login)"/>
                             <listcell>
-                                <span sclass="@load(each.admin ? 'badge badge-primary' : 'badge badge-secondary')"
+                                <span sclass="@load(each.admin ? 'badge badge-primary' : (each.gestor ? 'badge badge-success' : 'badge badge-secondary'))"
                                       style="font-size: 11px; padding: 5px 10px; color:black">
-                                    <label value="@load(each.admin ? 'ADMIN' : 'COMUM')"/>
+                                    <label value="@load(each.admin ? 'ADMIN' : (each.gestor ? 'GESTOR' : 'COMUM'))"/>
                                 </span>
                             </listcell>
                             <listcell>
@@ -150,9 +150,17 @@
                         <separator height="2px"/>
 
                         <div sclass="p-2">
-                            <checkbox label="Conceder permissão de Administrador?"
-                                      checked="@bind(vm.usuarioEdicao.admin)"
-                                      style="font-weight: bold; color: #555;"/>
+                            <vlayout spacing="10px">
+                                <checkbox label="Conceder permissão de Administrador?"
+                                          checked="@bind(vm.usuarioEdicao.admin)"
+                                          onCheck="@command('alternarPermissao', tipo='ADMIN')"
+                                          style="font-weight: bold; color: #555;"/>
+                                          
+                                <checkbox label="Conceder permissão de Gestor?"
+                                          checked="@bind(vm.usuarioEdicao.gestor)"
+                                          onCheck="@command('alternarPermissao', tipo='GESTOR')"
+                                          style="font-weight: bold; color: #555;"/>
+                            </vlayout>
                         </div>
                     </vlayout>
                 </div>
