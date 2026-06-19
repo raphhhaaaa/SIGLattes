@@ -8,7 +8,7 @@ import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
 @Entity
-@Table(name = "CURRICULO", indexes = {
+@Table(name = "SEL_CURRICULO", indexes = {
         @Index(name = "idx_curr_nome", columnList = "nm_completo"), // Acelera ordenação alfabética
         @Index(name = "idx_curr_lattes", columnList = "id_cnpq")
 })

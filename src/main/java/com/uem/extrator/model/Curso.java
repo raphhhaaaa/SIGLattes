@@ -3,7 +3,7 @@ package com.uem.extrator.model;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "CURSO")
+@Table(name = "SEL_CURSO")
 
 public class Curso {
 

@@ -3,7 +3,7 @@ package com.uem.extrator.model;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "ATIVIDADE_ITEM")
+@Table(name = "SEL_ATIVIDADE_ITEM")
 public class AtividadeItem {
 
     @Id

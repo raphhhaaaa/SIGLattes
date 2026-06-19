@@ -51,11 +51,11 @@ public class InstituicaoDAO {
              */
             String sql =
                 "SELECT i.nm_instituicao, COUNT(DISTINCT combined.id_cnpq) AS qtd " +
-                "FROM INSTITUICAO i " +
+                "FROM SEL_INSTITUICAO i " +
                 "LEFT JOIN (" +
-                "   SELECT id_instituicao, id_cnpq FROM FORMACAO " +
+                "   SELECT id_instituicao, id_cnpq FROM SEL_FORMACAO " +
                 "   UNION ALL " +
-                "   SELECT id_instituicao, id_cnpq FROM ATUACAO " +
+                "   SELECT id_instituicao, id_cnpq FROM SEL_ATUACAO " +
                 ") AS combined ON i.id_instituicao = combined.id_instituicao " +
                 "WHERE i.nm_instituicao IS NOT NULL " +
                 "AND (" +
