@@ -17,7 +17,7 @@
    direitos estão reservados À Pró-Reitoria de Planejamento e Desenvolvimento Institucional (PLD) - Divisão de Informações e Planos (LNI). Qualquer uso indevido
    ou não autorizado de todo e qualquer código ou informação armazenada nesse repositório, poderá acarretar em medidas administrativas cabíveis.
 
-2. Por causa de cláusulas contratuais, o acesso ao WebService do CNPq pela UEM é restrito a apenas um IP específico da instituição. Dado que, no momento, não possuo
+2. Por causa de cláusulas contratuais, o acesso ao WebService do CNPq pela UEM é restrito a apenas um IP específico da instituição. Dado que, em ambiente de desenvolvimento, não possuo
    acesso a esse IP, optei por utilizar uma técnica chamada de Tunelamento por SSH, que consiste em basicamente redirecionar o fluxo de requisições, criando uma porta local
    na máquina de desenvolvimento, encapsulando todo tráfego enviado para o localhost:8888 e entregando diretamente ao servidor do CNPq na porta 80.
 
@@ -38,14 +38,14 @@
 
 Este sistema automatiza a recuperação de dados acadêmicos da Plataforma Lattes. Ele atua como uma ponte entre o repositório governamental (CNPq) e o banco de dados da UEM, permitindo:
 
-1.  **Conexão Segura:** Acesso ao serviço SOAP `WSCurriculo` via HTTP (ou Tunelamento SSH para dev).
+1.  **Conexão Segura:** Acesso ao serviço SOAP `WSCurriculo` via HTTP.
 2.  **Processamento XML:** Parsing avançado de currículos (Dados Pessoais, Formação, Produção Bibliográfica).
 3.  **Persistência Relacional:** Armazenamento estruturado (1:N) para análise de dados.
 4.  **Visualização:** Interface Web interativa para consulta, detalhamento e extração de novos currículos.
 
 ---
 
-## ⚠️ Limitação Institucional (Crítico)
+## ⚠️ Paridade Institucional
 
 
 
@@ -142,8 +142,9 @@ para acesso, com uma conta temporária.
 
 > **Nota 1:** A autenticação por LDAP UEM se restringe apenas à docentes/funcionários vinculados à UEM. Alunos, por padrão, são impedidos de entrar no sistema.
 
-> **Nota 2:** Existem dois níveis de acesso: **Administrador** e **Usuário Comum**. O administrador possui acesso integral a todas as funcionalidades do sistema, incluindo configurações. Já o 
-> Usuário Comum possui acesso às principais funcionalidades de análise de dados (como acessar os relátorios e cadastros) além de poder extrair novos currículos. (** passível de  mudança futura **)
+> **Nota 2:** Existem três níveis de acesso: **Administrador**, **Gestor** e **Usuário Comum** . O administrador possui acesso integral a todas as funcionalidades do sistema, incluindo configurações e gestão de usuários. Já o 
+> Gestor possui acesso às principais funcionalidades de análise de dados (como acessar os relátorios e cadastros) além de poder extrair/atualizar currículos. Por fim, o Usuário Comum, possui acesso à nivel de leitura apenas.
+> Ficando limitado a visualização dos relatórios e tabelas disponíveis publicamente.
 
 ### 2. Página Inicial (index)
 A página inicial é o coração do sistema. Assim que o usuário entra, ele pode ter acesso à:

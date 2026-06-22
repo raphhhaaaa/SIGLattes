@@ -255,7 +255,7 @@
                                     </div>
                                 </div>
 
-                                    <n:div sclass="col-md-6" onclick="window.location.href='paginas/ferramentas/verificacao.zul';">
+                                    <div sclass="col-md-6" onClick="@command('redirecionarAtualizacoes')">
                                         <div sclass="card text-white bg-warning mb-3 shadow-sm dashboard-card">
                                             <div sclass="card-body" style="min-height: 120px; cursor: pointer;">
                                                 <n:h5 class="card-title">Atualizações CNPq</n:h5>
@@ -269,7 +269,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </n:div>
+                                    </div>
 
                                 <div sclass="col-md-6">
                                     <div sclass="card text-white bg-primary mb-3 shadow-sm dashboard-card">

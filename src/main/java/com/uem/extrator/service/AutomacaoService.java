@@ -12,6 +12,8 @@ import java.time.Duration;
 import java.time.LocalTime;
 import java.util.concurrent.*;
 
+import com.uem.extrator.util.HibernateUtil;
+import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.Date;
@@ -238,8 +240,26 @@ public class AutomacaoService {
         }
 
         // Controle de “SPAM” (verifica se já enviou hoje)
-        // cria um arquivo oculto na pasta do usuario para marcar o dia
-        File controle = new File(System.getProperty("user.home") + File.separator + ".lattes_weekly_report.dat");
+        // cria um arquivo oculto para marcar o dia
+
+        // verifica se está em ambiente de dev ou prod
+        File controle;
+        String catBase = System.getProperty("catalina.base");
+        
+        if (catBase != null && !catBase.contains("JetBrains") && !catBase.contains(".cache")) {
+            // Em produção, a raiz do Tomcat (/usr/local/tomcat) geralmente não tem permissão de escrita.
+            // O ideal é salvar na pasta 'temp' ou 'logs'.
+            File tempDir = new File(catBase, "temp");
+            if (tempDir.exists() && tempDir.canWrite()) {
+                controle = new File(tempDir, ".lattes_weekly_report.dat");
+            } else {
+                controle = new File(catBase + File.separator + "logs" + File.separator + ".lattes_weekly_report.dat");
+            }
+        } else {
+            // Em dev, salva na home do usuário
+            controle = new File(System.getProperty("user.home") + File.separator + ".lattes_weekly_report.dat");
+        }
+
         if (controle.exists()) {
             try (Scanner scanner = new Scanner(controle)) {
                 if (scanner.hasNext()) {
@@ -265,7 +285,11 @@ public class AutomacaoService {
         // verifica se existe espaço em disco
         long freeSpaceGB = 0;
         try {
-            freeSpaceGB = new File("/").getFreeSpace() / (1024 * 1024 * 1024);
+
+            String basePath = System.getProperty("catalina.base"); // caminho de prod
+            if (basePath == null) basePath = System.getProperty("user.dir"); // fallback para caminho de dev
+
+            freeSpaceGB = new File(basePath).getFreeSpace() / (1024 * 1024 * 1024);
         } catch (Exception ignored) {}
 
         // monta o email (html)

@@ -88,7 +88,7 @@ public class UsuarioVM {
     @NotifyChange({"listaUsuarios"})
     public void excluir(@org.zkoss.bind.annotation.BindingParam("u") Usuario u) {
         if ("admin".equals(u.getLogin())) {
-            Clients.showNotification("O admin principal não pode ser excluído.", "info", null, null, 3000);
+            Clients.showNotification("O admin principal não pode ser excluído.", "error", null, null, 3000);
             return;
         }
 

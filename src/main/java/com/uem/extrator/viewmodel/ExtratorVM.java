@@ -1289,6 +1289,22 @@ public class ExtratorVM {
         }
     }
 
+    public boolean isAdminOuGestor() {
+        if (usuarioLogado == null) {
+            usuarioLogado = (Usuario) Sessions.getCurrent().getAttribute("usuario_logado");
+        }
+        return usuarioLogado != null && (usuarioLogado.isAdmin() || usuarioLogado.isGestor());
+    }
+
+    @Command
+    public void redirecionarAtualizacoes() {
+        if (isAdminOuGestor()) {
+            Executions.sendRedirect("paginas/ferramentas/verificacao.zul");
+        } else {
+            Clients.showNotification("Acesso negado: apenas Administradores ou Gestores tem permissão para atualizar manualmente a base.", "warning", null, "middle_center", 3000);
+        }
+    }
+
     // Getters
     public Curriculo getCurriculo() { return curriculo; }
     public void setCurriculo(Curriculo c) { this.curriculo = c; }

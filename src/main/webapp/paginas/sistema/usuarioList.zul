@@ -13,6 +13,24 @@
 
         .meu-north { top: -10px !important; }
 
+        .btn-show-password {
+        position: absolute;
+        right: 4px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        color: #555;
+        padding: 4px 6px;
+        line-height: 1;
+        z-index: 10;
+        }
+
+        .btn-show-password:hover {
+        color: #005a9c;
+        }
+
     </style>
 
     <borderlayout width="100vw" height="100vh"
@@ -144,8 +162,13 @@
                                  placeholder="Ex: joao.silva" style="height:35px;"/>
 
                         <label value="Senha" sclass="font-weight-bold"/>
-                        <textbox value="@bind(vm.senhaTemporaria)" type="password" hflex="1"
-                                 placeholder="@load(vm.usuarioEdicao.id eq null ? 'Obrigatória' : '(Deixe em branco para manter a atual)')" style="height:35px;"/>
+
+                        <div sclass="password-wrapper">
+                            <textbox value="@bind(vm.senhaTemporaria)" type="password" hflex="1" id="newPwrd"
+                                     placeholder="@load(vm.usuarioEdicao.id eq null ? 'Obrigatória' : '(Deixe em branco para manter a atual)')" style="height:35px;"/>
+                            <button id="btnEyenewPwrd" sclass="btn-show-password" iconSclass="fa fa-eye" style="top: 16px;"
+                                    onClick='newPwrd.setType("text".equals(newPwrd.getType())?"password":"text"); btnEyenewPwrd.setIconSclass("text".equals(newPwrd.getType())?"fa fa-eye-slash":"fa fa-eye");'/>
+                        </div>
 
                         <separator height="2px"/>
 
