@@ -2,12 +2,15 @@ package com.uem.extrator.viewmodel;
 
 import com.uem.extrator.dao.CurriculoDAO;
 import com.uem.extrator.dao.InstituicaoDAO;
+import com.uem.extrator.dao.ProducaoDAO;
 import com.uem.extrator.dto.RelatorioProdutividadeDTO;
 import com.uem.extrator.model.Curriculo;
 import com.uem.extrator.model.Usuario;
 import com.uem.extrator.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zkoss.bind.annotation.BindingParam;
 import org.zkoss.bind.annotation.Command;
 import org.zkoss.bind.annotation.Init;
@@ -24,6 +27,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
 public class RelatorioProdutividadeVM {
+
+    private static final Logger logger = LoggerFactory.getLogger(RelatorioProdutividadeVM.class);
+
 
     private Usuario usuarioLogado;
 
@@ -75,27 +81,55 @@ public class RelatorioProdutividadeVM {
 
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
 
-            System.out.println("Iniciando conexão com o banco...");
+            logger.info("Iniciando conexão com o banco (Bypass Relacional)...");
 
-            // O HQL com COALESCE para tratar os NULLs perfeitamente
-            String hql = "SELECT c.idLattes, c.nomeCompleto, c.indiceH, " +
+            // 1. Pega apenas os IDs rapidamente, sem JOINs agressivos
+            String hqlIds = "SELECT DISTINCT a.curriculo.idLattes FROM Atuacao a WHERE UPPER(a.instituicao.nomeInstituicao) = UPPER(:instituicaoNome)";
+            List<String> idsFiltrados = session.createQuery(hqlIds, String.class)
+                    .setParameter("instituicaoNome", instituicaoSelecionada)
+                    .getResultList();
+
+            if (idsFiltrados.isEmpty()) {
+                logger.warn("Nenhum pesquisador encontrado para a instituição.");
+                return;
+            }
+
+            List<Object[]> resultadosBrutos = new ArrayList<>();
+            int batchSize = 500;
+
+            // 2. Busca os dados matemáticos em lotes para evitar erro na cláusula IN
+            String hqlMatematica = "SELECT c.idLattes, c.nomeCompleto, c.indiceH, " +
                     "COUNT(p.id), " +
                     "SUM(p.citacoes), " +
                     "(SUM(CASE WHEN p.statusAcesso = 'ABERTO' THEN 1.0 ELSE 0.0 END) * 100.0) / NULLIF(COUNT(p.id), 0) " +
                     "FROM Curriculo c " +
                     "LEFT JOIN c.producoes p " +
-                    "WHERE EXISTS (SELECT 1 FROM Atuacao a WHERE a.curriculo.idLattes = c.idLattes AND UPPER(a.instituicao.nomeInstituicao) = UPPER(:instituicaoNome)) " +
-                    "GROUP BY c.idLattes, c.nomeCompleto, c.indiceH " +
-                    "ORDER BY COALESCE(c.indiceH, 0) DESC, COALESCE(SUM(p.citacoes), 0) DESC";
+                    "WHERE c.idLattes IN (:idsLattes) " +
+                    "GROUP BY c.idLattes, c.nomeCompleto, c.indiceH";
 
-            Query<Object[]> query = session.createQuery(hql, Object[].class);
-            query.setParameter("instituicaoNome", instituicaoSelecionada);
+            for (int i = 0; i < idsFiltrados.size(); i += batchSize) {
+                List<String> subList = idsFiltrados.subList(i, Math.min(i + batchSize, idsFiltrados.size()));
+                List<Object[]> res = session.createQuery(hqlMatematica, Object[].class)
+                        .setParameterList("idsLattes", subList)
+                        .getResultList();
+                resultadosBrutos.addAll(res);
+            }
 
-            List<Object[]> resultados = query.getResultList();
+            // 3. Ordenação Feita no Java (Java-Side Join O(N log N))
+            resultadosBrutos.sort((row1, row2) -> {
+                Integer h1 = row1[2] != null ? ((Number) row1[2]).intValue() : 0;
+                Integer h2 = row2[2] != null ? ((Number) row2[2]).intValue() : 0;
+                if (!h2.equals(h1)) {
+                    return h2.compareTo(h1); // DESC por indiceH
+                }
+                Integer c1 = row1[4] != null ? ((Number) row1[4]).intValue() : 0;
+                Integer c2 = row2[4] != null ? ((Number) row2[4]).intValue() : 0;
+                return c2.compareTo(c1);     // DESC por citacoes
+            });
 
-            System.out.println("Resultado vindo do banco: " + resultados.toString());
+            logger.info("Métricas calculadas no Java com sucesso. Total: " + resultadosBrutos.size());
 
-            for (Object[] row : resultados) {
+            for (Object[] row : resultadosBrutos) {
                 String idLattes = (String) row[0];
                 String nome = (String) row[1];
                 Integer indiceH = row[2] != null ? ((Number) row[2]).intValue() : 0;
@@ -114,7 +148,7 @@ public class RelatorioProdutividadeVM {
             this.listaProdutividadeOriginal = new ArrayList<>(this.listaProdutividade);
             this.filtroNome = "";
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Erro ao executar pesquisa: ", e);
         }
     }
 
