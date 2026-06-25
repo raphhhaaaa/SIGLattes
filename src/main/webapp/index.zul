@@ -187,7 +187,7 @@
                                 <div sclass="col-md-7 mt-3">
                                     <div sclass="card shadow-sm dashboard-card" style="cursor: default;">
                                         <div sclass="card-body">
-                                            <n:h5 class="card-title text-secondary fw-bold" style="font-size: 14px; letter-spacing: 1px;">EVOLUÇÃO DE PRODUÇÃO (UEM)</n:h5>
+                                            <n:h5 class="card-title text-secondary fw-bold" style="font-size: 14px; letter-spacing: 1px;">EVOLUÇÃO DE PRODUÇÃO - ARTIGOS, EVENTOS, LIVROS/CAPITULOS - (UEM)</n:h5>
                                             <separator bar="true" sclass="mb-3"/>
                                             <n:div id="loadingBar" class="text-center" style="padding: 40px 0;">
                                                 <n:div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></n:div>
@@ -255,7 +255,7 @@
                                     </div>
                                 </div>
 
-                                    <div sclass="col-md-6" onClick="@command('redirecionarAtualizacoes')">
+                                    <div sclass="col-md-6" onClick="@command('redirecionarAtualizacoes')" style="@load(vm.adminOuGestor ? 'cursor: pointer;' : 'cursor: default; opacity: 0.6')">
                                         <div sclass="card text-white bg-warning mb-3 shadow-sm dashboard-card">
                                             <div sclass="card-body" style="min-height: 120px; cursor: pointer;">
                                                 <n:h5 class="card-title">Atualizações CNPq</n:h5>

@@ -22,7 +22,7 @@ public class UemLdapService {
 
     public boolean autenticar(String login, String senha) {
 
-        // nulo
+        // credenciais nulas
         if (login == null || senha == null || login.trim().isEmpty() || senha.trim().isEmpty()) {
             return false;
         }

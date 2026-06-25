@@ -75,6 +75,8 @@ public class RelatorioProdutividadeVM {
 
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
 
+            System.out.println("Iniciando conexão com o banco...");
+
             // O HQL com COALESCE para tratar os NULLs perfeitamente
             String hql = "SELECT c.idLattes, c.nomeCompleto, c.indiceH, " +
                     "COUNT(p.id), " +
@@ -90,6 +92,8 @@ public class RelatorioProdutividadeVM {
             query.setParameter("instituicaoNome", instituicaoSelecionada);
 
             List<Object[]> resultados = query.getResultList();
+
+            System.out.println("Resultado vindo do banco: " + resultados.toString());
 
             for (Object[] row : resultados) {
                 String idLattes = (String) row[0];
@@ -109,6 +113,8 @@ public class RelatorioProdutividadeVM {
 
             this.listaProdutividadeOriginal = new ArrayList<>(this.listaProdutividade);
             this.filtroNome = "";
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
